@@ -1,0 +1,216 @@
+Landing Page Vision: Universal Lead Machine
+Goal: A high-end, custom-coded page that positions you as the go-to AI lead gen solution for any small business and SaaS startups—$500 pilots, enterprise polish, Replit-driven.
+Tech Stack:  
+HTML5/CSS3/JavaScript—core build, no shortcuts.  
+Tailwind CSS (optional)—speed with pro styling.  
+Replit—hosts it, runs your scraper/emailer.  
+Firebase (later)—form backend, free tier.
+Vibe: Dark, futuristic, authoritative—like a Silicon Valley unicorn’s first site.
+Full Design Breakdown
+Overall Structure
+Width: 1440px max, responsive (320px mobile).  
+Font: “Inter” (Google Fonts)—sharp, tech-elite standard.  
+Colors:  
+Base: Obsidian (#0D1321)—dark, rich.  
+Accent: Neon Purple (#7B00FF)—AI edge, bold.  
+Secondary: White (#FFFFFF), Steel Gray (#A1A9B8).
+Section 1: Hero
+Height: 800px (full-screen punch).  
+Background: Obsidian (#0D1321), subtle gradient to black (#000000), faint “AI wave” animation (JS canvas—curved lines pulsing).  
+Headline:  
+Text: “Leadzap: Leads for Anyone, Powered by AI”  
+Size: 72px, bold, white, Inter, letter-spacing: -1.5px, line-height: 1.1.  
+Sub: “Small businesses and SaaS—100+ leads, delivered fast.”  
+Size: 26px, Steel Gray (#A1A9B8), 25px padding-top.
+Visual: Floating AI orb—Neon Purple (#7B00FF), pulsing glow (CSS keyframes), 100px diameter, centered above subtext.  
+CTA:  
+Button: “Launch Your Leads”  
+Style: Neon Purple (#7B00FF), white text, 20px, bold, 18px padding, border-radius: 10px, hover: brightens (#8F00FF) + shadow.  
+Scrolls to: Signup section.
+Animation: Headline slides up (1s), orb pulses (2s loop), button scales on hover (JS).  
+Vibe: Universal, commanding—Stanford-level first impression.
+Section 2: Pitch (Who It’s For)
+Height: 700px.  
+Background: Obsidian (#0D1321).  
+Title: “Leads for Every Hustle”  
+Size: 48px, bold, white, centered, 60px padding-top.
+Content: Three cards (30% width, 5% gap, stacks on mobile):  
+Small Businesses:  
+Text: “Plumbers, cafes, gyms—50+ local leads, no ad spend.”  
+Size: 18px, Steel Gray (#A1A9B8), 20px padding.  
+Icon: Storefront, Neon Purple (#7B00FF), 50px, top-center.  
+Style: Card bg: #1A2236, border: 1px purple, radius: 12px.
+SaaS Startups:  
+Text: “100+ B2B leads—founders, execs, ready to buy.”  
+Size: 18px, Steel Gray (#A1A9B8), 20px padding.  
+Icon: Rocket, Neon Purple (#7B00FF), 50px, top-center.  
+Style: Same card design—consistent flex.
+Anyone Else:  
+Text: “Your niche, your leads—AI finds ‘em, we deliver.”  
+Size: 18px, Steel Gray (#A1A9B8), 20px padding.  
+Icon: Globe, Neon Purple (#7B00FF), 50px, top-center.  
+Style: Matching card—universal appeal.
+Animation: Cards fade in on scroll (JS Intersection Observer, 0.5s stagger).  
+Vibe: Broad, badass—covers all bases without losing edge.
+Section 3: How It Works
+Height: 600px.  
+Background: Gradient—Obsidian (#0D1321) to #1A2236.  
+Title: “Your Lead Engine”  
+Size: 48px, bold, white, centered, 60px padding-top.
+Content: Four steps (22% width, 4% gap, centered):  
+Target: “Tell us your niche.”  
+Icon: Crosshair, purple, 60px, spins on hover (CSS).
+Scan: “AI hunts your leads.”  
+Icon: Radar pulse, purple, 60px, animates (JS).
+Craft: “Personalized outreach, auto-sent.”  
+Icon: Envelope stack, purple, 60px.
+Win: “Leads land in your hands.”  
+Icon: Handshake, purple, 60px.
+Text: 16px, Steel Gray (#A1A9B8), below icons.
+Animation: Steps scale up on scroll (JS, 0.3s delay each).  
+Vibe: Precise, tech-forward—million-dollar machinery feel.
+Section 4: Offer & Signup
+Height: 800px.  
+Background: Obsidian (#0D1321).  
+Title: “Zap Your Leads Live”  
+Size: 48px, bold, white, centered, 60px padding-top.
+Offer: Two cards (45% width, 5% gap, stacks on mobile):  
+Small Business Pilot:  
+Text: “50+ Local Leads • $500 One-Time”  
+Sub: “Full service: $1k/month”  
+Size: 22px (text), 14px (sub), white, bg: #1A2236, purple border, radius: 12px.
+SaaS Pilot:  
+Text: “100+ B2B Leads • $500 One-Time”  
+Sub: “Full service: $1k/month”  
+Size: Same as above, matching style.
+Form: Below cards—  
+Fields:  
+“Your Name” (text, required, 16px, white placeholder).  
+“Email” (email, required).  
+“Your Niche” (text—open field, let ‘em type “plumber” or “SaaS”).
+Style: Inputs—bg: #1A2236, border: Neon Purple (#7B00FF), radius: 8px, 15px padding.  
+Button: “Zap My Leads”  
+Neon Purple (#7B00FF), white text, 20px, bold, hover: glows (#8F00FF + shadow).
+Submits to: Your email (JS fetch to Firebase later).
+Animation: Cards slide in from sides, form fades up (JS).  
+Vibe: Flexible, high-value—sells to anyone with a pulse.
+Section 5: Trust
+Height: 400px.  
+Background: #1A2236.  
+Title: “Results You Can Bank On”  
+Size: 48px, bold, white, centered, 60px padding-top.
+Content: Placeholder—  
+Text: “300+ leads delivered • $15k+ in client revenue • 5+ active pilots.”  
+Size: 20px, Steel Gray (#A1A9B8), centered.  
+Future: Add carousel—quotes like “Leadzap got me 50 roofing leads in a week”—Joe, Contractor.
+Animation: Text fades in (1s).  
+Vibe: Credible, cash-focused—Stanford swagger.
+Footer
+Height: 150px.  
+Background: Obsidian (#0D1321).  
+Content:  
+Text: “© 2025 Leadzap • leads@leadzap.io”  
+Size: 14px, Steel Gray (#A1A9B8).  
+Socials: X/LinkedIn icons (purple, 30px, link to your profiles).
+Vibe: Tight, pro—closes like a boss.
+Coding in Replit
+Time: 12–18 hours (2–3 days)—serious build, not a toy.
+Files:  
+index.html: Full structure.  
+styles.css: Raw CSS (or Tailwind CDN).  
+script.js: Animations, form handling.
+Starter Code
+Replit: New “HTML, CSS, JS” project—LeadzapAgency.  
+index.html:
+html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leadzap - Leads for Anyone</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <section class="hero">
+        <div class="orb"></div>
+        <h1>Leadzap: Leads for Anyone, Powered by AI</h1>
+        <p>Small businesses and SaaS—100+ leads, delivered fast.</p>
+        <button onclick="document.getElementById('signup').scrollIntoView()">Launch Your Leads</button>
+    </section>
+
+    <section class="pitch">
+        <h2>Leads for Every Hustle</h2>
+        <div class="cards">
+            <div class="card">
+                <h3>Small Businesses</h3>
+                <p>Plumbers, cafes, gyms—50+ local leads, no ad spend.</p>
+            </div>
+            <div class="card">
+                <h3>SaaS Startups</h3>
+                <p>100+ B2B leads—founders, execs, ready to buy.</p>
+            </div>
+            <div class="card">
+                <h3>Anyone Else</h3>
+                <p>Your niche, your leads—AI finds ‘em, we deliver.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Add How It Works, Offer/Signup, Trust, Footer here -->
+
+    <script src="script.js"></script>
+</body>
+</html>
+styles.css:
+css
+body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background: #0D1321;
+    color: #FFFFFF;
+}
+.hero {
+    height: 800px;
+    background: linear-gradient(#0D1321, #000000);
+    text-align: center;
+    padding-top: 250px;
+    position: relative;
+}
+.orb {
+    width: 100px;
+    height: 100px;
+    background: #7B00FF;
+    border-radius: 50%;
+    position: absolute;
+    top: 150px;
+    left: 50%;
+    transform: translateX(-50%);
+    animation: pulse 2s infinite;
+}
+@keyframes pulse {
+    0% { box-shadow: 0 0 10px #7B00FF; }
+    50% { box-shadow: 0 0 20px #7B00FF; }
+    100% { box-shadow: 0 0 10px #7B00FF; }
+}
+.hero h1 { font-size: 72px; font-weight: 700; margin: 0; }
+.hero p { font-size: 26px; color: #A1A9B8; margin: 25px 0; }
+.hero button { background: #7B00FF; color: #FFF; padding: 18px 36px; border: none; border-radius: 10px; font-size: 20px; cursor: pointer; }
+.hero button:hover { background: #8F00FF; box-shadow: 0 0 15px #7B00FF; }
+.pitch { padding: 60px 0; }
+.pitch h2 { font-size: 48px; text-align: center; }
+.cards { display: flex; justify-content: center; gap: 5%; max-width: 1440px; margin: 40px auto; }
+.card { background: #1A2236; border: 1px solid #7B00FF; padding: 20px; width: 30%; border-radius: 12px; }
+.card h3 { font-size: 24px; }
+.card p { font-size: 18px; color: #A1A9B8; }
+script.js:
+javascript
+// Scroll animations TBD
+console.log("Leadzap ready to dominate!");
+Action:  
+Create Replit project, paste these—run it (public URL pops up).  
+Build out sections tonight (hero/pitch)—finish tomorrow (12–18 hours total).  
+Post URL here tomorrow—I’ll debug/add animations.
+Replit Integration
+Form submits to your email → Run leadzap_scraper.py (any niche) → Send via leadzap_email.py or Sheets.  
