@@ -1,0 +1,50 @@
+Interface Vision
+Purpose: A clean way for clients to sign up, see their leads, and track results—while your Replit scripts (scraper + emailer) run the engine behind the scenes.
+Type: Start with a basic website + lead delivery system—no heavy coding yet, just enough to sell pilots and scale later.  
+Components
+Landing Page  
+What: One-page site to pitch your service and grab signups.  
+Features:  
+Headline: “AI-Powered Leads for [Dentists/SaaS]”  
+Offer: “50 Leads for $500 (Pilot)” or “100 Leads for $1k/month”  
+Form: Name, email, niche (dentist/SaaS)—submit to trigger your outreach.
+Tool: Carrd ($19/year)—drag-and-drop, live in 2 hours.
+Client Dashboard  
+What: Simple portal where clients view leads after you deliver.  
+Features:  
+Lead List: Table of names/emails (from your Replit CSVs).  
+Stats: “50 leads delivered, 5 contacted” (manual update for now).  
+Download: Export CSV button.
+Tool: Google Sheets (free)—share a link per client, auto-populated by Replit. Later, upgrade to Airtable or a Bubble app.
+Email Delivery  
+What: Auto-send leads to clients from Replit via SendGrid.  
+Features: “Here’s your 50 dentist leads” + CSV attachment.  
+Tool: Ties into your email_generator.py script—runs in Replit.
+How It Works
+Client Journey:  
+Hits landing page, signs up for pilot ($500).  
+You scrape 50–100 leads in Replit, email ‘em via SendGrid.  
+Client gets a Sheets link to view/download leads.
+Your Effort: 2–3 hours to set up Carrd + Sheets, then Replit does the rest.
+Interface-Backed Name Ideas
+Since you want “lead” and originality, let’s tie the name to this slick, client-facing interface—suggesting speed, clarity, or AI magic. Checked for uniqueness:
+Leadzap  
+Why: “Lead” + “Zap”—fast, electric delivery via your interface. No big hits online.  
+Interface Fit: Quick signup, instant lead emails—zaps ‘em to clients.
+Leadveil  
+Why: “Lead” + “Veil”—unveils hidden prospects, sleek and mysterious. Untapped.  
+Interface Fit: Clean dashboard “lifts the veil” on leads.
+Leadcyn  
+Why: “Lead” + “Cyn” (sync)—leads flow in sync with client needs. Fresh combo.  
+Interface Fit: Synced Sheets delivery, seamless vibe.
+Leadryft  
+Why: “Lead” + “Ryft” (rift/drift)—leads drift in effortlessly. Unique spelling.  
+Interface Fit: Smooth, flowing signup-to-delivery process.
+Leadquor  
+Why: “Lead” + “Quor” (core)—core lead solution, quirky twist. No conflicts.  
+Interface Fit: Central hub feel for clients’ lead needs.
+Building It with Replit
+Your Replit scripts power the backend—here’s how they plug into the interface:  
+Scraper (leadzap_scraper.py): Fills CSVs → uploads to Sheets → clients see leads.  
+Emailer (leadzap_email.py): Sends “Your leads are ready” + CSV to clients.  
+Future: Add a Flask server in Replit to host a live dashboard (Month 2–3), but Sheets works for now.

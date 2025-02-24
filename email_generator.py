@@ -4,6 +4,8 @@ from config import OPENAI_API_KEY
 
 class EmailGenerator:
     def __init__(self):
+        if not OPENAI_API_KEY:
+            raise ValueError("OpenAI API key is not set")
         self.client = OpenAI(api_key=OPENAI_API_KEY)
         self.logger = logging.getLogger(__name__)
         # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
@@ -21,10 +23,12 @@ class EmailGenerator:
                 ],
                 temperature=0.7
             )
-            return response.choices[0].message.content
+            generated_content = response.choices[0].message.content
+            self.logger.info(f"Successfully generated email for dentist: {lead_data.get('name')}")
+            return generated_content
         except Exception as e:
             self.logger.error(f"Error generating dentist email: {str(e)}")
-            return None
+            return self._get_fallback_dentist_email(lead_data)
 
     def generate_saas_email(self, lead_data):
         """Generate personalized email for SaaS leads"""
@@ -38,10 +42,12 @@ class EmailGenerator:
                 ],
                 temperature=0.7
             )
-            return response.choices[0].message.content
+            generated_content = response.choices[0].message.content
+            self.logger.info(f"Successfully generated email for SaaS company: {lead_data.get('business_name')}")
+            return generated_content
         except Exception as e:
             self.logger.error(f"Error generating SaaS email: {str(e)}")
-            return None
+            return self._get_fallback_saas_email(lead_data)
 
     def _create_dentist_prompt(self, lead_data):
         return f"""
@@ -71,3 +77,24 @@ class EmailGenerator:
         4. Include specific SaaS industry understanding
         5. Keep it concise and professional
         """
+
+    def _get_fallback_dentist_email(self, lead_data):
+        """Return a template-based email when API fails"""
+        with open('templates/dentist_email.txt', 'r') as f:
+            template = f.read()
+        return template.format(
+            name=lead_data.get('name', 'Doctor'),
+            business_name=lead_data.get('business_name', 'your practice'),
+            city=lead_data.get('city', 'your city'),
+            sender_name="Your Lead Generation Expert"
+        )
+
+    def _get_fallback_saas_email(self, lead_data):
+        """Return a template-based email when API fails"""
+        with open('templates/saas_email.txt', 'r') as f:
+            template = f.read()
+        return template.format(
+            name=lead_data.get('name', 'there'),
+            business_name=lead_data.get('business_name', 'your company'),
+            sender_name="Your Lead Generation Expert"
+        )
