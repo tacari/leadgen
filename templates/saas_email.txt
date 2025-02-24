@@ -1,0 +1,22 @@
+Hi {name},
+
+I came across {business_name} and was impressed by your innovative solution in the SaaS space.
+
+We're a specialized B2B lead generation agency helping SaaS companies scale their sales pipeline. Our system consistently delivers 100+ qualified leads monthly to our clients.
+
+What sets us apart:
+- Targeted B2B lead generation
+- Pre-qualified decision-makers
+- Multi-channel outreach
+- Detailed conversion tracking
+
+We're offering a pilot program at $500/month that includes:
+- 100 qualified B2B leads
+- Email sequence automation
+- Weekly performance metrics
+- ROI tracking dashboard
+
+Would you be open to a brief call to explore how we can help scale your customer acquisition?
+
+Best regards,
+{sender_name}

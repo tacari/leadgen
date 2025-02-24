@@ -1,0 +1,22 @@
+Dear Dr. {name},
+
+I hope this email finds you well. I noticed your practice {business_name} in {city} and wanted to reach out with a unique opportunity to grow your patient base.
+
+We specialize in dental practice lead generation and have helped numerous dentists in {city} attract more quality patients. Our proven system consistently delivers 50+ new patient leads monthly.
+
+Key benefits of our service:
+- Targeted local patient acquisition
+- Pre-qualified leads ready to schedule
+- Full handling of digital marketing
+- Monthly performance reports
+
+We're currently offering a pilot program at $500/month to demonstrate our effectiveness. This includes:
+- 50 qualified patient leads
+- Email and phone follow-up systems
+- Weekly performance updates
+- ROI tracking
+
+Would you be interested in a 15-minute call to discuss how we can help grow your practice?
+
+Best regards,
+{sender_name}
