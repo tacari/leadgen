@@ -16,7 +16,12 @@ app.debug = True
 @app.route('/')
 def landing():
     """Basic landing page"""
-    return "Hello World! Flask is running."
+    return "Basic landing page is working!"
+
+@app.route('/health')
+def health():
+    """Health check endpoint"""
+    return "ok"
 
 if __name__ == '__main__':
     try:
