@@ -2,6 +2,7 @@ import os
 import logging
 import traceback
 import json
+import psutil
 from flask import Flask, render_template, redirect, url_for, flash, request
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from forms import LoginForm, RegisterForm
@@ -172,6 +173,32 @@ def test():
     """Test route to verify server is running"""
     return "Flask server is running!"
 
+def kill_process_on_port(port):
+    """Kill any process that is listening on the specified port"""
+    try:
+        logger.info(f"Checking for processes on port {port}")
+        for proc in psutil.process_iter(['pid', 'name', 'connections']):
+            try:
+                # Skip processes that don't have network connections
+                if not proc.info.get('connections'):
+                    continue
+
+                # Check each connection
+                for conn in proc.info['connections']:
+                    if hasattr(conn, 'laddr') and conn.laddr.port == port and conn.status == 'LISTEN':
+                        logger.warning(f"Found process using port {port}: PID={proc.info['pid']}, Name={proc.info['name']}")
+                        proc.kill()
+                        logger.info(f"Killed process {proc.info['pid']}")
+                        return True
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                continue
+        logger.info(f"No process found using port {port}")
+        return False
+    except Exception as e:
+        logger.error(f"Error while checking/killing process on port {port}: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return False
+
 # Ensure data directory exists and is properly initialized before running the app
 try:
     if not os.path.exists('data'):
@@ -194,6 +221,9 @@ if __name__ == '__main__':
         logger.debug(f"Template dir ({template_dir}): {os.listdir(template_dir) if os.path.exists(template_dir) else 'not found'}")
         logger.debug(f"Static dir ({static_dir}): {os.listdir(static_dir) if os.path.exists(static_dir) else 'not found'}")
         logger.debug(f"Data dir ({data_dir}): {os.listdir(data_dir) if os.path.exists(data_dir) else 'not found'}")
+
+        # Kill any existing process on port 5000
+        kill_process_on_port(5000)
 
         # ALWAYS serve the app on port 5000
         app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
