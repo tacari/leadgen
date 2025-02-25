@@ -10,6 +10,10 @@ from flask_login import LoginManager, current_user, login_user, logout_user, log
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import DataRequired, Email
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+
+from models.user import db
 
 def terminate_port_process(port):
     """Terminate any process using the specified port"""
@@ -31,6 +35,14 @@ def terminate_port_process(port):
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
+
+# Database configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Initialize SQLAlchemy with the Flask app
+db.init_app(app)
+migrate = Migrate(app, db)
 
 # Initialize Flask-Login
 login_manager = LoginManager()
