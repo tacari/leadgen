@@ -173,22 +173,52 @@ def test():
     """Test route to verify server is running"""
     return "Flask server is running!"
 
+@app.route('/about')
+def about():
+    """About page route"""
+    try:
+        logger.debug("Rendering about page")
+        return render_template('about.html')
+    except Exception as e:
+        logger.error(f"Error rendering about page: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return "Internal Server Error", 500
+
+@app.route('/services')
+def services():
+    """Services page route"""
+    try:
+        logger.debug("Rendering services page")
+        return render_template('services.html')
+    except Exception as e:
+        logger.error(f"Error rendering services page: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return "Internal Server Error", 500
+
+@app.route('/contact')
+def contact():
+    """Contact page route"""
+    try:
+        logger.debug("Rendering contact page")
+        return render_template('contact.html')
+    except Exception as e:
+        logger.error(f"Error rendering contact page: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return "Internal Server Error", 500
+
+
 def kill_process_on_port(port):
     """Kill any process that is listening on the specified port"""
     try:
         logger.info(f"Checking for processes on port {port}")
-        for proc in psutil.process_iter(['pid', 'name', 'connections']):
+        for proc in psutil.process_iter():
             try:
-                # Skip processes that don't have network connections
-                if not proc.info.get('connections'):
-                    continue
-
-                # Check each connection
-                for conn in proc.info['connections']:
-                    if hasattr(conn, 'laddr') and conn.laddr.port == port and conn.status == 'LISTEN':
-                        logger.warning(f"Found process using port {port}: PID={proc.info['pid']}, Name={proc.info['name']}")
+                # Get connections for the process
+                for conn in proc.connections():
+                    if conn.laddr.port == port and conn.status == 'LISTEN':
+                        logger.warning(f"Found process using port {port}: PID={proc.pid}, Name={proc.name()}")
                         proc.kill()
-                        logger.info(f"Killed process {proc.info['pid']}")
+                        logger.info(f"Killed process {proc.pid}")
                         return True
             except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                 continue

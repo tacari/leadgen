@@ -12,6 +12,25 @@ const observer = new IntersectionObserver((entries) => {
     });
 }, observerOptions);
 
+// Mobile menu toggle function
+function toggleMenu() {
+    const navLinks = document.querySelector('.nav-links');
+    navLinks.classList.toggle('active');
+
+    const hamburger = document.querySelector('.hamburger');
+    const spans = hamburger.getElementsByTagName('span');
+
+    if (navLinks.classList.contains('active')) {
+        spans[0].style.transform = 'rotate(45deg) translate(5px, 5px)';
+        spans[1].style.opacity = '0';
+        spans[2].style.transform = 'rotate(-45deg) translate(7px, -6px)';
+    } else {
+        spans[0].style.transform = 'none';
+        spans[1].style.opacity = '1';
+        spans[2].style.transform = 'none';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // Observe cards
     document.querySelectorAll('.card').forEach(card => {

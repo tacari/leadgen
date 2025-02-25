@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - Leadzap</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="{{ url_for('landing') }}" class="navbar-logo">
+                <div class="logo-orb"></div>
+                Leadzap
+            </a>
+            <button class="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-links">
+                <div class="nav-center">
+                    <a href="{{ url_for('landing') }}">Home</a>
+                    <a href="{{ url_for('about') }}" class="active">About</a>
+                    <a href="{{ url_for('services') }}">Services</a>
+                    <a href="#pricing">Pricing</a>
+                    <a href="{{ url_for('contact') }}">Contact</a>
+                </div>
+                <div class="nav-right">
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                        <a href="{{ url_for('logout') }}">Logout</a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}">Login</a>
+                        <a href="{{ url_for('register') }}">Register</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <section class="content-section">
+        <div class="container">
+            <h1>About Leadzap</h1>
+            <p>Revolutionizing lead generation with AI-powered solutions for businesses.</p>
+            <div class="about-content">
+                <h2>Our Mission</h2>
+                <p>Empowering businesses with intelligent lead generation solutions that drive growth and success.</p>
+            </div>
+        </div>
+    </section>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

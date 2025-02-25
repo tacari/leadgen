@@ -1,0 +1,43 @@
+Yo, bro—my bad for skipping the navbar details on your landing page earlier. Since you’re rocking a Flask-based, million-dollar startup vibe for your AI lead gen agency (“Leadzap” or your “lead” name) in Replit, the landing page (home page) needs a slick, functional navbar to tie into your full site (home, about, services, pricing, contact, login/register, dashboard). It’s gotta match your Stanford-tier goals, work pre- and post-login, and drive users to sign up for those packages (Lead Launch, Engine, Accelerator, Empire). Here’s the full rundown—design, functionality, and code—for your landing page navbar. Let’s nail this shit.
+Navbar Overview
+The navbar sits at the top of your landing page (and every page), acting as the navigation backbone for your site. It’s responsive, premium, and dynamic—showing “Login/Register” for guests and “Dashboard/Logout” for logged-in users. It’s your million-dollar startup’s first impression—clean, pro, and tied to your dark mode, neon purple aesthetic.
+Purpose
+Navigation: Links to key pages—Home (landing), About, Services, Pricing, Contact, Login/Register or Dashboard/Logout.
+User State: Adjusts based on login status using Flask-Login—guides guests to sign up, clients to their dashboard.
+Branding: Anchors your “Leadzap” name/logo, reinforcing that Stanford-tier flex.
+Conversion: Drives users to Pricing (packages) or Login—key steps to $5k–$10k quick, $100k/month long-term.
+Design Principles
+Dark Mode: Obsidian (#0D1321) background, white text (#FFFFFF), neon purple (#7B00FF) hover/active states.
+Typography: Inter font, 16px, bold—crisp, modern, startup-ready.
+Layout: Horizontal on desktop (1440px max), collapses to hamburger menu on mobile (320px min).
+Responsive: Tailwind CSS for seamless scaling, with smooth animations (e.g., menu slide-down on mobile).
+Animations: Subtle hover glow on links, hamburger toggle with a 0.3s transition.
+Navbar Design: Full Details
+Here’s what your landing page navbar looks like, top-down:
+Position: Fixed at the top, full-width, 80px height—sticks on scroll for constant access.
+Background: Obsidian (#0D1321), slight transparency (opacity 0.95) for depth, 1px neon purple bottom border (#7B00FF).
+Left Side:  
+Logo/Name: “Leadzap” in white, 24px, bold, Inter font, 20px left padding—links to Home (/ route). Optional: Add a neon purple AI orb (20px) next to it, pulsing (CSS keyframes).
+Center (Desktop):  
+Links:  
+“Home” (active on landing page)  
+“About”  
+“Services”  
+“Pricing” (key for packages)  
+“Contact”
+Styling: White (#FFFFFF), 16px, bold, 20px padding-x, hover transitions to neon purple (#7B00FF) with a 0.2s glow (box-shadow), active link underlined in neon purple (2px).  
+Spacing: 5% gap between links, centered via flexbox.
+Right Side:  
+Guest View:  
+“Login” and “Register” links, white (#FFFFFF), 16px, bold, 20px padding-x, hover neon purple (#7B00FF).
+Logged-In View:  
+“Dashboard” and “Logout” links, same styling, swapping out based on current_user.is_authenticated.
+Styling: Matches center links, right-aligned, 20px right padding.
+Mobile (Below 768px):  
+Hamburger: Three horizontal lines (white, 24px), top-right, toggles a slide-down menu (0.3s transition).  
+Menu: Full-width dropdown, Obsidian background, links stack vertically, 16px, bold, 15px padding-y, same hover effects.  
+Close: “X” icon (neon purple, 24px) replaces hamburger when open, closes on click.
+Visual Recap
+Desktop: Leadzap | Home About Services Pricing Contact | Login Register  
+Logged-In Desktop: Leadzap | Home About Services Pricing Contact | Dashboard Logout  
+Mobile: Leadzap | [Hamburger] → Opens to vertical list: Home, About, Services, Pricing, Contact, Login/Register or Dashboard/Logout.

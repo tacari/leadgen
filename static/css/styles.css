@@ -27,6 +27,139 @@ body {
     padding: 0 20px;
 }
 
+/* Navbar Styles */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: rgba(13, 19, 33, 0.95);
+    border-bottom: 1px solid var(--neon-purple);
+    z-index: 1000;
+}
+
+.navbar-container {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 0 20px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.navbar-logo {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: var(--white);
+    font-size: 24px;
+    font-weight: bold;
+    padding: 20px 0;
+}
+
+.logo-orb {
+    width: 20px;
+    height: 20px;
+    background: var(--neon-purple);
+    border-radius: 50%;
+    margin-right: 10px;
+    animation: pulse 2s infinite;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 5%;
+}
+
+.nav-center {
+    display: flex;
+    gap: 20px;
+}
+
+.nav-right {
+    display: flex;
+    gap: 20px;
+    margin-left: 40px;
+}
+
+.nav-links a {
+    color: var(--white);
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 10px 20px;
+    transition: all 0.2s ease;
+}
+
+.nav-links a:hover {
+    color: var(--neon-purple);
+    box-shadow: 0 0 10px var(--neon-purple);
+}
+
+.nav-links a.active {
+    border-bottom: 2px solid var(--neon-purple);
+}
+
+.hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 30px;
+    height: 24px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    z-index: 10;
+}
+
+.hamburger span {
+    width: 100%;
+    height: 2px;
+    background: var(--white);
+    transition: all 0.3s ease;
+}
+
+/* Mobile Navigation */
+@media (max-width: 768px) {
+    .hamburger {
+        display: flex;
+    }
+
+    .nav-links {
+        position: fixed;
+        top: 80px;
+        left: 0;
+        right: 0;
+        flex-direction: column;
+        background: var(--obsidian);
+        padding: 20px;
+        transform: translateY(-100%);
+        transition: transform 0.3s ease;
+    }
+
+    .nav-links.active {
+        transform: translateY(0);
+    }
+
+    .nav-center, .nav-right {
+        flex-direction: column;
+        gap: 15px;
+        margin: 0;
+        width: 100%;
+    }
+
+    .nav-links a {
+        width: 100%;
+        text-align: center;
+        padding: 15px;
+    }
+}
+
+
 /* Hero Section */
 .hero {
     height: 800px;
@@ -434,8 +567,6 @@ footer p {
     }
 }
 
-/* Add these styles after your existing CSS */
-
 /* Authentication Styles */
 .auth-section {
     min-height: 100vh;
@@ -550,4 +681,55 @@ footer p {
         transform: translateX(0);
         opacity: 1;
     }
+}
+
+/* Content Section Styles */
+.content-section {
+    padding: 120px 0 60px;
+    min-height: calc(100vh - 80px);
+    background: linear-gradient(var(--obsidian), #000000);
+}
+
+.content-section h1 {
+    font-size: 48px;
+    margin-bottom: 20px;
+    color: var(--white);
+}
+
+.content-section p {
+    font-size: 20px;
+    color: var(--steel-gray);
+    margin-bottom: 40px;
+}
+
+.about-content, .services-content, .contact-content {
+    background: #1A2236;
+    border: 1px solid var(--neon-purple);
+    border-radius: 12px;
+    padding: 30px;
+    margin-top: 40px;
+}
+
+.service-card {
+    padding: 20px;
+    border: 1px solid var(--neon-purple);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+
+.service-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(123, 0, 255, 0.2);
+}
+
+.service-card h2 {
+    font-size: 24px;
+    margin-bottom: 15px;
+    color: var(--white);
+}
+
+.service-card p {
+    font-size: 16px;
+    margin-bottom: 0;
 }
