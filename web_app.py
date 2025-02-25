@@ -30,6 +30,6 @@ if __name__ == '__main__':
 
         logger.info("Starting Flask application...")
         # Ensure the app is accessible externally
-        app.run(host='0.0.0.0', port=5000, debug=True)
+        app.run(host='0.0.0.0', port=3000, debug=True)
     except Exception as e:
         logger.error(f"Failed to start server: {str(e)}")
