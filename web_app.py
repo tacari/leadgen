@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, send_file
 from lead_manager import LeadManager
 import os
 from datetime import datetime
@@ -46,7 +46,7 @@ def download_leads(lead_type):
 
     return send_file(filepath, as_attachment=True)
 
-@app.route('/dashboard') #Added this to maintain the original dashboard functionality
+@app.route('/dashboard')
 def dashboard():
     """Main dashboard showing lead statistics"""
     dentist_leads = lead_manager.get_leads('dentist')
@@ -60,7 +60,6 @@ def dashboard():
 
     return render_template('dashboard.html', stats=stats)
 
-
 if __name__ == '__main__':
-    # Always serve the app on port 5000
+    # Ensure the app is accessible externally
     app.run(host='0.0.0.0', port=5000, debug=True)

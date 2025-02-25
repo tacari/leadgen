@@ -102,23 +102,67 @@
     <section class="signup" id="signup">
         <div class="container">
             <h2>Zap Your Leads Live</h2>
-            <div class="offers">
-                <div class="offer">
-                    <h3>Small Business Pilot</h3>
-                    <p class="price">50+ Local Leads • $500 One-Time</p>
-                    <p class="sub">Full service: $1k/month</p>
+            <div class="packages">
+                <!-- Pilot Package -->
+                <div class="package">
+                    <h3>Lead Spark</h3>
+                    <div class="price-toggle">
+                        <p class="price active" data-type="small-biz">$499 One-Time</p>
+                        <p class="price" data-type="saas">$749 One-Time</p>
+                    </div>
+                    <ul>
+                        <li>50-100 Qualified Leads</li>
+                        <li>AI-Powered Targeting</li>
+                        <li>CSV + Email Delivery (7 Days)</li>
+                        <li>1 Email Outreach Template</li>
+                    </ul>
+                    <button onclick="document.getElementById('signup-form').scrollIntoView({behavior: 'smooth'})">Get Started</button>
                 </div>
-                <div class="offer">
-                    <h3>SaaS Pilot</h3>
-                    <p class="price">100+ B2B Leads • $500 One-Time</p>
-                    <p class="sub">Full service: $1k/month</p>
+
+                <!-- Standard Package -->
+                <div class="package popular">
+                    <div class="popular-tag">Most Popular</div>
+                    <h3>Lead Surge</h3>
+                    <div class="price-toggle">
+                        <p class="price active" data-type="small-biz">$1,499/month</p>
+                        <p class="price" data-type="saas">$2,499/month</p>
+                    </div>
+                    <ul>
+                        <li>100-200 Leads Monthly</li>
+                        <li>Weekly CSV + Email Updates</li>
+                        <li>3 Email Templates + Automation</li>
+                        <li>Basic Report (Google Sheets)</li>
+                    </ul>
+                    <button onclick="document.getElementById('signup-form').scrollIntoView({behavior: 'smooth'})">Get Started</button>
+                </div>
+
+                <!-- Premium Package -->
+                <div class="package">
+                    <h3>Lead Titan</h3>
+                    <p class="price">$4,999/month</p>
+                    <ul>
+                        <li>500 Leads Monthly</li>
+                        <li>Daily Updates + Live Dashboard</li>
+                        <li>5 Templates + Multi-Channel</li>
+                        <li>Detailed Reports + VIP Support</li>
+                    </ul>
+                    <button onclick="document.getElementById('signup-form').scrollIntoView({behavior: 'smooth'})">Get Started</button>
                 </div>
             </div>
-            <form class="signup-form" action="/signup" method="POST">
+
+            <form id="signup-form" class="signup-form" action="/signup" method="POST">
                 <input type="text" name="name" placeholder="Your Name" required>
                 <input type="email" name="email" placeholder="Email" required>
                 <input type="text" name="niche" placeholder="Your Niche (e.g., plumber, SaaS)" required>
-                <button type="submit">Zap My Leads</button>
+                <select name="package" required>
+                    <option value="">Select Your Package</option>
+                    <option value="spark-small">Lead Spark - Small Business ($499)</option>
+                    <option value="spark-saas">Lead Spark - SaaS ($749)</option>
+                    <option value="surge-small">Lead Surge - Small Business ($1,499/mo)</option>
+                    <option value="surge-saas">Lead Surge - SaaS ($2,499/mo)</option>
+                    <option value="titan">Lead Titan ($4,999/mo)</option>
+                </select>
+                <button type="submit">Start Your Lead Generation</button>
             </form>
         </div>
     </section>

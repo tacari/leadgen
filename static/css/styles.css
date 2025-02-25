@@ -310,3 +310,127 @@ footer p {
         font-size: 18px;
     }
 }
+
+/* Packages Section */
+.packages {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+    margin: 60px 0;
+}
+
+.package {
+    background: #1A2236;
+    border: 1px solid var(--neon-purple);
+    border-radius: 12px;
+    padding: 30px;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.package:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(123, 0, 255, 0.1);
+}
+
+.package.popular {
+    border-width: 2px;
+    transform: scale(1.05);
+}
+
+.package.popular:hover {
+    transform: scale(1.05) translateY(-5px);
+}
+
+.popular-tag {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--neon-purple);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.package h3 {
+    font-size: 24px;
+    margin-bottom: 15px;
+    color: white;
+}
+
+.price-toggle {
+    margin-bottom: 20px;
+}
+
+.price-toggle .price {
+    display: none;
+    font-size: 22px;
+    color: var(--steel-gray);
+    margin: 10px 0;
+}
+
+.price-toggle .price.active {
+    display: block;
+}
+
+.package ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 30px;
+}
+
+.package ul li {
+    color: var(--steel-gray);
+    margin: 10px 0;
+    padding-left: 25px;
+    position: relative;
+}
+
+.package ul li::before {
+    content: "→";
+    color: var(--neon-purple);
+    position: absolute;
+    left: 0;
+}
+
+.package button {
+    width: 100%;
+    background: var(--neon-purple);
+    color: white;
+    border: none;
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.package button:hover {
+    background: var(--neon-purple-hover);
+    box-shadow: 0 0 15px rgba(123, 0, 255, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+    .packages {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .package.popular {
+        grid-column: span 2;
+    }
+}
+
+@media (max-width: 768px) {
+    .packages {
+        grid-template-columns: 1fr;
+    }
+
+    .package.popular {
+        grid-column: auto;
+    }
+}
