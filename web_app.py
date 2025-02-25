@@ -94,25 +94,16 @@ def register():
         try:
             print(f"Attempting to register user: {email}", file=sys.stderr)
 
-            # First, check if email already exists in Supabase auth
-            try:
-                existing_user = supabase.auth.admin.list_users(
-                    filters={'email': email}
-                )
-                if existing_user:
-                    flash('Email already registered', 'error')
-                    return render_template('register.html')
-            except Exception as e:
-                print(f"Error checking existing user: {str(e)}", file=sys.stderr)
-
-            # Create new user in Supabase Auth
+            # Create new user in Supabase Auth with auto-confirm enabled
             user = supabase.auth.sign_up({
                 'email': email,
                 'password': password,
                 'options': {
                     'data': {
-                        'username': username
-                    }
+                        'username': username,
+                    },
+                    # Skip email verification
+                    'email_confirm': True
                 }
             })
 
