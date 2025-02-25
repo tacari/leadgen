@@ -5,15 +5,10 @@ import csv
 from datetime import datetime
 from io import StringIO
 import psutil
-from flask import Flask, render_template, redirect, url_for, flash, request, make_response
-from flask_login import LoginManager, current_user, login_user, logout_user, login_required, UserMixin
-from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField
-from wtforms.validators import DataRequired, Email
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
-
-from models.user import db
+from flask import Flask, render_template, redirect, url_for, flash, request, make_response, session
+from supabase import create_client, Client
+from models.lead import Lead
+from models.user_package import UserPackage
 
 def terminate_port_process(port):
     """Terminate any process using the specified port"""
@@ -36,142 +31,108 @@ def terminate_port_process(port):
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
 
-# Database configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# Initialize SQLAlchemy with the Flask app
-db.init_app(app)
-migrate = Migrate(app, db)
-
-# Initialize Flask-Login
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
-
-# Forms
-class LoginForm(FlaskForm):
-    email = StringField('Email', validators=[DataRequired(), Email()])
-    password = PasswordField('Password', validators=[DataRequired()])
-    submit = SubmitField('Log In')
-
-class UpdateEmailForm(FlaskForm):
-    email = StringField('Email', validators=[DataRequired(), Email()])
-    submit = SubmitField('Update Email')
-
-@login_manager.user_loader
-def load_user(user_id):
-    from models.user import User
-    print(f"Loading user with ID: {user_id}", file=sys.stderr)
-    user = User.get(user_id)
-    print(f"User loaded: {user is not None}", file=sys.stderr)
-    return user
+# Initialize Supabase client
+supabase_url = os.environ.get("SUPABASE_URL")
+supabase_key = os.environ.get("SUPABASE_KEY")
+supabase: Client = create_client(supabase_url, supabase_key)
 
 @app.route('/')
 def landing():
-    return render_template('landing.html', current_user=current_user)
+    return render_template('landing.html')
 
 @app.route('/services')
 def services():
-    return render_template('services.html', current_user=current_user)
+    return render_template('services.html')
 
 @app.route('/about')
 def about():
-    return render_template('about.html', current_user=current_user)
+    return render_template('about.html')
 
 @app.route('/contact')
 def contact():
-    return render_template('contact.html', current_user=current_user)
+    return render_template('contact.html')
 
 @app.route('/pricing')
 def pricing():
-    return render_template('pricing.html', current_user=current_user)
+    return render_template('pricing.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if current_user.is_authenticated:
+    if 'user_id' in session:
         return redirect(url_for('dashboard'))
 
-    form = LoginForm()
-    print(f"Login form submitted: {form.is_submitted()}", file=sys.stderr)
-    print(f"Login form validated: {form.validate()}", file=sys.stderr)
-    if form.validate_on_submit():
-        print(f"Attempting login with email: {form.email.data}", file=sys.stderr)
-        from models.user import User
-        user = User.get_by_email(form.email.data)
-        print(f"User found: {user is not None}", file=sys.stderr)
-        if user and user.check_password(form.password.data):
-            login_user(user)
-            next_page = request.args.get('next', url_for('dashboard'))
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        try:
+            print(f"Attempting login with email: {email}", file=sys.stderr)
+            user = supabase.auth.sign_in_with_password({
+                'email': email,
+                'password': password
+            })
+            print(f"Login successful for user: {email}", file=sys.stderr)
+            session['user_id'] = user.user.id
+            session['user_email'] = user.user.email
             flash('Welcome back!', 'success')
-            return redirect(next_page)
-        flash('Invalid email or password', 'error')
-        print("Login failed: Invalid credentials", file=sys.stderr)
-    return render_template('login.html', form=form, current_user=current_user)
+            return redirect(url_for('dashboard'))
+        except Exception as e:
+            print(f"Login failed: {str(e)}", file=sys.stderr)
+            flash('Invalid email or password', 'error')
+
+    return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if current_user.is_authenticated:
+    if 'user_id' in session:
         return redirect(url_for('dashboard'))
 
-    from forms import RegisterForm
-    form = RegisterForm()
-
-    print(f"Register form submitted: {form.is_submitted()}", file=sys.stderr)
-    print(f"Register form validated: {form.validate()}", file=sys.stderr)
-    if form.errors:
-        print(f"Form validation errors: {form.errors}", file=sys.stderr)
-
-    if form.validate_on_submit():
-        print(f"Attempting to create user with email: {form.email.data}", file=sys.stderr)
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        username = request.form['username']
         try:
-            from models.user import User
-            user = User.create(
-                email=form.email.data,
-                password=form.password.data,
-                name=form.username.data
-            )
-            print(f"User creation result: {user is not None}", file=sys.stderr)
-            if user:
-                login_user(user)
-                flash('Registration successful! Welcome to Leadzap.', 'success')
-                return redirect(url_for('dashboard'))
-            else:
-                flash('Registration failed. Email may already be registered.', 'error')
-                print("Registration failed: Email exists", file=sys.stderr)
-        except Exception as e:
-            flash('Registration failed. Please try again.', 'error')
-            print(f"Registration error: {str(e)}", file=sys.stderr)
+            print(f"Attempting to register user: {email}", file=sys.stderr)
+            user = supabase.auth.sign_up({
+                'email': email,
+                'password': password
+            })
+            print(f"Registration successful for user: {email}", file=sys.stderr)
 
-    return render_template('register.html', form=form, current_user=current_user)
+            # Store additional user data (username) in a custom table
+            supabase.table('users').insert({
+                'id': user.user.id,
+                'username': username,
+                'email': email
+            }).execute()
+
+            session['user_id'] = user.user.id
+            session['user_email'] = user.user.email
+            flash('Registration successful! Welcome to Leadzap.', 'success')
+            return redirect(url_for('dashboard'))
+        except Exception as e:
+            print(f"Registration failed: {str(e)}", file=sys.stderr)
+            flash('Registration failed. Please try again.', 'error')
+
+    return render_template('register.html')
 
 @app.route('/dashboard', methods=['GET', 'POST'])
-@login_required
 def dashboard():
-    from models.lead import Lead
-    from models.user_package import UserPackage
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
 
-    form = UpdateEmailForm(email=current_user.email)
-    if form.validate_on_submit():
-        current_user.email = form.email.data
-        # Save email update
-        try:
-            with open('data/users.json', 'r') as f:
-                users = json.load(f)
-                users[str(current_user.id)]['email'] = form.email.data
-            with open('data/users.json', 'w') as f:
-                json.dump(users, f, indent=4)
-            flash('Email updated successfully')
-        except Exception as e:
-            flash('Failed to update email')
-            print(f"Error updating email: {str(e)}", file=sys.stderr)
-
+    try:
+        user = supabase.auth.get_user(session['user_id'])
+        user_data = supabase.table('users').select('*').eq('id', user.user.id).execute()
+        username = user_data.data[0]['username'] if user_data.data else user.user.email.split('@')[0]
+    except Exception as e:
+        print(f"Error fetching user data: {str(e)}", file=sys.stderr)
+        return redirect(url_for('logout'))
 
     # Get user's leads
-    leads = Lead.get_by_user_id(current_user.id)
+    leads = Lead.get_by_user_id(session['user_id'])
 
     # Get user's subscription
-    subscription = UserPackage.get_by_user_id(current_user.id)
+    subscription = UserPackage.get_by_user_id(session['user_id'])
 
     # Calculate analytics
     total_leads = len(leads)
@@ -202,15 +163,15 @@ def dashboard():
         subscription=subscription,
         analytics=analytics,
         delivery_status=delivery_status,
-        form=form,
-        current_user=current_user
+        username=username
     )
 
 @app.route('/download_leads')
-@login_required
 def download_leads():
-    from models.lead import Lead
-    leads = Lead.get_by_user_id(current_user.id)
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    leads = Lead.get_by_user_id(session['user_id'])
 
     output = StringIO()
     writer = csv.writer(output)
@@ -232,15 +193,18 @@ def download_leads():
     return response
 
 @app.route('/logout')
-@login_required
 def logout():
-    logout_user()
+    try:
+        supabase.auth.sign_out()
+    except Exception as e:
+        print(f"Error during logout: {str(e)}", file=sys.stderr)
+    session.clear()
     return redirect(url_for('landing'))
 
 if __name__ == '__main__':
     try:
         # Create required JSON files if they don't exist
-        for file_path in ['data/users.json', 'data/leads.json', 'data/user_packages.json']:
+        for file_path in ['data/leads.json', 'data/user_packages.json']:
             try:
                 if not os.path.exists(file_path):
                     os.makedirs(os.path.dirname(file_path), exist_ok=True)

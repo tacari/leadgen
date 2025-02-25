@@ -15,36 +15,20 @@
 
             <div class="auth-form animate-fade-in">
                 <form method="POST" action="{{ url_for('register') }}">
-                    {{ form.hidden_tag() }}
-
                     <div class="form-group">
                         <label for="username">Username</label>
-                        {{ form.username(class="form-control", placeholder="e.g., johndoe") }}
-                        {% if form.username.errors %}
-                            <div class="errors">
-                                {% for error in form.username.errors %}
-                                    <span>{{ error }}</span>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
+                        <input type="text" id="username" name="username" class="form-control" placeholder="e.g., johndoe" required>
                     </div>
 
                     <div class="form-group">
                         <label for="email">Email</label>
-                        {{ form.email(class="form-control", placeholder="e.g., john@example.com") }}
-                        {% if form.email.errors %}
-                            <div class="errors">
-                                {% for error in form.email.errors %}
-                                    <span>{{ error }}</span>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
+                        <input type="email" id="email" name="email" class="form-control" placeholder="e.g., john@example.com" required>
                     </div>
 
                     <div class="form-group">
                         <label for="password">Password</label>
                         <div class="password-input-wrapper">
-                            {{ form.password(class="form-control", placeholder="••••••••", oninput="validatePassword(this.value)") }}
+                            <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" oninput="validatePassword(this.value)" required>
                             <button type="button" class="password-toggle" onclick="togglePasswordVisibility('password')">
                                 <span class="eye-icon">👁️</span>
                             </button>
@@ -66,19 +50,12 @@
                                 </li>
                             </ul>
                         </div>
-                        {% if form.password.errors %}
-                            <div class="errors">
-                                {% for error in form.password.errors %}
-                                    <span>{{ error }}</span>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
                     </div>
 
                     <div class="form-group">
                         <label for="confirm_password">Confirm Password</label>
                         <div class="password-input-wrapper">
-                            {{ form.confirm_password(class="form-control", placeholder="••••••••", oninput="validatePasswordMatch()") }}
+                            <input type="password" id="confirm_password" name="confirm_password" class="form-control" placeholder="••••••••" oninput="validatePasswordMatch()" required>
                             <button type="button" class="password-toggle" onclick="togglePasswordVisibility('confirm_password')">
                                 <span class="eye-icon">👁️</span>
                             </button>
@@ -87,16 +64,9 @@
                             <span class="check-icon">❌</span>
                             Passwords match
                         </div>
-                        {% if form.confirm_password.errors %}
-                            <div class="errors">
-                                {% for error in form.confirm_password.errors %}
-                                    <span>{{ error }}</span>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
                     </div>
 
-                    {{ form.submit(class="btn btn-primary") }}
+                    <button type="submit" class="btn btn-primary w-full">Register</button>
                 </form>
                 <p class="auth-link">
                     Already have an account? <a href="{{ url_for('login') }}">Log in</a>
@@ -164,10 +134,6 @@
             display: flex;
             align-items: center;
         }
-        .password-requirements li::before {
-            content: "";
-            margin-right: 5px;
-        }
         .check-icon {
             margin-right: 8px;
             transition: all 0.3s ease;
@@ -219,7 +185,6 @@
                 specialCheck.querySelector('.check-icon').textContent = '❌';
             }
 
-            // Update password match if confirm password is not empty
             validatePasswordMatch();
         }
 
@@ -240,7 +205,6 @@
             }
         }
 
-        // Initial validation
         document.addEventListener('DOMContentLoaded', function() {
             validatePassword(document.getElementById('password').value);
         });

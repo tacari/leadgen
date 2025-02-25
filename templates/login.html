@@ -10,30 +10,23 @@
         <!-- Form -->
         <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-8 animate-fade-in">
             <form method="POST" action="{{ url_for('login') }}">
-                {{ form.hidden_tag() }}
                 <!-- Email -->
                 <div class="mb-6">
-                    <label class="block text-white text-base font-bold mb-2" for="{{ form.email.id }}">Email</label>
-                    {{ form.email(class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white text-base placeholder-[#A1A9B8]", placeholder="e.g., john@example.com") }}
-                    {% for error in form.email.errors %}
-                        <p class="text-red-500 text-sm mt-1">{{ error }}</p>
-                    {% endfor %}
+                    <label class="block text-white text-base font-bold mb-2" for="email">Email</label>
+                    <input type="email" id="email" name="email" class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white text-base placeholder-[#A1A9B8]" placeholder="e.g., john@example.com" required>
                 </div>
                 <!-- Password -->
                 <div class="mb-6">
-                    <label class="block text-white text-base font-bold mb-2" for="{{ form.password.id }}">Password</label>
+                    <label class="block text-white text-base font-bold mb-2" for="password">Password</label>
                     <div class="password-input-wrapper">
-                        {{ form.password(class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white text-base placeholder-[#A1A9B8]", placeholder="••••••••") }}
+                        <input type="password" id="password" name="password" class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white text-base placeholder-[#A1A9B8]" placeholder="••••••••" required>
                         <button type="button" class="password-toggle" onclick="togglePasswordVisibility('password')">
                             <span class="eye-icon">👁️</span>
                         </button>
                     </div>
-                    {% for error in form.password.errors %}
-                        <p class="text-red-500 text-sm mt-1">{{ error }}</p>
-                    {% endfor %}
                 </div>
                 <!-- Submit -->
-                {{ form.submit(class="w-full bg-[#7B00FF] text-white px-6 py-3 rounded-lg text-lg font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200") }}
+                <button type="submit" class="w-full bg-[#7B00FF] text-white px-6 py-3 rounded-lg text-lg font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Log In</button>
             </form>
             <p class="text-[#A1A9B8] text-sm mt-4">Don't have an account? <a href="{{ url_for('register') }}" class="text-[#7B00FF] hover:underline">Sign up</a></p>
             <p class="text-[#A1A9B8] text-sm mt-2"><a href="#" class="text-[#7B00FF] hover:underline">Forgot password?</a></p>

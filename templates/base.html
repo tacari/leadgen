@@ -60,7 +60,7 @@
                     <a href="/contact">Contact</a>
                 </div>
                 <div class="nav-right">
-                    {% if current_user.is_authenticated %}
+                    {% if session.get('user_id') %}
                         <a href="/dashboard">Dashboard</a>
                         <a href="/logout">Logout</a>
                     {% else %}
@@ -73,6 +73,15 @@
     </nav>
 
     <main>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
         {% block content %}{% endblock %}
     </main>
 
