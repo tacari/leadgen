@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leadzap - {% block title %}{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#0D1321] text-white">
+    <!-- Dashboard Navbar -->
+    <nav class="fixed top-0 w-full bg-[#0D1321] bg-opacity-95 border-b border-[#7B00FF] h-20 flex items-center justify-between px-6 z-10">
+        <!-- Logo -->
+        <a href="{{ url_for('dashboard') }}" class="flex items-center">
+            <span class="text-2xl font-bold">Leadzap</span>
+            <div class="w-5 h-5 bg-[#7B00FF] rounded-full ml-2 animate-pulse"></div>
+        </a>
+
+        <!-- Desktop Links -->
+        <div class="hidden md:flex space-x-10">
+            <a href="{{ url_for('dashboard') }}" class="nav-link px-5 py-2 {% if request.endpoint == 'dashboard' %}border-b-2 border-[#7B00FF]{% endif %}">Dashboard</a>
+            <a href="{{ url_for('lead_history') }}" class="nav-link px-5 py-2 {% if request.endpoint == 'lead_history' %}border-b-2 border-[#7B00FF]{% endif %}">Lead History</a>
+            <a href="#" class="nav-link px-5 py-2">Analytics</a>
+            <a href="#" class="nav-link px-5 py-2">Settings</a>
+            <a href="#" class="nav-link px-5 py-2">Support</a>
+        </div>
+
+        <!-- Right Side -->
+        <div class="hidden md:flex items-center space-x-6">
+            <span class="text-[#A1A9B8] italic">Hey {{ username }}</span>
+            <a href="#" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Logout</a>
+        </div>
+
+        <!-- Mobile Hamburger -->
+        <div class="md:hidden">
+            <button id="hamburger" class="focus:outline-none">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="hidden md:hidden fixed w-full bg-[#1A2236] top-20 left-0 border-b border-[#7B00FF] z-10">
+        <div class="flex flex-col items-center py-4">
+            <a href="{{ url_for('dashboard') }}" class="nav-link py-3 w-full text-center {% if request.endpoint == 'dashboard' %}text-[#7B00FF]{% endif %}">Dashboard</a>
+            <a href="{{ url_for('lead_history') }}" class="nav-link py-3 w-full text-center {% if request.endpoint == 'lead_history' %}text-[#7B00FF]{% endif %}">Lead History</a>
+            <a href="#" class="nav-link py-3 w-full text-center">Analytics</a>
+            <a href="#" class="nav-link py-3 w-full text-center">Settings</a>
+            <a href="#" class="nav-link py-3 w-full text-center">Support</a>
+            <span class="text-[#A1A9B8] italic py-3">Hey {{ username }}</span>
+            <a href="#" class="nav-link py-3 w-full text-center bg-[#7B00FF] text-white">Logout</a>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="mt-20">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Hamburger JS -->
+    <script>
+        const hamburger = document.getElementById('hamburger');
+        const mobileMenu = document.getElementById('mobile-menu');
+        hamburger.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+            hamburger.innerHTML = mobileMenu.classList.contains('hidden') ?
+                '<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>' :
+                '<svg class="w-6 h-6 text-[#7B00FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+        });
+    </script>
+
+    <style>
+        .nav-link {
+            transition: all 0.2s ease-in-out;
+        }
+        .nav-link:hover {
+            color: #7B00FF;
+            box-shadow: 0 0 5px rgba(123, 0, 255, 0.5);
+        }
+    </style>
+</body>
+</html>
