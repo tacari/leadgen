@@ -1,0 +1,370 @@
+Key Points
+It seems likely that for your AI lead generation agency (“Leadzap” or your chosen “lead” name), the pricing page should be a critical component of your Flask-based website in Replit, reflecting your million-dollar startup vision.
+Research suggests it should clearly list your four packages (Lead Launch, Engine, Accelerator, Empire) with detailed features, prices, and a strong call-to-action (CTA) to drive conversions.
+The evidence leans toward a visually compelling, user-friendly pricing page with package cards, feature breakdowns, and Stripe integration, seamlessly tied to your navbar and dark mode aesthetic.
+Pricing Page Overview
+The pricing page (pricing.html) is the money-making hub of your Flask website (home, about, services, pricing, contact, login/register, dashboard), accessible via the navbar from your landing page and services page. It’s where you close the deal for your AI lead generation agency, targeting small businesses and SaaS startups with packages ranging from $499 (Lead Launch) to $5,999/month (Lead Empire). Built in Replit with Flask, it’s dynamic, premium, and designed to convert—aligning with your Stanford-tier, million-dollar startup vibe and pushing your $5k–$10k quick and $100k/month long-term goals. It extends base.html with your slick navbar, detailing each package so clients know exactly what they’re getting and why they should sign up.
+Purpose
+List Packages: Showcase your four tiers—Lead Launch ($499), Lead Engine ($1,499/month), Lead Accelerator ($2,999/month), Lead Empire ($5,999/month)—with clear pricing and features.
+Clarify Value: Break down deliverables (e.g., lead volume, outreach, analytics) to justify costs and match your services page flex.
+Drive Signups: Push users to buy with “Sign Up” buttons linked to Stripe checkout—quick path to revenue.
+Build Trust: Transparent pricing and detailed features show you’re legit, not some shady lead mill.
+Design Principles
+Dark Mode: Obsidian (#0D1321) base, neon purple (#7B00FF) accents, steel gray (#A1A9B8) text—consistent with your site’s pro aesthetic.
+Typography: Inter font—40px bold for main title, 28px bold for package names, 16px regular for features—clean and startup-ready.
+Layout: Single-column with package cards, 1440px max-width, responsive with Tailwind CSS—stacks on mobile (320px min).
+Animations: Cards fade in on scroll (0.5s via JavaScript Intersection Observer), buttons scale on hover (0.2s CSS)—subtle, premium feel.
+Pricing Page Design: Full Details
+Here’s the full breakdown of your pricing page (pricing.html), extending base.html with your navbar:
+Header:  
+Title: “Pricing Plans” in white (#FFFFFF), 40px, bold, Inter font, centered, 60px padding-top—sets the stage with authority.  
+Sub-Title: “Choose Your Lead Generation Power—Start Small or Dominate Big” in steel gray (#A1A9B8), 20px, italic, centered, 20px padding-bottom—frames your package range.  
+Background: Obsidian (#0D1321)—keeps the dark, techy tone.
+Packages Section:  
+Title: “Your Options” in white, 28px, bold, centered, 40px padding-top—introduces the tiers.  
+Content: Four cards (25% width, 3% gap, stacks on mobile)—each with package details, features, and a CTA:  
+Card 1: Lead Launch  
+Name: “Lead Launch” in white, 28px, bold, centered, 20px padding-top.  
+Price: “$499” in neon purple (#7B00FF), 36px, bold, centered, with “One-Time” in steel gray, 16px, below.  
+Tagline: “Test the waters with AI leads.” in steel gray, 16px, italic, centered, 10px padding-bottom.  
+Features:  
+“50 Qualified Leads—Your Niche”  
+“AI Targets Your Ideal Prospects”  
+“Delivered in 7 Days (CSV + Email)”  
+“1 Personalized Email Sent to Leads”  
+Styling: Steel gray (#A1A9B8), 16px, bullet list, neon purple dots, 10px padding per item.
+CTA: “Sign Up” button in neon purple (#7B00FF), white text, 20px, bold, 18px padding-x, 12px padding-y, 8px radius, hover glow (#8F00FF + shadow), links to Stripe checkout (/checkout/launch).  
+Styling: Background #1A2236, border 1px neon purple, radius 12px, padding 20px, fades in (0.5s).
+Card 2: Lead Engine  
+Name: “Lead Engine” in white, 28px, bold, centered, 20px padding-top.  
+Price: “$1,499/month” in neon purple, 36px, bold, centered, “Monthly” in steel gray, 16px, below.  
+Tagline: “Steady leads to grow your biz.” in steel gray, 16px, italic, centered, 10px padding-bottom.  
+Features:  
+“150 Leads/Month—Any Niche”  
+“Weekly Delivery (CSV + Sheets)”  
+“3 Email Templates + Drip Campaign”  
+“Basic Stats (Leads Sent, Replies)”  
+Styling: Matches Lead Launch—steel gray, 16px, neon purple dots.
+CTA: “Sign Up” button, same styling, links to /checkout/engine.  
+Styling: Matches Lead Launch, fades in (0.7s delay).
+Card 3: Lead Accelerator  
+Name: “Lead Accelerator” in white, 28px, bold, centered, 20px padding-top.  
+Price: “$2,999/month” in neon purple, 36px, bold, centered, “Monthly” in steel gray, 16px, below.  
+Tagline: “Ramp up with serious lead flow.” in steel gray, 16px, italic, centered, 10px padding-bottom.  
+Features:  
+“300 Leads/Month—Custom Targets”  
+“Daily Delivery (CSV + Sheets)”  
+“5 Email Templates + LinkedIn Script”  
+“Detailed Monthly Report”  
+Styling: Matches above—steel gray, 16px, neon purple dots.
+CTA: “Sign Up” button, same styling, links to /checkout/accelerator.  
+Styling: Matches Lead Launch, fades in (0.9s delay).
+Card 4: Lead Empire  
+Name: “Lead Empire” in white, 28px, bold, centered, 20px padding-top.  
+Price: “$5,999/month” in neon purple, 36px, bold, centered, “Monthly” in steel gray, 16px, below.  
+Tagline: “Dominate your market with AI.” in steel gray, 16px, italic, centered, 10px padding-bottom.  
+Features:  
+“600 Leads/Month—Precision Targeting”  
+“Daily Delivery + Live Dashboard”  
+“7 Templates (Email + LinkedIn + SMS)”  
+“Weekly Premium Report + VIP Calls”  
+Styling: Matches above—steel gray, 16px, neon purple dots.
+CTA: “Sign Up” button, same styling, links to /checkout/empire.  
+Styling: Matches Lead Launch, fades in (1.1s delay).
+Background: Gradient from Obsidian (#0D1321) to midnight blue (#1E2A44)—premium depth.  
+Purpose: Displays all packages—$499 hooks ‘em, $5,999 seals big deals—clear, actionable, tied to services.
+Comparison Table (Optional):  
+Title: “Compare Your Plans” in white, 28px, bold, centered, 40px padding-top—adds clarity.  
+Content: Responsive table (collapses on mobile):  
+Columns: Package Name, Price, Leads/Month, Delivery, Outreach, Reports/Support.  
+Rows: Lead Launch, Engine, Accelerator, Empire—matches card details.  
+Styling: Background #1A2236, borders 1px neon purple, text steel gray, 14px, padding 10px, fades in (0.5s).
+Purpose: Side-by-side view—helps clients pick fast, reinforces value.
+Call-to-Action (CTA) Section:  
+Title: “Start Zapping Leads Today” in white, 28px, bold, centered, 40px padding-top—final push.  
+Content:  
+Text: “From $499 pilots to $5,999 empires—pick your plan and grow.” in steel gray, 18px, centered, 20px padding-bottom.  
+Button: “Get Started” in neon purple (#7B00FF), white text, 20px, bold, 18px padding-x, 12px padding-y, 8px radius, hover glow (#8F00FF + shadow), links to /pricing (self-refresh for emphasis).
+Styling: Obsidian background, button scales on hover (0.2s CSS), section fades in (0.5s).  
+Purpose: Closes the deal—reinforces urgency, drives Stripe signups.
+Footer:  
+Matches site—Obsidian (#0D1321), “© 2025 Leadzap • leads@leadzap.io” in steel gray, 14px, centered, X/LinkedIn icons in neon purple, 30px, linking to profiles—pro wrap-up.
+Visual Flow
+Structure: Header → Packages (4 cards) → [Optional Comparison Table] → CTA (button) → Footer.
+Height: ~1800px desktop (with table, ~2200px), smooth scroll—mobile stacks to ~2800px (or ~3200px with table).
+Vibe: Dark, futuristic, premium—pricing that screams value and scales from $499 to $5,999.
+Implementation in Replit with Flask
+Assuming your Flask app has a navbar in base.html, landing page (index.html), and services page (services.html), here’s how to add the pricing page:
+Flask App (app.py)
+Add the pricing and checkout routes—update your existing app.py:
+python
+from flask import Flask, render_template, request, redirect, url_for, flash, make_response
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_sqlalchemy import SQLAlchemy
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, SubmitField
+from wtforms.validators import DataRequired, Email, EqualTo
+from werkzeug.security import generate_password_hash, check_password_hash
+import stripe
+import os
+import io
+import csv
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key')  # Add to Replit Secrets
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///leadzap.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['STRIPE_API_KEY'] = os.environ.get('STRIPE_API_KEY')  # Add to Secrets
+app.config['STRIPE_PUB_KEY'] = os.environ.get('STRIPE_PUB_KEY')  # Add to Secrets
+
+stripe.api_key = app.config['STRIPE_API_KEY']
+
+db = SQLAlchemy(app)
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+
+# Models (simplified)
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64), unique=True, index=True)
+    email = db.Column(db.String(120), unique=True, index=True)
+    password_hash = db.Column(db.String(128))
+    leads = db.relationship('Lead', backref='user', lazy=True)
+    user_package = db.relationship('UserPackage', backref='user', uselist=False)
+
+class Lead(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120))
+    email = db.Column(db.String(120))
+    source = db.Column(db.String(120))
+    status = db.Column(db.String(50))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+class UserPackage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    package_name = db.Column(db.String(50))
+    lead_volume = db.Column(db.Integer)
+    stripe_subscription_id = db.Column(db.String(120))
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+# Forms
+class LoginForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    submit = SubmitField('Login')
+
+class RegisterForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField('Register')
+
+# Routes
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
+@app.route('/services')
+def services():
+    return render_template('services.html')
+
+@app.route('/pricing')
+def pricing():
+    return render_template('pricing.html')
+
+@app.route('/contact')
+def contact():
+    return render_template('contact.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user and check_password_hash(user.password_hash, form.password.data):
+            login_user(user)
+            return redirect(url_for('dashboard'))
+        flash('Invalid email or password')
+    return render_template('login.html', form=form)
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    form = RegisterForm()
+    if form.validate_on_submit():
+        hashed_password = generate_password_hash(form.password.data, method='pbkdf2:sha256')
+        user = User(username=form.username.data, email=form.email.data, password_hash=hashed_password)
+        db.session.add(user)
+        db.session.commit()
+        login_user(user)
+        return redirect(url_for('dashboard'))
+    return render_template('register.html', form=form)
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    return render_template('dashboard.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('home'))
+
+@app.route('/checkout/<string:package>')
+def checkout(package):
+    packages = {
+        'launch': {'price': 49900, 'name': 'Lead Launch', 'mode': 'payment'},
+        'engine': {'price': 149900, 'name': 'Lead Engine', 'mode': 'subscription'},
+        'accelerator': {'price': 299900, 'name': 'Lead Accelerator', 'mode': 'subscription'},
+        'empire': {'price': 599900, 'name': 'Lead Empire', 'mode': 'subscription'}
+    }
+    if package not in packages:
+        flash('Invalid package')
+        return redirect(url_for('pricing'))
+    session = stripe.checkout.Session.create(
+        payment_method_types=['card'],
+        line_items=[{
+            'price_data': {
+                'currency': 'usd',
+                'product_data': {'name': packages[package]['name']},
+                'unit_amount': packages[package]['price'],  # in cents
+            } if packages[package]['mode'] == 'payment' else {
+                'price': stripe.Price.create(
+                    unit_amount=packages[package]['price'],
+                    currency='usd',
+                    recurring={'interval': 'month'},
+                    product_data={'name': packages[package]['name']}
+                ).id
+            },
+            'quantity': 1,
+        }],
+        mode=packages[package]['mode'],
+        success_url=url_for('success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
+        cancel_url=url_for('pricing', _external=True)
+    )
+    return redirect(session.url)
+
+@app.route('/success')
+def success():
+    flash('Payment successful. Leads will be delivered soon.')
+    return render_template('success.html')
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080)
+Pricing Template (templates/pricing.html)
+Create and style with Tailwind CSS, extending base.html:
+html
+{% extends "base.html" %}
+{% block title %}Pricing{% endblock %}
+{% block content %}
+<div class="bg-[#0D1321] min-h-screen text-white p-8">
+    <!-- Header -->
+    <header class="text-center py-16">
+        <h1 class="text-4xl font-bold mb-4">Pricing Plans</h1>
+        <p class="text-xl text-[#A1A9B8] italic">Choose Your Lead Generation Power—Start Small or Dominate Big</p>
+    </header>
+
+    <!-- Packages -->
+    <section class="mb-16 bg-gradient-to-b from-[#0D1321] to-[#1E2A44] py-16">
+        <h2 class="text-3xl font-bold text-center mb-12">Your Options</h2>
+        <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
+            <!-- Lead Launch -->
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+                <h3 class="text-3xl font-bold text-center mb-2">Lead Launch</h3>
+                <p class="text-[#7B00FF] text-4xl font-bold text-center">$499</p>
+                <p class="text-[#A1A9B8] text-center mb-4">One-Time</p>
+                <p class="text-[#A1A9B8] italic text-center mb-6">Test the waters with AI leads.</p>
+                <ul class="text-[#A1A9B8] text-base list-none mb-6">
+                    <li class="flex items-start mb-2"><span class="w-2 h-2 bg-[#7B00FF] rounded-full mr-2 mt-1"></span>50 Qualified Leads—Your Niche</li>
+                    <li class="flex items-start mb-2"><span class="w-2 h-2 bg-[#7B00FF] rounded-full mr-2 mt-1"></span>AI Targets Your Ideal Prospects</li>
+                    <li class="flex items-start mb-2"><span class="w-2 h-2 bg-[#7B00FF] rounded-full mr-2 mt-1"></span>Delivered in 7 Days (CSV + Email)</li>
+                    <li class="flex items-start"><span class="w-2 h-2 bg-[#7B00FF] rounded-full mr-2 mt-1"></span>1 Personalized Email Sent to Leads</li>
+                </ul>
+                <a href="{{ url_for('checkout', package='launch') }}" class="block bg-[#7B00FF] text-white px-6 py-3 rounded-lg text-lg font-bold text-center hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Sign Up</a>
+            </div>
+            <!-- Lead Engine -->
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in" style="animation-delay: 0.2s;">
+                <h3 class="text-3xl font-bold text-center mb-2">Lead Engine</h3>
+                <p class="text-[#7B00FF] text-4xl font-bold text-center">$1,499</p>
+                <p class="text-[#A1A9B8] text-center mb-4">/Month</p>
+                <p class="text-[#A1A9B8] italic text-center mb-6">Steady leads to grow your biz.</p>
+                <ul class="text-[#A1A9B8] text-base list-none mb-6">
+                    <li class="flex items-start mb-2"><span class="w-2 h-2 bg-[#7B00FF] rounded-full mr-2 mt-1"></span>150 Leads/Month—Any Niche</li>
+                    <li class="flex items-start mb-2"><span class="w-2 h-2 bg-[#7B00FF] rounded-full mr-2 mt-1"></span>Weekly Delivery (CSV + Sheets)</li>
+                    <li class="flex items-start mb-2"><span class="w-2 h-2 bg-[#7B00FF] rounded-full mr-2 mt-1"></span>3 Email Templates + Drip Campaign</li>
+                    <li class="flex items-start"><span class="w-2 h-2 bg-[#7B00FF] rounded-full mr-2 mt-1"></span>Basic Stats (Leads Sent, Replies)</li>
+                </ul>
+                <a href="{{ url_for('checkout', package='engine') }}" class="block bg-[#7B00FF] text-white px-6 py-3 rounded-lg text-lg font-bold text-center hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Sign Up</a>
+            </div>
+            <!-- Lead Accelerator -->
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in" style="animation-delay: 0.4s;">
+                <h3 class="text-3xl font-bold text-center mb-2">Lead Accelerator</h3>
+                <p class="text-[#7B00FF] text-4xl font-bold text-center">$2,999</p>
+                <p class="text-[#A1A9B8] text-center mb-4">/Month</p>
+                <p class="text-[#A1A9B8] italic text-center mb-6">Ramp up with serious lead flow.</p>
+                <ul class="text-[#A1A9B8] text-base list-none mb-6">
+                    <li class="flex items-start mb-2"><span class="w-2 h-2 bg-[#7B00FF] rounded-full mr-2 mt-1"></span>300 Leads/Month—Custom Targets</li>
+                    <li class="flex items-start mb-2"><span class="w-2 h-2 bg-[#7B00FF] rounded-full mr-2 mt-1"></span>Daily Delivery (CSV + Sheets)</li>
+                    <li class="flex items-start mb-2"><span class="w-2 h-2 bg-[#7B00FF] rounded-full mr-2 mt-1"></span>5 Email Templates + LinkedIn Script</li>
+                    <li class="flex items-start"><span class="w-2 h-2 bg-[#7B00FF] rounded-full mr-2 mt-1"></span>Detailed Monthly Report</li>
+                </ul>
+                <a href="{{ url_for('checkout', package='accelerator') }}" class="block bg-[#7B00FF] text-white px-6 py-3 rounded-lg text-lg font-bold text-center hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Sign Up</a>
+            </div>
+            <!-- Lead Empire -->
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in" style="animation-delay: 0.6s;">
+                <h3 class="text-3xl font-bold text-center mb-2">Lead Empire</h3>
+                <p class="text-[#7B00FF] text-4xl font-bold text-center">$5,999</p>
+                <p class="text-[#A1A9B8] text-center mb-4">/Month</p>
+                <p class="text-[#A1A9B8] italic text-center mb-6">Dominate your market with AI.</p>
+                <ul class="text-[#A1A9B8] text-base list-none mb-6">
+                    <li class="flex items-start mb-2"><span class="w-2 h-2 bg-[#7B00FF] rounded-full mr-2 mt-1"></span>600 Leads/Month—Precision Targeting</li>
+                    <li class="flex items-start mb-2"><span class="w-2 h-2 bg-[#7B00FF] rounded-full mr-2 mt-1"></span>Daily Delivery + Live Dashboard</li>
+                    <li class="flex items-start mb-2"><span class="w-2 h-2 bg-[#7B00FF] rounded-full mr-2 mt-1"></span>7 Templates (Email + LinkedIn + SMS)</li>
+                    <li class="flex items-start"><span class="w-2 h-2 bg-[#7B00FF] rounded-full mr-2 mt-1"></span>Weekly Premium Report + VIP Calls</li>
+                </ul>
+                <a href="{{ url_for('checkout', package='empire') }}" class="block bg-[#7B00FF] text-white px-6 py-3 rounded-lg text-lg font-bold text-center hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Sign Up</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="text-center py-16">
+        <h2 class="text-3xl font-bold mb-6">Start Zapping Leads Today</h2>
+        <p class="text-lg text-[#A1A9B8] mb-8">From $499 pilots to $5,999 empires—pick your plan and grow.</p>
+        <a href="{{ url_for('pricing') }}" class="bg-[#7B00FF] text-white px-8 py-4 rounded-lg text-xl font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Get Started</a>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-[#0D1321] py-8 text-center text-[#A1A9B8] text-sm">
+        <p>© 2025 Leadzap • leads@leadzap.io</p>
+        <div class="mt-2 flex justify-center gap-4">
+            <a href="#" class="text-[#7B00FF]"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"></path></svg></a>
+            <a href="#" class="text-[#7B00FF]"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M16.98 0a6.9 6.9 0 015.08 1.98A6.94 6.94 0 0124 7.02v9.96c0 2.08-.82 3.96-1.98 5.08A6.94 6.94 0 0116.98 24H7.02a6.9 6.9 0 01-5.08-1.98A6.94 6.94 0 010 16.98V7.02C0 4.94.82 3.06 1.98 1.98A6.94 6.94 0 017.02 0h9.96zm-2.54 5.02H9.56c-2.08 0-3.96 1.66-3.96 3.74v4.98c0 2.08 1.66 3.74 3.96 3.74h4.88c2.08 0 3.74-1.66 3.74-3.74V9.76c0-2.08-1.66-3.74-3.74-3.74zm1.24 2.5a1.24 1.24 0 110 2.48 1.24 1.24 0 010-2.48zM12 8.52a3.48 3.48 0 110 6.96 3.48 3.48 0 010-6.96z"></path></svg></a>
+        </div>
+    </footer>
+</div>
+
+<style>
+    @keyframes fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    .animate-fade-in {
+        animation: fade-in 0.5s ease-in;
+    }
+</style>
+{% endblock %}
+Setup
+Install: Ensure flask, flask-login, flask-sqlalchemy, flask-wtf, stripe in Replit’s requirements.txt.
+Stripe: Add STRIPE_API_KEY and STRIPE_PUB_KEY to Replit Secrets—get from Stripe dashboard.
+Database: Run in Replit shell: from app import db; db.create_all()—initializes leadzap.db.
+Run: Update app.py, add pricing.html to templates/, hit “Run”—URL is yourname.replit.app/pricing.
