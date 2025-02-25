@@ -4,44 +4,74 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lead Generation Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
-    <nav class="navbar navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="/">Lead Generation Dashboard</a>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="{{ url_for('landing') }}" class="navbar-logo">
+                <div class="logo-orb"></div>
+                Leadzap
+            </a>
+            <button class="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-links">
+                <div class="nav-center">
+                    <a href="{{ url_for('landing') }}">Home</a>
+                    <a href="{{ url_for('about') }}">About</a>
+                    <a href="{{ url_for('services') }}">Services</a>
+                    <a href="{{ url_for('pricing') }}">Pricing</a>
+                    <a href="{{ url_for('contact') }}">Contact</a>
+                </div>
+                <div class="nav-right">
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('dashboard') }}" class="active">Dashboard</a>
+                        <a href="{{ url_for('logout') }}">Logout</a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}">Login</a>
+                        <a href="{{ url_for('register') }}">Register</a>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </nav>
 
-    <div class="container mt-4">
-        <div class="row">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Dentist Leads</h5>
-                        <p class="card-text">Total Leads: {{ stats.dentist_count }}</p>
-                        <a href="/leads/dentist" class="btn btn-primary">View Leads</a>
-                        <a href="/download/dentist" class="btn btn-secondary">Download CSV</a>
+    <div class="content-section">
+        <div class="container">
+            <h1>Dashboard</h1>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Dentist Leads</h5>
+                            <p class="card-text">Total Leads: {{ stats.dentist_count if stats else 0 }}</p>
+                            <a href="/leads/dentist" class="btn btn-primary">View Leads</a>
+                            <a href="/download/dentist" class="btn btn-secondary">Download CSV</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">SaaS Leads</h5>
+                            <p class="card-text">Total Leads: {{ stats.saas_count if stats else 0 }}</p>
+                            <a href="/leads/saas" class="btn btn-primary">View Leads</a>
+                            <a href="/download/saas" class="btn btn-secondary">Download CSV</a>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">SaaS Leads</h5>
-                        <p class="card-text">Total Leads: {{ stats.saas_count }}</p>
-                        <a href="/leads/saas" class="btn btn-primary">View Leads</a>
-                        <a href="/download/saas" class="btn btn-secondary">Download CSV</a>
-                    </div>
-                </div>
+
+            <div class="mt-4 text-muted">
+                Last updated: {{ stats.last_update if stats else 'Never' }}
             </div>
-        </div>
-        
-        <div class="mt-4 text-muted">
-            Last updated: {{ stats.last_update }}
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>
