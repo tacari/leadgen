@@ -1,6 +1,7 @@
 import os
 import logging
 import traceback
+import json
 from flask import Flask, render_template, redirect, url_for, flash, request
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from forms import LoginForm, RegisterForm
@@ -54,12 +55,19 @@ def load_user(user_id):
         return user
     except Exception as e:
         logger.error(f"Error loading user {user_id}: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
         return None
 
 @app.route('/')
 def landing():
     """Landing page with pricing packages"""
-    return render_template('landing.html')
+    try:
+        logger.debug("Rendering landing page")
+        return render_template('landing.html')
+    except Exception as e:
+        logger.error(f"Error rendering landing page: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return "Internal Server Error", 500
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -132,6 +140,7 @@ def logout():
         return redirect(url_for('landing'))
     except Exception as e:
         logger.error(f"Error in logout route: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
         flash('An error occurred during logout')
         return redirect(url_for('dashboard'))
 
@@ -149,6 +158,7 @@ def dashboard():
         return render_template('dashboard.html', stats=stats)
     except Exception as e:
         logger.error(f"Error loading dashboard: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
         flash('Error loading dashboard')
         return redirect(url_for('landing'))
 
@@ -162,11 +172,31 @@ def test():
     """Test route to verify server is running"""
     return "Flask server is running!"
 
+# Ensure data directory exists and is properly initialized before running the app
+try:
+    if not os.path.exists('data'):
+        os.makedirs('data')
+        logger.info("Created data directory")
+
+    if not os.path.exists('data/users.json'):
+        with open('data/users.json', 'w') as f:
+            json.dump({}, f)
+        logger.info("Initialized empty users.json file")
+except Exception as e:
+    logger.error(f"Error initializing data directory: {str(e)}")
+    logger.error(f"Traceback: {traceback.format_exc()}")
+    raise
+
 if __name__ == '__main__':
     try:
         logger.info("Starting Flask application...")
+        logger.debug("Current directory structure:")
+        logger.debug(f"Template dir ({template_dir}): {os.listdir(template_dir) if os.path.exists(template_dir) else 'not found'}")
+        logger.debug(f"Static dir ({static_dir}): {os.listdir(static_dir) if os.path.exists(static_dir) else 'not found'}")
+        logger.debug(f"Data dir ({data_dir}): {os.listdir(data_dir) if os.path.exists(data_dir) else 'not found'}")
+
         # ALWAYS serve the app on port 5000
-        app.run(host='0.0.0.0', port=5000, debug=True)
+        app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
     except Exception as e:
         logger.error(f"Failed to start server: {str(e)}")
         logger.error(f"Traceback: {traceback.format_exc()}")
