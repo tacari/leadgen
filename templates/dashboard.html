@@ -10,7 +10,7 @@
 <body>
     <nav class="navbar">
         <div class="navbar-container">
-            <a href="{{ url_for('landing') }}" class="navbar-logo">
+            <a href="/" class="navbar-logo">
                 <div class="logo-orb"></div>
                 Leadzap
             </a>
@@ -21,19 +21,19 @@
             </button>
             <div class="nav-links">
                 <div class="nav-center">
-                    <a href="{{ url_for('landing') }}">Home</a>
-                    <a href="{{ url_for('about') }}">About</a>
-                    <a href="{{ url_for('services') }}">Services</a>
-                    <a href="{{ url_for('pricing') }}">Pricing</a>
-                    <a href="{{ url_for('contact') }}">Contact</a>
+                    <a href="/">Home</a>
+                    <a href="/about">About</a>
+                    <a href="/services">Services</a>
+                    <a href="/pricing">Pricing</a>
+                    <a href="/contact">Contact</a>
                 </div>
                 <div class="nav-right">
                     {% if current_user.is_authenticated %}
-                        <a href="{{ url_for('dashboard') }}" class="active">Dashboard</a>
-                        <a href="{{ url_for('logout') }}">Logout</a>
+                        <a href="/dashboard" class="active">Dashboard</a>
+                        <a href="/logout">Logout</a>
                     {% else %}
-                        <a href="{{ url_for('login') }}">Login</a>
-                        <a href="{{ url_for('register') }}">Register</a>
+                        <a href="/login">Login</a>
+                        <a href="/register">Register</a>
                     {% endif %}
                 </div>
             </div>
