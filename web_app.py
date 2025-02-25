@@ -5,7 +5,7 @@ import csv
 from datetime import datetime
 from io import StringIO
 import psutil
-from flask import Flask, render_template, redirect, url_for, flash, request, make_response, session
+from flask import Flask, render_template, redirect, url_for, flash, request, make_response, session, jsonify
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
@@ -51,15 +51,35 @@ def pricing():
 @app.route('/dashboard')
 def dashboard():
     # For development, using sample data
-    leads = []  # Empty for now
-    subscription = None  # No subscription data for now
+    leads = [
+        {
+            'name': "Joe's Plumbing",
+            'email': 'joe@example.com',
+            'source': 'Yellow Pages',
+            'score': 85,
+            'status': 'Emailed',
+            'date_added': '2025-02-25'
+        },
+        {
+            'name': "Sarah's Dental",
+            'email': 'sarah@example.com',
+            'source': 'LinkedIn',
+            'score': 92,
+            'status': 'Pending',
+            'date_added': '2025-02-24'
+        }
+    ]
+    subscription = {
+        'package_name': 'Lead Engine',
+        'lead_volume': 150,
+    }
     analytics = {
-        'total': 0,
-        'emailed': 0,
+        'total': 2,
+        'emailed': 1,
         'replies': 0,
         'conversions': 0
     }
-    delivery_status = "Development Mode"
+    delivery_status = "Next 37-38 leads: Weekly delivery"
 
     return render_template(
         'dashboard.html',
@@ -70,12 +90,78 @@ def dashboard():
         username="Developer"  # Hardcoded for development
     )
 
+@app.route('/lead-history')
+def lead_history():
+    # Sample historical data for development
+    leads = [
+        {
+            'name': "Joe's Plumbing",
+            'email': 'joe@example.com',
+            'source': 'Yellow Pages',
+            'score': 85,
+            'status': 'Emailed',
+            'date_added': '2025-02-25',
+            'notes': 'Called 2/26',
+            'outcome': 'Meeting scheduled'
+        },
+        {
+            'name': "Sarah's Dental",
+            'email': 'sarah@example.com',
+            'source': 'LinkedIn',
+            'score': 92,
+            'status': 'Pending',
+            'date_added': '2025-02-24',
+            'notes': 'High priority lead',
+            'outcome': 'Pending contact'
+        },
+        {
+            'name': "Tech Solutions Inc",
+            'email': 'info@techsolutions.com',
+            'source': 'Google Ads',
+            'score': 78,
+            'status': 'Replied',
+            'date_added': '2025-02-23',
+            'notes': 'Interested in Enterprise plan',
+            'outcome': 'In negotiations'
+        }
+    ]
+    return render_template('lead_history.html', leads=leads)
+
 @app.route('/download_leads')
 def download_leads():
-    # For development, return empty CSV
+    # Sample data for CSV export
+    leads = [
+        {
+            'name': "Joe's Plumbing",
+            'email': 'joe@example.com',
+            'source': 'Yellow Pages',
+            'score': 85,
+            'status': 'Emailed',
+            'date_added': '2025-02-25'
+        },
+        {
+            'name': "Sarah's Dental",
+            'email': 'sarah@example.com',
+            'source': 'LinkedIn',
+            'score': 92,
+            'status': 'Pending',
+            'date_added': '2025-02-24'
+        }
+    ]
+
     output = StringIO()
     writer = csv.writer(output)
     writer.writerow(['Name', 'Email', 'Source', 'Score', 'Status', 'Date Added'])
+
+    for lead in leads:
+        writer.writerow([
+            lead['name'],
+            lead['email'],
+            lead['source'],
+            lead['score'],
+            lead['status'],
+            lead['date_added']
+        ])
 
     response = make_response(output.getvalue())
     response.headers['Content-Disposition'] = 'attachment; filename=leads.csv'
