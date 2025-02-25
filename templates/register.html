@@ -1,213 +1,58 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - Leadzap</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-</head>
-<body>
-    <section class="auth-section">
-        <div class="container">
-            <h1>Create Your Leadzap Account</h1>
-            <p>Sign up to start zapping leads—takes 30 seconds.</p>
+{% extends "base.html" %}
+{% block content %}
+<div class="bg-[#0D1321] min-h-screen text-white p-8 flex items-center justify-center">
+    <div class="max-w-md w-full text-center">
+        <h1 class="text-4xl font-bold mb-4">Create Your Leadzap Account</h1>
+        <p class="text-lg text-[#A1A9B8] italic mb-8">Sign up to start zapping leads.</p>
 
-            <div class="auth-form animate-fade-in">
-                <form method="POST" action="{{ url_for('register') }}">
-                    <div class="form-group">
-                        <label for="username">Username</label>
-                        <input type="text" id="username" name="username" class="form-control" placeholder="e.g., johndoe" required>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-4 text-{{ 'green' if category == 'success' else 'red' }}-500">
+                        {{ message }}
                     </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-                    <div class="form-group">
-                        <label for="email">Email</label>
-                        <input type="email" id="email" name="email" class="form-control" placeholder="e.g., john@example.com" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="password">Password</label>
-                        <div class="password-input-wrapper">
-                            <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" oninput="validatePassword(this.value)" required>
-                            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('password')">
-                                <span class="eye-icon">👁️</span>
-                            </button>
-                        </div>
-                        <div class="password-requirements">
-                            <p>Password must:</p>
-                            <ul>
-                                <li id="length-check">
-                                    <span class="check-icon">❌</span>
-                                    Be at least 8 characters long
-                                </li>
-                                <li id="letter-check">
-                                    <span class="check-icon">❌</span>
-                                    Include both letters and numbers
-                                </li>
-                                <li id="special-check">
-                                    <span class="check-icon">❌</span>
-                                    Include at least one special character
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="confirm_password">Confirm Password</label>
-                        <div class="password-input-wrapper">
-                            <input type="password" id="confirm_password" name="confirm_password" class="form-control" placeholder="••••••••" oninput="validatePasswordMatch()" required>
-                            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('confirm_password')">
-                                <span class="eye-icon">👁️</span>
-                            </button>
-                        </div>
-                        <div id="password-match" class="password-match hidden">
-                            <span class="check-icon">❌</span>
-                            Passwords match
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-full">Register</button>
-                </form>
-                <p class="auth-link">
-                    Already have an account? <a href="{{ url_for('login') }}">Log in</a>
-                </p>
+        <form method="POST" class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-8 animate-fade-in">
+            <div class="mb-6">
+                <label class="block text-white text-base font-bold mb-2">Username</label>
+                <input 
+                    name="username" 
+                    type="text" 
+                    class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white" 
+                    placeholder="e.g., johndoe" 
+                    required
+                >
             </div>
-        </div>
-    </section>
-
-    <style>
-        @keyframes fade-in {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in {
-            animation: fade-in 0.5s ease-out;
-        }
-        .password-input-wrapper {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-        .password-toggle {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: var(--steel-gray);
-            cursor: pointer;
-            padding: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .password-toggle:hover {
-            color: var(--neon-purple);
-        }
-        .eye-icon {
-            font-size: 20px;
-        }
-        .password-requirements {
-            margin-top: 10px;
-            padding: 10px;
-            border-radius: 5px;
-            background: rgba(123, 0, 255, 0.1);
-            border: 1px solid var(--neon-purple);
-        }
-        .password-requirements p {
-            color: var(--white);
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
-        .password-requirements ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .password-requirements li {
-            color: var(--steel-gray);
-            font-size: 12px;
-            margin: 3px 0;
-            padding-left: 15px;
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-        .check-icon {
-            margin-right: 8px;
-            transition: all 0.3s ease;
-        }
-        .password-match {
-            margin-top: 5px;
-            color: var(--steel-gray);
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-        }
-        .hidden {
-            display: none;
-        }
-    </style>
-
-    <script>
-        function togglePasswordVisibility(fieldId) {
-            const field = document.getElementById(fieldId);
-            if (field.type === "password") {
-                field.type = "text";
-            } else {
-                field.type = "password";
-            }
-        }
-
-        function validatePassword(password) {
-            // Length check
-            const lengthCheck = document.getElementById('length-check');
-            if (password.length >= 8) {
-                lengthCheck.querySelector('.check-icon').textContent = '✅';
-            } else {
-                lengthCheck.querySelector('.check-icon').textContent = '❌';
-            }
-
-            // Letters and numbers check
-            const letterCheck = document.getElementById('letter-check');
-            if (/[A-Za-z]/.test(password) && /\d/.test(password)) {
-                letterCheck.querySelector('.check-icon').textContent = '✅';
-            } else {
-                letterCheck.querySelector('.check-icon').textContent = '❌';
-            }
-
-            // Special character check
-            const specialCheck = document.getElementById('special-check');
-            if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-                specialCheck.querySelector('.check-icon').textContent = '✅';
-            } else {
-                specialCheck.querySelector('.check-icon').textContent = '❌';
-            }
-
-            validatePasswordMatch();
-        }
-
-        function validatePasswordMatch() {
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirm_password').value;
-            const matchDisplay = document.getElementById('password-match');
-
-            if (confirmPassword) {
-                matchDisplay.classList.remove('hidden');
-                if (password === confirmPassword) {
-                    matchDisplay.querySelector('.check-icon').textContent = '✅';
-                } else {
-                    matchDisplay.querySelector('.check-icon').textContent = '❌';
-                }
-            } else {
-                matchDisplay.classList.add('hidden');
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            validatePassword(document.getElementById('password').value);
-        });
-    </script>
-</body>
-</html>
+            <div class="mb-6">
+                <label class="block text-white text-base font-bold mb-2">Email</label>
+                <input 
+                    name="email" 
+                    type="email" 
+                    class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white" 
+                    placeholder="e.g., john@example.com" 
+                    required
+                >
+            </div>
+            <div class="mb-6">
+                <label class="block text-white text-base font-bold mb-2">Password</label>
+                <input 
+                    name="password" 
+                    type="password" 
+                    class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white" 
+                    placeholder="••••••••" 
+                    required
+                >
+            </div>
+            <button type="submit" class="w-full bg-[#7B00FF] text-white px-6 py-3 rounded-lg text-lg font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">
+                Register
+            </button>
+        </form>
+        <p class="text-[#A1A9B8] text-sm mt-4">
+            Already have an account? <a href="{{ url_for('login') }}" class="text-[#7B00FF] hover:underline">Log in</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

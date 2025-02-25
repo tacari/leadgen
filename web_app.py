@@ -90,28 +90,65 @@ def register():
         email = request.form['email']
         password = request.form['password']
         username = request.form['username']
+
         try:
             print(f"Attempting to register user: {email}", file=sys.stderr)
+
+            # First, check if email already exists in Supabase auth
+            try:
+                existing_user = supabase.auth.admin.list_users(
+                    filters={'email': email}
+                )
+                if existing_user:
+                    flash('Email already registered', 'error')
+                    return render_template('register.html')
+            except Exception as e:
+                print(f"Error checking existing user: {str(e)}", file=sys.stderr)
+
+            # Create new user in Supabase Auth
             user = supabase.auth.sign_up({
                 'email': email,
-                'password': password
+                'password': password,
+                'options': {
+                    'data': {
+                        'username': username
+                    }
+                }
             })
+
+            if not user.user:
+                flash('Registration failed. Please try again.', 'error')
+                return render_template('register.html')
+
             print(f"Registration successful for user: {email}", file=sys.stderr)
 
-            # Store additional user data (username) in a custom table
-            supabase.table('users').insert({
-                'id': user.user.id,
-                'username': username,
-                'email': email
-            }).execute()
+            # Store additional user data in custom table
+            try:
+                supabase.table('profiles').insert({
+                    'id': user.user.id,
+                    'username': username,
+                    'email': email,
+                    'created_at': datetime.now().isoformat()
+                }).execute()
+            except Exception as e:
+                print(f"Error creating profile: {str(e)}", file=sys.stderr)
+                # Don't fail registration if profile creation fails
+                pass
 
+            # Set session data
             session['user_id'] = user.user.id
             session['user_email'] = user.user.email
             flash('Registration successful! Welcome to Leadzap.', 'success')
             return redirect(url_for('welcome'))
+
         except Exception as e:
             print(f"Registration failed: {str(e)}", file=sys.stderr)
-            flash('Registration failed. Please try again.', 'error')
+            error_message = str(e)
+            if 'already registered' in error_message.lower():
+                flash('Email already registered', 'error')
+            else:
+                flash('Registration failed. Please try again.', 'error')
+            return render_template('register.html')
 
     return render_template('register.html')
 
