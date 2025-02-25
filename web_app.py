@@ -207,6 +207,17 @@ def contact():
         return "Internal Server Error", 500
 
 
+@app.route('/pricing')
+def pricing():
+    """Pricing page route"""
+    try:
+        logger.debug("Rendering pricing page")
+        return render_template('pricing.html')
+    except Exception as e:
+        logger.error(f"Error rendering pricing page: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return "Internal Server Error", 500
+
 def kill_process_on_port(port):
     """Kill any process that is listening on the specified port"""
     try:

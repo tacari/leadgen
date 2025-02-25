@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing - Leadzap</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="{{ url_for('landing') }}" class="navbar-logo">
+                <div class="logo-orb"></div>
+                Leadzap
+            </a>
+            <button class="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-links">
+                <div class="nav-center">
+                    <a href="{{ url_for('landing') }}">Home</a>
+                    <a href="{{ url_for('about') }}">About</a>
+                    <a href="{{ url_for('services') }}">Services</a>
+                    <a href="{{ url_for('pricing') }}" class="active">Pricing</a>
+                    <a href="{{ url_for('contact') }}">Contact</a>
+                </div>
+                <div class="nav-right">
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                        <a href="{{ url_for('logout') }}">Logout</a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}">Login</a>
+                        <a href="{{ url_for('register') }}">Register</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <section class="content-section">
+        <div class="container">
+            <h1>Pricing Plans</h1>
+            <p>Choose Your Lead Generation Power—Start Small or Dominate Big</p>
+
+            <div class="packages">
+                <div class="package">
+                    <h3>Lead Launch</h3>
+                    <p class="price">$499</p>
+                    <p class="tagline">Test the waters with AI leads</p>
+                    <ul>
+                        <li>50 qualified leads</li>
+                        <li>AI-targeted to your business</li>
+                        <li>7-day delivery</li>
+                        <li>1 cold email template</li>
+                    </ul>
+                    <button onclick="document.getElementById('signupForm').scrollIntoView({behavior: 'smooth'})">
+                        Get Started
+                    </button>
+                </div>
+                <div class="package">
+                    <h3>Lead Engine</h3>
+                    <p class="price">$1,499/month</p>
+                    <p class="tagline">Steady leads to grow your biz</p>
+                    <ul>
+                        <li>150 leads/month</li>
+                        <li>Weekly delivery</li>
+                        <li>3 email templates</li>
+                        <li>Basic stats tracking</li>
+                    </ul>
+                    <button onclick="document.getElementById('signupForm').scrollIntoView({behavior: 'smooth'})">
+                        Get Started
+                    </button>
+                </div>
+                <div class="package">
+                    <h3>Lead Accelerator</h3>
+                    <p class="price">$2,999/month</p>
+                    <p class="tagline">Ramp up with serious lead flow</p>
+                    <ul>
+                        <li>300 leads/month</li>
+                        <li>Daily delivery</li>
+                        <li>5 email templates</li>
+                        <li>Detailed reports</li>
+                    </ul>
+                    <button onclick="document.getElementById('signupForm').scrollIntoView({behavior: 'smooth'})">
+                        Get Started
+                    </button>
+                </div>
+                <div class="package">
+                    <h3>Lead Empire</h3>
+                    <p class="price">$5,999/month</p>
+                    <p class="tagline">Dominate your market with AI</p>
+                    <ul>
+                        <li>600 leads/month</li>
+                        <li>Priority delivery</li>
+                        <li>7 multi-channel templates</li>
+                        <li>VIP support</li>
+                    </ul>
+                    <button onclick="document.getElementById('signupForm').scrollIntoView({behavior: 'smooth'})">
+                        Get Started
+                    </button>
+                </div>
+            </div>
+
+            <form id="signupForm" class="signup-form">
+                <input type="text" name="name" placeholder="Your Name" required>
+                <input type="email" name="email" placeholder="Email" required>
+                <input type="text" name="niche" placeholder="Your Niche (e.g., plumber, SaaS)" required>
+                <select name="package" required>
+                    <option value="">Select Your Package</option>
+                    <option value="launch">Lead Launch - $499</option>
+                    <option value="engine">Lead Engine - $1,499/mo</option>
+                    <option value="accelerator">Lead Accelerator - $2,999/mo</option>
+                    <option value="empire">Lead Empire - $5,999/mo</option>
+                </select>
+                <button type="submit">Start Your Lead Generation</button>
+            </form>
+        </div>
+    </section>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
