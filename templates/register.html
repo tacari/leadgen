@@ -44,7 +44,7 @@
                     <div class="form-group">
                         <label for="password">Password</label>
                         <div class="password-input-wrapper">
-                            {{ form.password(class="form-control", placeholder="••••••••") }}
+                            {{ form.password(class="form-control", placeholder="••••••••", oninput="validatePassword(this.value)") }}
                             <button type="button" class="password-toggle" onclick="togglePasswordVisibility('password')">
                                 <span class="eye-icon">👁️</span>
                             </button>
@@ -52,9 +52,18 @@
                         <div class="password-requirements">
                             <p>Password must:</p>
                             <ul>
-                                <li>Be at least 8 characters long</li>
-                                <li>Include both letters and numbers</li>
-                                <li>Include at least one special character</li>
+                                <li id="length-check">
+                                    <span class="check-icon">❌</span>
+                                    Be at least 8 characters long
+                                </li>
+                                <li id="letter-check">
+                                    <span class="check-icon">❌</span>
+                                    Include both letters and numbers
+                                </li>
+                                <li id="special-check">
+                                    <span class="check-icon">❌</span>
+                                    Include at least one special character
+                                </li>
                             </ul>
                         </div>
                         {% if form.password.errors %}
@@ -69,10 +78,14 @@
                     <div class="form-group">
                         <label for="confirm_password">Confirm Password</label>
                         <div class="password-input-wrapper">
-                            {{ form.confirm_password(class="form-control", placeholder="••••••••") }}
+                            {{ form.confirm_password(class="form-control", placeholder="••••••••", oninput="validatePasswordMatch()") }}
                             <button type="button" class="password-toggle" onclick="togglePasswordVisibility('confirm_password')">
                                 <span class="eye-icon">👁️</span>
                             </button>
+                        </div>
+                        <div id="password-match" class="password-match hidden">
+                            <span class="check-icon">❌</span>
+                            Passwords match
                         </div>
                         {% if form.confirm_password.errors %}
                             <div class="errors">
@@ -148,12 +161,26 @@
             margin: 3px 0;
             padding-left: 15px;
             position: relative;
+            display: flex;
+            align-items: center;
         }
         .password-requirements li::before {
-            content: "•";
-            color: var(--neon-purple);
-            position: absolute;
-            left: 0;
+            content: "";
+            margin-right: 5px;
+        }
+        .check-icon {
+            margin-right: 8px;
+            transition: all 0.3s ease;
+        }
+        .password-match {
+            margin-top: 5px;
+            color: var(--steel-gray);
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+        }
+        .hidden {
+            display: none;
         }
     </style>
 
@@ -166,6 +193,57 @@
                 field.type = "password";
             }
         }
+
+        function validatePassword(password) {
+            // Length check
+            const lengthCheck = document.getElementById('length-check');
+            if (password.length >= 8) {
+                lengthCheck.querySelector('.check-icon').textContent = '✅';
+            } else {
+                lengthCheck.querySelector('.check-icon').textContent = '❌';
+            }
+
+            // Letters and numbers check
+            const letterCheck = document.getElementById('letter-check');
+            if (/[A-Za-z]/.test(password) && /\d/.test(password)) {
+                letterCheck.querySelector('.check-icon').textContent = '✅';
+            } else {
+                letterCheck.querySelector('.check-icon').textContent = '❌';
+            }
+
+            // Special character check
+            const specialCheck = document.getElementById('special-check');
+            if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+                specialCheck.querySelector('.check-icon').textContent = '✅';
+            } else {
+                specialCheck.querySelector('.check-icon').textContent = '❌';
+            }
+
+            // Update password match if confirm password is not empty
+            validatePasswordMatch();
+        }
+
+        function validatePasswordMatch() {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            const matchDisplay = document.getElementById('password-match');
+
+            if (confirmPassword) {
+                matchDisplay.classList.remove('hidden');
+                if (password === confirmPassword) {
+                    matchDisplay.querySelector('.check-icon').textContent = '✅';
+                } else {
+                    matchDisplay.querySelector('.check-icon').textContent = '❌';
+                }
+            } else {
+                matchDisplay.classList.add('hidden');
+            }
+        }
+
+        // Initial validation
+        document.addEventListener('DOMContentLoaded', function() {
+            validatePassword(document.getElementById('password').value);
+        });
     </script>
 </body>
 </html>
