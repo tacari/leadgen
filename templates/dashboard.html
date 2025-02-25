@@ -3,20 +3,19 @@
 {% block content %}
 <div class="bg-[#0D1321] min-h-screen text-white p-8">
     <!-- Header -->
-    <header class="text-center py-10 relative">
-        <h1 class="text-4xl font-bold">Your Leadzap Dashboard</h1>
-        <p class="text-lg text-[#A1A9B8] italic mt-2">Welcome back, {{ current_user.name or current_user.email }}</p>
+    <header class="text-center py-10 relative animate-fade-in">
+        <h1 class="text-4xl font-bold">Hey {{ username }}, Welcome to Your Leadzap Dashboard</h1>
     </header>
 
     <!-- Leads -->
     <section class="mb-12">
-        <h2 class="text-3xl font-bold text-center mb-6">Your Leads</h2>
-        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6">
+        <h2 class="text-3xl font-bold text-center mb-6">Your Lead Pipeline</h2>
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 max-w-6xl mx-auto">
             <div class="flex flex-wrap gap-4 mb-4">
-                <button class="filter-btn bg-[#0D1321] border border-[#7B00FF] text-[#A1A9B8] px-4 py-2 rounded-lg hover:bg-[#7B00FF] hover:text-white active" onclick="filterLeads('all')">All</button>
-                <button class="filter-btn bg-[#0D1321] border border-[#7B00FF] text-[#A1A9B8] px-4 py-2 rounded-lg hover:bg-[#7B00FF] hover:text-white" onclick="filterLeads('verified')">Verified Only</button>
-                <button class="filter-btn bg-[#0D1321] border border-[#7B00FF] text-[#A1A9B8] px-4 py-2 rounded-lg hover:bg-[#7B00FF] hover:text-white" onclick="filterLeads('highScore')">High Score (>75)</button>
-                <button class="filter-btn bg-[#0D1321] border border-[#7B00FF] text-[#A1A9B8] px-4 py-2 rounded-lg hover:bg-[#7B00FF] hover:text-white" onclick="filterLeads('recent')">Last 7 Days</button>
+                <button class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white active" onclick="filterLeads('all')">All</button>
+                <button class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white" onclick="filterLeads('verified')">Verified Only</button>
+                <button class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white" onclick="filterLeads('highScore')">High Score (>75)</button>
+                <button class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white" onclick="filterLeads('recent')">Last 7 Days</button>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-[#A1A9B8] text-sm">
@@ -32,40 +31,42 @@
                     </thead>
                     <tbody>
                         {% for lead in leads %}
-                        <tr class="border-b border-[#7B00FF] animate-fade-in" data-score="{{ lead.score }}" data-date="{{ lead.date_added.strftime('%Y-%m-%d') }}">
+                        <tr class="border-b border-[#7B00FF] animate-fade-in" data-score="{{ lead.score }}" data-date="{{ lead.date_added }}">
                             <td class="p-3">{{ lead.name }}</td>
                             <td class="p-3">{{ lead.email }}</td>
                             <td class="p-3">{{ lead.source }}</td>
                             <td class="p-3 {% if lead.score > 75 %}text-[#7B00FF]{% endif %}">{{ lead.score }}</td>
                             <td class="p-3">{{ lead.status }}</td>
-                            <td class="p-3">{{ lead.date_added.strftime('%Y-%m-%d') }}</td>
+                            <td class="p-3">{{ lead.date_added }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
-            <a href="{{ url_for('download_leads') }}" class="mt-4 inline-block bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg">Export Leads (CSV)</a>
+            <div class="mt-4 flex gap-4 justify-center">
+                <a href="{{ url_for('download_leads') }}" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg">Download Leads (CSV)</a>
+            </div>
         </div>
     </section>
 
     <!-- Subscription -->
     <section class="mb-12">
-        <h2 class="text-3xl font-bold text-center mb-6">Your Subscription</h2>
+        <h2 class="text-3xl font-bold text-center mb-6">Your Leadzap Plan</h2>
         <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 max-w-[400px] mx-auto animate-fade-in">
             <p class="text-xl font-bold text-center">{{ subscription.package_name if subscription else 'No Active Plan' }}</p>
             <p class="text-[#A1A9B8] text-center mb-2">{{ subscription.lead_volume if subscription else '0' }} leads/month</p>
             <p class="text-[#A1A9B8] text-center mb-2">${{ "{:,.0f}".format(subscription.lead_volume * 10 if subscription else 0) }}/month</p>
             <p class="text-[#7B00FF] font-bold text-center mb-4">Active</p>
             <div class="flex gap-4 justify-center">
-                <a href="{{ url_for('pricing') }}" class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg">Upgrade Plan</a>
-                <button class="bg-[#FF4444] text-white px-4 py-2 rounded-lg hover:bg-[#FF6666] hover:shadow-lg">Cancel</button>
+                <a href="{{ url_for('pricing') }}" class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Upgrade Plan</a>
+                <a href="#" class="border border-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#7B00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Manage Subscription</a>
             </div>
         </div>
     </section>
 
     <!-- Analytics -->
     <section class="mb-12">
-        <h2 class="text-3xl font-bold text-center mb-6">Your Lead Analytics</h2>
+        <h2 class="text-3xl font-bold text-center mb-6">Lead Analytics</h2>
         <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 max-w-[600px] mx-auto animate-fade-in">
             <div class="grid grid-cols-2 gap-4 mb-6">
                 <div class="text-center">
@@ -91,30 +92,16 @@
 
     <!-- Delivery Status -->
     <section class="mb-12">
-        <h2 class="text-3xl font-bold text-center mb-6">Next Delivery</h2>
+        <h2 class="text-3xl font-bold text-center mb-6">Next Lead Drop</h2>
         <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 max-w-[400px] mx-auto animate-fade-in">
             <p class="text-[#A1A9B8] text-center">{{ delivery_status }}</p>
         </div>
     </section>
-
-    <!-- Settings -->
-    <section class="mb-12">
-        <h2 class="text-3xl font-bold text-center mb-6">Settings</h2>
-        <form method="POST" class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 max-w-[400px] mx-auto animate-fade-in">
-            {{ form.hidden_tag() }}
-            <div class="mb-4">
-                <label class="block text-white text-base font-bold mb-2">Email</label>
-                {{ form.email(class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white placeholder-[#A1A9B8]") }}
-            </div>
-            {{ form.submit(class="w-full bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg") }}
-        </form>
-    </section>
 </div>
 
-<!-- Chart.js for Analytics -->
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Analytics Chart
     const ctx = document.getElementById('analyticsChart').getContext('2d');
     new Chart(ctx, {
         type: 'bar',
@@ -170,7 +157,7 @@
 
             switch(filter) {
                 case 'verified':
-                    show = row.querySelector('td:nth-child(3)').textContent === 'Verified';
+                    show = row.querySelector('td:nth-child(5)').textContent === 'Verified';
                     break;
                 case 'highScore':
                     show = score > 75;

@@ -1,0 +1,311 @@
+Alright, bro—fuck yeah, let’s cook up a badass dashboard for Leadzap! You’re logged in with Supabase, and when users hit that /dashboard after login, it’s gotta slap ‘em with value—personalized, premium, and packed with everything to make this a $100k/month AI lead gen beast. No half-assing—full details, every section, deep dive, dark mode swagger, neon purple fire. Register/login’s on the back burner—we’re focusing on what they see post-login, starting with “Hey [Username]” to set the tone. Supabase is in play, so we’ll leverage it for user data. Let’s fucking go—here’s the full dashboard breakdown!
+Dashboard Overview: What Users See Post-Login
+The dashboard (dashboard.html) is the heart of Leadzap—where clients land after logging in via /login, powered by Flask on Replit with Supabase auth. It’s their control hub—showing AI-generated leads, subscription details, analytics, and delivery status—tied to their package (Lead Launch: $499, 50 leads; Empire: $5,999/month, 600 leads). It’s gotta be slick, intuitive, and scream “You’re getting your money’s worth”—keeping ‘em hooked for that $5k–$10k quick win and $100k/month grind. Dark mode (#0D1321 base, #7B00FF accents), Tailwind CSS, and dynamic data from Supabase make it pop.
+Purpose
+Personalize: Greet ‘em with “Hey [Username]”—feels custom, builds connection.  
+Value Upfront: Show leads—name, email, score—right away, no bullshit.  
+Engage: Filters, stats, controls—keep ‘em clicking, not bouncing.  
+Upsell: Highlight their plan, tease bigger tiers—$499 to $5,999 upgrades.  
+Trust: Premium design, real-time data—feels like a million-dollar tool.
+Dashboard Design: Full Details
+Here’s every section—visuals, functionality, styling—when users log in, starting with that “Hey [Username]” hook.
+1. Header
+Purpose: Sets a personal, premium tone—welcomes ‘em, offers logout.  
+Title: “Hey [Username], Welcome to Your Leadzap Dashboard”  
+Style: White (#FFFFFF), 40px, bold, Inter font, centered, 40px padding-top—big, personal kickoff.  
+Data: [Username] pulled from Supabase users table (supabase.table('users').select('username').eq('id', session['user_id'])).
+Logout Button:  
+Text: “Logout”  
+Style: Neon purple (#7B00FF), white text, 16px, bold, 20px padding-x, 10px padding-y, 8px radius, absolute top-right—glows on hover (#8F00FF + shadow), scales (0.2s), links to /logout.
+Background: Obsidian (#0D1321)—grounds the page in dark mode.  
+Animation: Fades in (0.5s)—smooth, pro entry.
+2. Leads Section
+Purpose: Core value—displays their AI-generated leads, makes the $499–$5,999 worth it.  
+Title: “Your Lead Pipeline”  
+Style: White, 28px, bold, centered, 30px padding-top—draws eyes instantly.
+Content: Responsive table (stacks to cards on mobile):  
+Columns:  
+Name: Lead’s name (e.g., “Joe’s Plumbing”), steel gray (#A1A9B8), 14px.  
+Email: Lead’s email (e.g., “joe@example.com”), steel gray, 14px.  
+Source: Where it came from (e.g., “Yellow Pages”), steel gray, 14px.  
+Score: AI score (1–100, e.g., “85”), neon purple if >75, steel gray else, 14px—hot leads pop.  
+Verified: “Yes”/“No” (email check), steel gray, 14px—shows quality.  
+Status: “Pending,” “Emailed,” “Replied” (steel gray, 14px)—tracks outreach.  
+Date Added: When it landed (e.g., “2025-02-25”), steel gray, 14px.
+Filters: Buttons above table—  
+“All,” “Verified Only,” “High Score (>75),” “Last 7 Days”—neon purple outline, 14px, toggleable (basic JS/CSS).  
+Style: Hover fills neon purple, active state stays filled—intuitive UX.
+Pagination: 25 leads/page (Empire’s 600 needs it)—“Prev/Next” buttons, neon purple, 12px padding-x.  
+Export: “Download Leads (CSV)” button below—neon purple, white text, 16px, bold, 20px padding-x, 10px padding-y, glows on hover—exports filtered table as CSV.
+Styling: Table in #1A2236, 1px neon purple border, 12px radius, 10px padding per cell—rows fade in (0.5s stagger). Mobile: Cards (100% width, 10px gap).  
+Data: Fetched from Supabase leads table—e.g., supabase.table('leads').select('*').eq('user_id', session['user_id']).execute().  
+Example: Lead Launch user sees 50 leads; Empire user sees 600 (25/page).  
+Purpose: Immediate payoff—leads are real, scored, actionable—keeps ‘em coming back.
+3. Subscription Section
+Purpose: Shows their plan—reinforces value, nudges upgrades.  
+Title: “Your Leadzap Plan”  
+Style: White, 28px, bold, centered, 30px padding-top—clear focus.
+Content: Card (max-width 400px, centered):  
+Package: E.g., “Lead Engine” (white, 20px, bold).  
+Price: E.g., “$1,499/month” (steel gray, 16px)—placeholder, Stripe fills later.  
+Lead Volume: E.g., “150 leads/month” (steel gray, 16px).  
+Next Billing: E.g., “March 25, 2025” (steel gray, 16px)—placeholder, Stripe later.  
+Status: “Active” (neon purple, 16px, bold).  
+Buttons:  
+“Upgrade Plan” (neon purple, white text, 16px, bold, 20px padding-x, links to /pricing)—glows on hover.  
+“Manage Subscription” (neon purple outline, white text, same size)—placeholder for Stripe portal (future).
+Styling: #1A2236 card, 1px neon purple border, 12px radius, 20px padding—fades in (0.5s).  
+Data: From Supabase user_packages table—e.g., supabase.table('user_packages').select('*').eq('user_id', session['user_id']).execute().  
+Purpose: Shows what they’ve got, teases more (e.g., “150/month? Get 600 with Empire!”).
+4. Analytics Section
+Purpose: Proves ROI—stats on lead performance, builds trust and upsell case.  
+Title: “Lead Analytics”  
+Style: White, 28px, bold, centered, 30px padding-top—data-driven hook.
+Content: Card (max-width 600px, centered):  
+Stats:  
+“Total Leads”: E.g., “150” (white, 20px, bold)—counts all leads.  
+“Emailed”: E.g., “100” (steel gray, 16px)—tracks outreach.  
+“Replies”: E.g., “10” (steel gray, 16px)—placeholder, SendGrid later.  
+“Conversions”: E.g., “5” (steel gray, 16px)—manual input now.
+Chart: Bar chart via Chart.js—e.g., “Total vs. Emailed vs. Replies” (neon purple bars, 400x200px).
+Styling: #1A2236 card, 1px neon purple border, 12px radius, 20px padding—stats fade in (0.5s stagger).  
+Data: Aggregated from leads table—e.g., leads = supabase.table('leads').select('*').eq('user_id', session['user_id']).execute(); total = len(leads.data).  
+Purpose: Shows results—hooks ‘em on value, teases bigger plans for more stats.
+5. Delivery Status Section
+Purpose: Keeps ‘em in the loop—when’s the next lead drop, builds anticipation.  
+Title: “Next Lead Drop”  
+Style: White, 28px, bold, centered, 30px padding-top—sets expectation.
+Content:  
+Text: Dynamic per package:  
+Lead Launch: “Your 50 leads arrive by [date]” (7 days post-signup).  
+Engine: “Next 37–38 leads: [weekly date]” (e.g., “March 1, 2025”).  
+Accelerator: “Next 12–13 leads: Tomorrow” (daily).  
+Empire: “Next 25 leads: Tomorrow” (daily).
+Style: Steel gray, 16px, centered—in a #1A2236 card, neon purple border, fades in (0.5s).
+Data: Hardcoded now—future scheduler (Flask-APScheduler) calculates based on package and signup date.  
+Purpose: Keeps ‘em engaged—daily/weekly value drip, ties to package tier.
+Visual Flow
+Order: Header → Leads → Subscription → Analytics → Delivery Status.  
+Height: ~1800px desktop, smooth scroll—stacks to ~2400px mobile.  
+Vibe: Dark, data-rich, premium—feels like a million-dollar AI tool.
+Implementation in Replit with Flask & Supabase
+Here’s the full code—assumes Supabase auth is live (keys in Replit Secrets: SUPABASE_URL, SUPABASE_KEY).
+Flask App (app.py)
+python
+from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response
+from supabase import create_client, Client
+import os
+import io
+import csv
+from datetime import datetime
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key')
+supabase_url = os.environ.get('SUPABASE_URL')
+supabase_key = os.environ.get('SUPABASE_KEY')
+supabase: Client = create_client(supabase_url, supabase_key)
+
+# Routes
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+@app.route('/dashboard')
+def dashboard():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user = supabase.auth.get_user(session['user_id'])
+    username = supabase.table('users').select('username').eq('id', user.user.id).execute().data[0]['username']
+    leads = supabase.table('leads').select('*').eq('user_id', user.user.id).order('date_added', desc=True).execute().data
+    subscription = supabase.table('user_packages').select('*').eq('user_id', user.user.id).execute().data
+    subscription = subscription[0] if subscription else None
+    # Analytics
+    total_leads = len(leads)
+    emailed_leads = sum(1 for lead in leads if lead['status'] == 'Emailed')
+    analytics = {'total': total_leads, 'emailed': emailed_leads, 'replies': 0, 'conversions': 0}  # Placeholders
+    # Delivery Status (hardcoded for now)
+    delivery_status = "Next batch: 25 leads tomorrow" if subscription and subscription['package_name'] == 'Empire' else "Next batch: 37 leads on March 1, 2025"
+    return render_template('dashboard.html', username=username, leads=leads, subscription=subscription, analytics=analytics, delivery_status=delivery_status)
+
+@app.route('/download_leads')
+def download_leads():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user = supabase.auth.get_user(session['user_id'])
+    leads = supabase.table('leads').select('*').eq('user_id', user.user.id).execute().data
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Name', 'Email', 'Source', 'Score', 'Verified', 'Status', 'Date Added'])
+    for lead in leads:
+        writer.writerow([lead['name'], lead['email'], lead['source'], lead['score'], lead['verified'], lead['status'], lead['date_added']])
+    response = make_response(output.getvalue())
+    response.headers['Content-Disposition'] = 'attachment; filename=leads.csv'
+    response.headers['Content-type'] = 'text/csv'
+    return response
+
+# Placeholder routes—add register/login later
+@app.route('/login')
+def login():
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    supabase.auth.sign_out()
+    session.pop('user_id', None)
+    return redirect(url_for('home'))
+
+@app.route('/pricing')
+def pricing():
+    return render_template('pricing.html')
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080)
+Dashboard Template (dashboard.html)
+html
+{% extends "base.html" %}
+{% block content %}
+<div class="bg-[#0D1321] min-h-screen text-white p-8">
+    <!-- Header -->
+    <header class="text-center py-10 relative animate-fade-in">
+        <h1 class="text-4xl font-bold">Hey {{ username }}, Welcome to Your Leadzap Dashboard</h1>
+        <a href="{{ url_for('logout') }}" class="absolute top-4 right-4 bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Logout</a>
+    </header>
+
+    <!-- Leads -->
+    <section class="mb-12">
+        <h2 class="text-3xl font-bold text-center mb-6">Your Lead Pipeline</h2>
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 max-w-6xl mx-auto">
+            <div class="flex flex-wrap gap-4 mb-4">
+                <button class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white">All</button>
+                <button class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white">Verified Only</button>
+                <button class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white">High Score (>75)</button>
+                <button class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white">Last 7 Days</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-[#A1A9B8] text-sm">
+                    <thead>
+                        <tr class="border-b border-[#7B00FF]">
+                            <th class="p-3">Name</th>
+                            <th class="p-3">Email</th>
+                            <th class="p-3">Source</th>
+                            <th class="p-3">Score</th>
+                            <th class="p-3">Verified</th>
+                            <th class="p-3">Status</th>
+                            <th class="p-3">Date Added</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lead in leads %}
+                        <tr class="border-b border-[#7B00FF] animate-fade-in">
+                            <td class="p-3">{{ lead.name }}</td>
+                            <td class="p-3">{{ lead.email }}</td>
+                            <td class="p-3">{{ lead.source }}</td>
+                            <td class="p-3 {% if lead.score > 75 %}text-[#7B00FF]{% endif %}">{{ lead.score }}</td>
+                            <td class="p-3">{{ 'Yes' if lead.verified else 'No' }}</td>
+                            <td class="p-3">{{ lead.status }}</td>
+                            <td class="p-3">{{ lead.date_added }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-4 flex justify-between">
+                <button class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] disabled:bg-gray-500" disabled>Prev</button>
+                <a href="{{ url_for('download_leads') }}" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg">Download Leads (CSV)</a>
+                <button class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] disabled:bg-gray-500" disabled>Next</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Subscription -->
+    <section class="mb-12">
+        <h2 class="text-3xl font-bold text-center mb-6">Your Leadzap Plan</h2>
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 max-w-[400px] mx-auto animate-fade-in">
+            <p class="text-xl font-bold text-center">{{ subscription.package_name if subscription else 'No Active Plan' }}</p>
+            <p class="text-[#A1A9B8] text-center">{{ subscription.lead_volume if subscription else '0' }} leads/month</p>
+            <p class="text-[#A1A9B8] text-center">${{ "{:,.0f}".format(subscription.lead_volume * 10 if subscription else 0) }}/month</p>
+            <p class="text-[#A1A9B8] text-center">Next Billing: March 25, 2025</p>
+            <p class="text-[#7B00FF] font-bold text-center">Active</p>
+            <div class="mt-4 flex gap-4 justify-center">
+                <a href="{{ url_for('pricing') }}" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg">Upgrade Plan</a>
+                <a href="#" class="border border-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#7B00FF]">Manage Subscription</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Analytics -->
+    <section class="mb-12">
+        <h2 class="text-3xl font-bold text-center mb-6">Lead Analytics</h2>
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 max-w-[600px] mx-auto animate-fade-in">
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="text-center">
+                    <p class="text-white text-xl font-bold">{{ analytics.total }}</p>
+                    <p class="text-[#A1A9B8] text-sm">Total Leads</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-white text-xl font-bold">{{ analytics.emailed }}</p>
+                    <p class="text-[#A1A9B8] text-sm">Emailed</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-white text-xl font-bold">{{ analytics.replies }}</p>
+                    <p class="text-[#A1A9B8] text-sm">Replies</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-white text-xl font-bold">{{ analytics.conversions }}</p>
+                    <p class="text-[#A1A9B8] text-sm">Conversions</p>
+                </div>
+            </div>
+            <canvas id="analyticsChart" width="400" height="200"></canvas>
+        </div>
+    </section>
+
+    <!-- Delivery Status -->
+    <section class="mb-12">
+        <h2 class="text-3xl font-bold text-center mb-6">Next Lead Drop</h2>
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 max-w-[400px] mx-auto animate-fade-in">
+            <p class="text-[#A1A9B8] text-center">{{ delivery_status }}</p>
+        </div>
+    </section>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('analyticsChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Total', 'Emailed', 'Replies', 'Conversions'],
+            datasets: [{
+                label: 'Lead Stats',
+                data: [{{ analytics.total }}, {{ analytics.emailed }}, {{ analytics.replies }}, {{ analytics.conversions }}],
+                backgroundColor: '#7B00FF',
+                borderColor: '#8F00FF',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+</script>
+
+<style>
+    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+    .animate-fade-in { animation: fade-in 0.5s ease-in; }
+</style>
+{% endblock %}
+Supabase Tables
+users: id (uuid, matches auth), username (text), email (text).  
+leads: id (uuid), user_id (uuid), name (text), email (text), source (text), score (int), verified (boolean), status (text), date_added (timestamp).  
+user_packages: id (uuid), user_id (uuid), package_name (text), lead_volume (int).
+Setup Steps
+Supabase: Ensure SUPABASE_URL and SUPABASE_KEY are in Replit Secrets—tables (users, leads, user_packages) created via Supabase dashboard.  
+Install: pip install supabase-py if not done—add to requirements.txt.  
+Test Data: Add dummy leads in Supabase—e.g., supabase.table('leads').insert({'user_id': '[your_user_id]', 'name': 'Joe Plumbing', 'email': 'joe@example.com', 'source': 'Yellow Pages', 'score': 85, 'verified': True, 'status': 'Emailed'}).  
+Run: Update app.py and dashboard.html, hit “Run”—test login (use a Supabase auth user), check dashboard.
+Why This Dashboard Cooks
+Personal Hook: “Hey [Username]” + premium design—feels custom, million-dollar vibes.  
+Lead Power: Table with scores, filters, export—$499–$5,999 feels worth it instantly.  
+Upsell Fuel: Subscription card teases bigger plans—hooks Lead Launch users to Empire.  
+Trust: Analytics and delivery status—shows the AI’s working, builds loyalty for $100k/month.
