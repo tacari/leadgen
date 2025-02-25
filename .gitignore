@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Replit specific
+.replit
+.breakpoints
+replit.nix
+.cache/
+.upm/
+.config/
+
+# Database
+*.db
+*.sqlite3
+
+# Logs
+*.log
+leadgen.log
+
+# Others
+.DS_Store
+.coverage
+htmlcov/
