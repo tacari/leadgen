@@ -170,6 +170,7 @@
         sortedRows.forEach(row => tbody.appendChild(row));
     }
 
+    // Lead Filtering
     function filterLeads() {
         const timeFilter = document.getElementById('timeFilter').value;
         const statusFilter = document.getElementById('statusFilter').value;
@@ -183,20 +184,24 @@
             const isDesktop = row.tagName === 'TR';
 
             // Get values based on desktop/mobile layout
-            const date = new Date(isDesktop ? 
-                row.cells[5].textContent : 
-                row.getAttribute('data-date')
-            );
-            const status = isDesktop ? 
-                row.cells[4].textContent : 
-                row.querySelector('span:nth-of-type(1)').textContent.replace('Status: ', '');
-            const name = isDesktop ? 
-                row.cells[0].textContent : 
-                row.querySelector('h3').textContent;
-            const email = isDesktop ? 
-                row.cells[1].textContent : 
-                row.querySelectorAll('p')[0].textContent;
-            const score = parseInt(row.getAttribute('data-score'));
+            let name, email, status, date, score;
+
+            if (isDesktop) {
+                name = row.cells[0].textContent;
+                email = row.cells[1].textContent;
+                status = row.cells[4].textContent;
+                date = new Date(row.cells[5].textContent);
+                score = parseInt(row.getAttribute('data-score'));
+            } else {
+                const nameEl = row.querySelector('.font-bold');
+                name = nameEl ? nameEl.textContent : '';
+                const emailEl = row.querySelector('.text-[#A1A9B8]');
+                email = emailEl ? emailEl.textContent : '';
+                const statusEl = row.querySelector('.text-sm span:first-child');
+                status = statusEl ? statusEl.textContent.replace('Status: ', '') : '';
+                date = new Date(row.getAttribute('data-date'));
+                score = parseInt(row.getAttribute('data-score'));
+            }
 
             // Time filter
             if (timeFilter !== 'all') {
