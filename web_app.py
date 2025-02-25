@@ -1,7 +1,7 @@
 import os
 import sys
 import psutil
-from flask import Flask, render_template, redirect, url_for
+from flask import Flask, render_template, redirect, url_for, flash
 from flask_login import LoginManager, current_user, login_user, logout_user, login_required
 
 def terminate_port_process(port):
@@ -66,7 +66,25 @@ def login():
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
-    return render_template('register.html', current_user=current_user)
+
+    from forms import RegisterForm
+    form = RegisterForm()
+
+    if form.validate_on_submit():
+        from models.user import User
+        user = User.create(
+            email=form.email.data,
+            password=form.password.data,
+            name=form.username.data
+        )
+        if user:
+            login_user(user)
+            flash('Registration successful! Welcome to Leadzap.', 'success')
+            return redirect(url_for('dashboard'))
+        else:
+            flash('Registration failed. Please try again.', 'error')
+
+    return render_template('register.html', form=form, current_user=current_user)
 
 @app.route('/dashboard')
 @login_required
