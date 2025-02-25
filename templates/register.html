@@ -43,7 +43,20 @@
 
                     <div class="form-group">
                         <label for="password">Password</label>
-                        {{ form.password(class="form-control", placeholder="••••••••") }}
+                        <div class="password-input-wrapper">
+                            {{ form.password(class="form-control", placeholder="••••••••") }}
+                            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('password')">
+                                <span class="eye-icon">👁️</span>
+                            </button>
+                        </div>
+                        <div class="password-requirements">
+                            <p>Password must:</p>
+                            <ul>
+                                <li>Be at least 8 characters long</li>
+                                <li>Include both letters and numbers</li>
+                                <li>Include at least one special character</li>
+                            </ul>
+                        </div>
                         {% if form.password.errors %}
                             <div class="errors">
                                 {% for error in form.password.errors %}
@@ -55,7 +68,12 @@
 
                     <div class="form-group">
                         <label for="confirm_password">Confirm Password</label>
-                        {{ form.confirm_password(class="form-control", placeholder="••••••••") }}
+                        <div class="password-input-wrapper">
+                            {{ form.confirm_password(class="form-control", placeholder="••••••••") }}
+                            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('confirm_password')">
+                                <span class="eye-icon">👁️</span>
+                            </button>
+                        </div>
                         {% if form.confirm_password.errors %}
                             <div class="errors">
                                 {% for error in form.confirm_password.errors %}
@@ -82,6 +100,72 @@
         .animate-fade-in {
             animation: fade-in 0.5s ease-out;
         }
+        .password-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--steel-gray);
+            cursor: pointer;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .password-toggle:hover {
+            color: var(--neon-purple);
+        }
+        .eye-icon {
+            font-size: 20px;
+        }
+        .password-requirements {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            background: rgba(123, 0, 255, 0.1);
+            border: 1px solid var(--neon-purple);
+        }
+        .password-requirements p {
+            color: var(--white);
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        .password-requirements ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .password-requirements li {
+            color: var(--steel-gray);
+            font-size: 12px;
+            margin: 3px 0;
+            padding-left: 15px;
+            position: relative;
+        }
+        .password-requirements li::before {
+            content: "•";
+            color: var(--neon-purple);
+            position: absolute;
+            left: 0;
+        }
     </style>
+
+    <script>
+        function togglePasswordVisibility(fieldId) {
+            const field = document.getElementById(fieldId);
+            if (field.type === "password") {
+                field.type = "text";
+            } else {
+                field.type = "password";
+            }
+        }
+    </script>
 </body>
 </html>

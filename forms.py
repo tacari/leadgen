@@ -1,6 +1,16 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
-from wtforms.validators import DataRequired, Email, Length, EqualTo
+from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError
+import re
+
+def password_check(form, field):
+    password = field.data
+    if not re.search(r"[A-Za-z]", password):
+        raise ValidationError("Password must include at least one letter")
+    if not re.search(r"\d", password):
+        raise ValidationError("Password must include at least one number")
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+        raise ValidationError("Password must include at least one special character")
 
 class LoginForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
@@ -15,7 +25,8 @@ class RegisterForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Password', validators=[
         DataRequired(),
-        Length(min=8, message='Password must be at least 8 characters long')
+        Length(min=8, message='Password must be at least 8 characters long'),
+        password_check
     ])
     confirm_password = PasswordField(
         'Confirm Password',
