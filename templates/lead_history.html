@@ -31,7 +31,12 @@
                         <option value="medium">Medium (50-75)</option>
                         <option value="low">Low (<50)</option>
                     </select>
-                    <input type="text" id="searchInput" placeholder="Search by name/email" class="bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm text-[#A1A9B8] flex-grow md:flex-grow-0">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        placeholder="Search by name, email, or source" 
+                        class="bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm text-[#A1A9B8] flex-grow md:flex-grow-0"
+                    >
                 </div>
 
                 <!-- Quick Stats Bar -->
@@ -143,6 +148,7 @@
 
 <script>
     let sortDirections = {};
+    let searchTimeout = null;
 
     function sortTable(columnIndex) {
         const table = document.querySelector('table');
@@ -170,7 +176,23 @@
         sortedRows.forEach(row => tbody.appendChild(row));
     }
 
-    // Lead Filtering
+    function debounce(func, wait) {
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(searchTimeout);
+                func(...args);
+            };
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(later, wait);
+        };
+    }
+
+    function highlightMatch(text, searchTerm) {
+        if (!searchTerm) return text;
+        const regex = new RegExp(`(${searchTerm})`, 'gi');
+        return text.replace(regex, '<span class="text-[#7B00FF]">$1</span>');
+    }
+
     function filterLeads() {
         const timeFilter = document.getElementById('timeFilter').value;
         const statusFilter = document.getElementById('statusFilter').value;
@@ -184,11 +206,12 @@
             const isDesktop = row.tagName === 'TR';
 
             // Get values based on desktop/mobile layout
-            let name, email, status, date, score;
+            let name, email, source, status, date, score;
 
             if (isDesktop) {
                 name = row.cells[0].textContent;
                 email = row.cells[1].textContent;
+                source = row.cells[2].textContent;
                 status = row.cells[4].textContent;
                 date = new Date(row.cells[5].textContent);
                 score = parseInt(row.getAttribute('data-score'));
@@ -197,25 +220,25 @@
                 name = nameEl ? nameEl.textContent : '';
                 const emailEl = row.querySelector('.text-[#A1A9B8]');
                 email = emailEl ? emailEl.textContent : '';
+                const sourceEl = row.querySelector('.text-[#A1A9B8]:nth-child(3)');
+                source = sourceEl ? sourceEl.textContent.replace('Source: ', '') : '';
                 const statusEl = row.querySelector('.text-sm span:first-child');
                 status = statusEl ? statusEl.textContent.replace('Status: ', '') : '';
                 date = new Date(row.getAttribute('data-date'));
                 score = parseInt(row.getAttribute('data-score'));
             }
 
-            // Time filter
+            // Apply filters
             if (timeFilter !== 'all') {
                 const days = parseInt(timeFilter);
                 const cutoff = new Date(today.getTime() - (days * 24 * 60 * 60 * 1000));
                 show = show && date >= cutoff;
             }
 
-            // Status filter
             if (statusFilter !== 'all') {
                 show = show && status === statusFilter;
             }
 
-            // Score filter
             if (scoreFilter !== 'all') {
                 switch(scoreFilter) {
                     case 'high':
@@ -230,27 +253,44 @@
                 }
             }
 
-            // Search filter
+            // Search filter with highlighting
             if (searchTerm) {
                 const nameMatch = name.toLowerCase().includes(searchTerm);
                 const emailMatch = email.toLowerCase().includes(searchTerm);
-                show = show && (nameMatch || emailMatch);
+                const sourceMatch = source.toLowerCase().includes(searchTerm);
+                show = show && (nameMatch || emailMatch || sourceMatch);
+
+                if (show) {
+                    if (isDesktop) {
+                        row.cells[0].innerHTML = highlightMatch(name, searchTerm);
+                        row.cells[1].innerHTML = highlightMatch(email, searchTerm);
+                        row.cells[2].innerHTML = highlightMatch(source, searchTerm);
+                    } else {
+                        nameEl.innerHTML = highlightMatch(name, searchTerm);
+                        emailEl.innerHTML = highlightMatch(email, searchTerm);
+                        sourceEl.innerHTML = 'Source: ' + highlightMatch(source, searchTerm);
+                    }
+                }
+            } else {
+                // Reset highlighting
+                if (isDesktop) {
+                    row.cells[0].textContent = name;
+                    row.cells[1].textContent = email;
+                    row.cells[2].textContent = source;
+                } else {
+                    nameEl.textContent = name;
+                    emailEl.textContent = email;
+                    sourceEl.textContent = 'Source: ' + source;
+                }
             }
 
             row.style.display = show ? '' : 'none';
-
-            // Also handle the mobile card if it exists
-            if (!isDesktop) {
-                const mobileCard = document.querySelector(`.md\\:hidden [data-date="${row.getAttribute('data-date')}"]`);
-                if (mobileCard) {
-                    mobileCard.style.display = show ? '' : 'none';
-                }
-            }
         });
     }
 
-    // Add event listeners for real-time filtering
-    document.getElementById('searchInput').addEventListener('input', filterLeads);
+    // Add event listeners with debouncing for search
+    const debouncedFilter = debounce(filterLeads, 200);
+    document.getElementById('searchInput').addEventListener('input', debouncedFilter);
     document.getElementById('timeFilter').addEventListener('change', filterLeads);
     document.getElementById('statusFilter').addEventListener('change', filterLeads);
     document.getElementById('scoreFilter').addEventListener('change', filterLeads);
