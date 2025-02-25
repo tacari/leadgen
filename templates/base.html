@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Leadzap{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#0D1321] text-white">
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="/" class="navbar-logo">
+                <div class="logo-orb"></div>
+                Leadzap
+            </a>
+            <button class="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-links" id="navLinks">
+                <div class="nav-center">
+                    <a href="/">Home</a>
+                    <a href="/about">About</a>
+                    <a href="/services">Services</a>
+                    <a href="/pricing">Pricing</a>
+                    <a href="/contact">Contact</a>
+                </div>
+                <div class="nav-right">
+                    {% if current_user.is_authenticated %}
+                        <a href="/dashboard">Dashboard</a>
+                        <a href="/logout">Logout</a>
+                    {% else %}
+                        <a href="/login">Login</a>
+                        <a href="/register">Register</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <style>
+        :root {
+            --obsidian: #0D1321;
+            --neon-purple: #7B00FF;
+            --steel-gray: #A1A9B8;
+            --white: #FFFFFF;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .navbar {
+            background-color: var(--obsidian);
+            border-bottom: 1px solid rgba(123, 0, 255, 0.2);
+            padding: 1rem 0;
+        }
+
+        .navbar-container {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar-logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--white);
+            text-decoration: none;
+        }
+
+        .logo-orb {
+            width: 2rem;
+            height: 2rem;
+            background: var(--neon-purple);
+            border-radius: 50%;
+            margin-right: 0.75rem;
+            animation: pulse 2s infinite;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-center, .nav-right {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .nav-links a {
+            color: var(--steel-gray);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--neon-purple);
+        }
+
+        .nav-links a.active {
+            color: var(--neon-purple);
+            font-weight: bold;
+        }
+
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 0.25rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        .hamburger span {
+            display: block;
+            width: 1.5rem;
+            height: 0.125rem;
+            background-color: var(--white);
+            transition: all 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .hamburger {
+                display: flex;
+            }
+
+            .nav-links {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background-color: var(--obsidian);
+                flex-direction: column;
+                padding: 1rem;
+                border-bottom: 1px solid rgba(123, 0, 255, 0.2);
+            }
+
+            .nav-links.active {
+                display: flex;
+            }
+
+            .nav-center, .nav-right {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+    </style>
+
+    <script>
+        function toggleMenu() {
+            document.getElementById('navLinks').classList.toggle('active');
+        }
+    </script>
+</body>
+</html>
