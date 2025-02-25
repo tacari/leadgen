@@ -1,14 +1,8 @@
 import os
 from flask import Flask, render_template
 
-# Create Flask app with explicit template and static paths
-template_dir = os.path.abspath('templates')
-static_dir = os.path.abspath('static')
-
-app = Flask(__name__,
-           template_folder=template_dir,
-           static_folder=static_dir)
-
+# Create Flask app
+app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
 
 @app.route('/')
@@ -32,5 +26,9 @@ def contact():
     return render_template('contact.html')
 
 if __name__ == '__main__':
-    # ALWAYS serve the app on port 5000
-    app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
+    try:
+        # ALWAYS serve the app on port 5000
+        app.run(host='0.0.0.0', port=5000, debug=True)
+    except Exception as e:
+        print(f"Failed to start server: {str(e)}")
+        exit(1)
