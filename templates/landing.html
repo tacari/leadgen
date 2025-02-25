@@ -1,10 +1,44 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Test Page</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leadzap - AI-Powered Lead Generation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
-    <h1>Test Landing Page</h1>
-    <p>This is a test of the template rendering system.</p>
+    <section class="hero">
+        <div class="container">
+            <div class="orb"></div>
+            <h1>Leadzap: Leads for Anyone, Powered by AI</h1>
+            <p>Small businesses and SaaS—100+ leads, delivered fast.</p>
+            <button onclick="document.getElementById('signup').scrollIntoView({behavior: 'smooth'})">
+                Launch Your Leads
+            </button>
+        </div>
+    </section>
+
+    <section class="pitch" id="pitch">
+        <div class="container">
+            <h2>Leads for Every Hustle</h2>
+            <div class="cards">
+                <div class="card">
+                    <h3>Small Businesses</h3>
+                    <p>Plumbers, cafes, gyms—50+ local leads, no ad spend.</p>
+                </div>
+                <div class="card">
+                    <h3>SaaS Startups</h3>
+                    <p>100+ B2B leads—founders, execs, ready to buy.</p>
+                </div>
+                <div class="card">
+                    <h3>Anyone Else</h3>
+                    <p>Your niche, your leads—AI finds 'em, we deliver.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>
