@@ -1,48 +1,89 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Leadzap</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-</head>
-<body>
-    <section class="auth-section">
-        <div class="container">
-            <h1>Sign In to Leadzap</h1>
-            <div class="auth-form">
-                <form method="POST" action="{{ url_for('login') }}">
-                    {{ form.hidden_tag() }}
-                    <div class="form-group">
-                        {{ form.email.label }}
-                        {{ form.email(class="form-control") }}
-                        {% if form.email.errors %}
-                            <div class="errors">
-                                {% for error in form.email.errors %}
-                                    <span>{{ error }}</span>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block content %}
+<div class="bg-[#0D1321] min-h-screen text-white p-8 flex items-center justify-center">
+    <!-- Header -->
+    <div class="max-w-md w-full text-center">
+        <h1 class="text-4xl font-bold mb-4">Log In to Leadzap</h1>
+        <p class="text-lg text-[#A1A9B8] italic mb-8">Access your leads and dashboard—let's zap some growth.</p>
+
+        <!-- Form -->
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-8 animate-fade-in">
+            <form method="POST" action="{{ url_for('login') }}">
+                {{ form.hidden_tag() }}
+                <!-- Email -->
+                <div class="mb-6">
+                    <label class="block text-white text-base font-bold mb-2" for="{{ form.email.id }}">Email</label>
+                    {{ form.email(class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white text-base placeholder-[#A1A9B8]", placeholder="e.g., john@example.com") }}
+                    {% for error in form.email.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                <!-- Password -->
+                <div class="mb-6">
+                    <label class="block text-white text-base font-bold mb-2" for="{{ form.password.id }}">Password</label>
+                    <div class="password-input-wrapper">
+                        {{ form.password(class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white text-base placeholder-[#A1A9B8]", placeholder="••••••••") }}
+                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('password')">
+                            <span class="eye-icon">👁️</span>
+                        </button>
                     </div>
-                    <div class="form-group">
-                        {{ form.password.label }}
-                        {{ form.password(class="form-control") }}
-                        {% if form.password.errors %}
-                            <div class="errors">
-                                {% for error in form.password.errors %}
-                                    <span>{{ error }}</span>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    {{ form.submit(class="btn btn-primary") }}
-                </form>
-                <p class="auth-link">
-                    Don't have an account? <a href="{{ url_for('register') }}">Register here</a>
-                </p>
-            </div>
+                    {% for error in form.password.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                <!-- Submit -->
+                {{ form.submit(class="w-full bg-[#7B00FF] text-white px-6 py-3 rounded-lg text-lg font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200") }}
+            </form>
+            <p class="text-[#A1A9B8] text-sm mt-4">Don't have an account? <a href="{{ url_for('register') }}" class="text-[#7B00FF] hover:underline">Sign up</a></p>
+            <p class="text-[#A1A9B8] text-sm mt-2"><a href="#" class="text-[#7B00FF] hover:underline">Forgot password?</a></p>
         </div>
-    </section>
-</body>
-</html>
+    </div>
+</div>
+
+<style>
+    @keyframes fade-in {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+        animation: fade-in 0.5s ease-out;
+    }
+    .password-input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+    .password-toggle {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: var(--steel-gray);
+        cursor: pointer;
+        padding: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .password-toggle:hover {
+        color: var(--neon-purple);
+    }
+    .eye-icon {
+        font-size: 20px;
+    }
+</style>
+
+<script>
+    function togglePasswordVisibility(fieldId) {
+        const field = document.getElementById(fieldId);
+        if (field.type === "password") {
+            field.type = "text";
+        } else {
+            field.type = "password";
+        }
+    }
+</script>
+{% endblock %}

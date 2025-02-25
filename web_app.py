@@ -1,8 +1,11 @@
 import os
 import sys
 import psutil
-from flask import Flask, render_template, redirect, url_for, flash
+from flask import Flask, render_template, redirect, url_for, flash, request
 from flask_login import LoginManager, current_user, login_user, logout_user, login_required
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, SubmitField
+from wtforms.validators import DataRequired, Email
 
 def terminate_port_process(port):
     """Terminate any process using the specified port"""
@@ -29,6 +32,11 @@ app.config['SECRET_KEY'] = os.urandom(24)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
+class LoginForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    submit = SubmitField('Log In')
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -60,7 +68,18 @@ def contact():
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
-    return render_template('login.html', current_user=current_user)
+
+    form = LoginForm()
+    if form.validate_on_submit():
+        from models.user import User
+        user = User.get_by_email(form.email.data)
+        if user and user.check_password(form.password.data):
+            login_user(user)
+            next_page = request.args.get('next', url_for('dashboard'))
+            flash('Welcome back!', 'success')
+            return redirect(next_page)
+        flash('Invalid email or password', 'error')
+    return render_template('login.html', form=form, current_user=current_user)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
