@@ -13,7 +13,7 @@
             <div class="orb"></div>
             <h1>Leadzap: Leads for Anyone, Powered by AI</h1>
             <p>Small businesses and SaaS—100+ leads, delivered fast.</p>
-            <button onclick="document.getElementById('pitch').scrollIntoView({behavior: 'smooth'})">
+            <button onclick="document.getElementById('signup').scrollIntoView({behavior: 'smooth'})">
                 Launch Your Leads
             </button>
         </div>
@@ -38,6 +38,119 @@
             </div>
         </div>
     </section>
+
+    <section class="how-it-works">
+        <div class="container">
+            <h2>Your Lead Engine</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="icon">→</div>
+                    <p>Tell us your niche</p>
+                </div>
+                <div class="step">
+                    <div class="icon">↗</div>
+                    <p>AI hunts your leads</p>
+                </div>
+                <div class="step">
+                    <div class="icon">↘</div>
+                    <p>Personalized outreach</p>
+                </div>
+                <div class="step">
+                    <div class="icon">⭐</div>
+                    <p>Leads land in your hands</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="signup" class="signup">
+        <div class="container">
+            <h2>Zap Your Leads Live</h2>
+            <div class="packages">
+                <div class="package">
+                    <div class="popular-tag">Most Popular</div>
+                    <h3>Lead Launch</h3>
+                    <p class="price">$499</p>
+                    <p class="tagline">Test the waters with AI leads</p>
+                    <ul>
+                        <li>50 qualified leads</li>
+                        <li>AI-targeted to your business</li>
+                        <li>7-day delivery</li>
+                        <li>1 cold email template</li>
+                    </ul>
+                    <button onclick="document.getElementById('signupForm').scrollIntoView({behavior: 'smooth'})">
+                        Get Started
+                    </button>
+                </div>
+                <div class="package">
+                    <h3>Lead Engine</h3>
+                    <p class="price">$1,499/month</p>
+                    <p class="tagline">Steady leads to grow your biz</p>
+                    <ul>
+                        <li>150 leads/month</li>
+                        <li>Weekly delivery</li>
+                        <li>3 email templates</li>
+                        <li>Basic stats tracking</li>
+                    </ul>
+                    <button onclick="document.getElementById('signupForm').scrollIntoView({behavior: 'smooth'})">
+                        Get Started
+                    </button>
+                </div>
+                <div class="package">
+                    <h3>Lead Accelerator</h3>
+                    <p class="price">$2,999/month</p>
+                    <p class="tagline">Ramp up with serious lead flow</p>
+                    <ul>
+                        <li>300 leads/month</li>
+                        <li>Daily delivery</li>
+                        <li>5 email templates</li>
+                        <li>Detailed reports</li>
+                    </ul>
+                    <button onclick="document.getElementById('signupForm').scrollIntoView({behavior: 'smooth'})">
+                        Get Started
+                    </button>
+                </div>
+                <div class="package">
+                    <h3>Lead Empire</h3>
+                    <p class="price">$5,999/month</p>
+                    <p class="tagline">Dominate your market with AI</p>
+                    <ul>
+                        <li>600 leads/month</li>
+                        <li>Priority delivery</li>
+                        <li>7 multi-channel templates</li>
+                        <li>VIP support</li>
+                    </ul>
+                    <button onclick="document.getElementById('signupForm').scrollIntoView({behavior: 'smooth'})">
+                        Get Started
+                    </button>
+                </div>
+            </div>
+
+            <form id="signupForm" class="signup-form">
+                <input type="text" name="name" placeholder="Your Name" required>
+                <input type="email" name="email" placeholder="Email" required>
+                <input type="text" name="niche" placeholder="Your Niche (e.g., plumber, SaaS)" required>
+                <select name="package" required>
+                    <option value="">Select Your Package</option>
+                    <option value="launch">Lead Launch - $499</option>
+                    <option value="engine">Lead Engine - $1,499/mo</option>
+                    <option value="accelerator">Lead Accelerator - $2,999/mo</option>
+                    <option value="empire">Lead Empire - $5,999/mo</option>
+                </select>
+                <button type="submit">Zap My Leads</button>
+            </form>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>© 2025 Leadzap • leads@leadzap.io</p>
+            <div class="social">
+                <a href="#" target="_blank">Twitter</a>
+                <a href="#" target="_blank">LinkedIn</a>
+            </div>
+        </div>
+    </footer>
 
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>

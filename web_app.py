@@ -5,7 +5,7 @@ import traceback
 import socket
 import time
 
-# Configure logging
+# Configure logging with more detail
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -19,6 +19,7 @@ static_dir = os.path.abspath('static')
 logger.info(f"Template directory: {template_dir}")
 logger.info(f"Static directory: {static_dir}")
 
+# Ensure directories exist
 if not os.path.exists(template_dir):
     os.makedirs(template_dir)
     logger.info(f"Created template directory: {template_dir}")
@@ -36,6 +37,8 @@ def landing():
     """Landing page with pricing packages"""
     try:
         logger.info("Attempting to render landing page")
+        logger.debug(f"Files in template dir: {os.listdir(template_dir)}")
+        logger.debug(f"Files in static dir: {os.listdir(static_dir)}")
         return render_template('landing.html')
     except Exception as e:
         logger.error(f"Error rendering landing page: {str(e)}")
@@ -47,9 +50,14 @@ def health():
     """Health check endpoint"""
     return "ok"
 
+@app.route('/test')
+def test():
+    """Test route to verify server is running"""
+    return "Flask server is running!"
+
 if __name__ == '__main__':
     try:
-        # Try to release the port if it's in a TIME_WAIT state
+        # Clean socket handling
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         try:

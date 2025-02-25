@@ -12,7 +12,6 @@ const observer = new IntersectionObserver((entries) => {
     });
 }, observerOptions);
 
-// Observe all cards and steps
 document.addEventListener('DOMContentLoaded', () => {
     // Observe cards
     document.querySelectorAll('.card').forEach(card => {
@@ -31,12 +30,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Smooth scroll for navigation
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
+    document.querySelectorAll('a[href^="#"], button[onclick]').forEach(element => {
+        const clickHandler = (e) => {
             e.preventDefault();
-            document.querySelector(this.getAttribute('href')).scrollIntoView({
+            const targetId = element.getAttribute('href') || 
+                           element.getAttribute('onclick').match(/getElementById\('([^']+)'\)/)[1];
+            document.getElementById(targetId)?.scrollIntoView({
                 behavior: 'smooth'
             });
-        });
+        };
+
+        element.addEventListener('click', clickHandler);
     });
+
+    // Form submission handler
+    const form = document.querySelector('.signup-form');
+    if (form) {
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('Thanks! We\'ll be in touch soon.');
+        });
+    }
 });
