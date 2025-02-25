@@ -126,7 +126,30 @@ def lead_history():
             'outcome': 'In negotiations'
         }
     ]
-    return render_template('lead_history.html', leads=leads)
+
+    # Quick stats and source insights
+    total_leads = len(leads)
+    high_score = sum(1 for lead in leads if lead['score'] > 75)
+    converted = sum(1 for lead in leads if lead['status'] == 'Converted')
+    avg_score = round(sum(lead['score'] for lead in leads) / total_leads, 2) if total_leads > 0 else 0
+    stats = {'total': total_leads, 'high_score': high_score, 'converted': converted, 'avg_score': avg_score}
+
+    # Calculate source insights
+    sources = {}
+    for lead in leads:
+        source = lead['source']
+        if source not in sources:
+            sources[source] = {'count': 0, 'high_score': 0}
+        sources[source]['count'] += 1
+        if lead['score'] > 75:
+            sources[source]['high_score'] += 1
+    source_insights = {k: {'count': v['count'], 'high_score_percent': round(v['high_score'] / v['count'] * 100, 1)} 
+                      for k, v in sources.items()}
+
+    return render_template('lead_history.html', 
+                         leads=leads,
+                         stats=stats,
+                         source_insights=source_insights)
 
 @app.route('/download_leads')
 def download_leads():
