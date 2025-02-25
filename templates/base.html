@@ -41,32 +41,16 @@
 </head>
 <body>
     <nav class="navbar">
-        <div class="navbar-container">
-            <a href="/" class="navbar-logo">
-                <div class="logo-orb"></div>
-                Leadzap
-            </a>
-            <button class="hamburger" onclick="toggleMenu()">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-            <div class="nav-links" id="navLinks">
-                <div class="nav-center">
-                    <a href="/">Home</a>
-                    <a href="/about">About</a>
-                    <a href="/services">Services</a>
-                    <a href="/pricing">Pricing</a>
-                    <a href="/contact">Contact</a>
-                </div>
-                <div class="nav-right">
-                    {% if session.get('user_id') %}
-                        <a href="/dashboard">Dashboard</a>
-                        <a href="/logout">Logout</a>
-                    {% else %}
-                        <a href="/login">Login</a>
-                        <a href="/register">Register</a>
-                    {% endif %}
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center">
+                <a href="/" class="text-2xl font-bold text-white">Leadzap</a>
+                <div class="hidden md:flex space-x-6">
+                    <a href="/" class="text-white hover:text-[#7B00FF]">Home</a>
+                    <a href="/about" class="text-white hover:text-[#7B00FF]">About</a>
+                    <a href="/services" class="text-white hover:text-[#7B00FF]">Services</a>
+                    <a href="/pricing" class="text-white hover:text-[#7B00FF]">Pricing</a>
+                    <a href="/contact" class="text-white hover:text-[#7B00FF]">Contact</a>
+                    <a href="/dashboard" class="text-white hover:text-[#7B00FF]">Dashboard</a>
                 </div>
             </div>
         </div>
