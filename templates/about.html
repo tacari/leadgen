@@ -1,56 +1,90 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About - Leadzap</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-</head>
-<body>
-    <nav class="navbar">
-        <div class="navbar-container">
-            <a href="{{ url_for('landing') }}" class="navbar-logo">
-                <div class="logo-orb"></div>
-                Leadzap
-            </a>
-            <button class="hamburger" onclick="toggleMenu()">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-            <div class="nav-links">
-                <div class="nav-center">
-                    <a href="{{ url_for('landing') }}">Home</a>
-                    <a href="{{ url_for('about') }}" class="active">About</a>
-                    <a href="{{ url_for('services') }}">Services</a>
-                    <a href="#pricing">Pricing</a>
-                    <a href="{{ url_for('contact') }}">Contact</a>
-                </div>
-                <div class="nav-right">
-                    {% if current_user.is_authenticated %}
-                        <a href="{{ url_for('dashboard') }}">Dashboard</a>
-                        <a href="{{ url_for('logout') }}">Logout</a>
-                    {% else %}
-                        <a href="{{ url_for('login') }}">Login</a>
-                        <a href="{{ url_for('register') }}">Register</a>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </nav>
+{% extends "base.html" %}
+{% block title %}About{% endblock %}
+{% block content %}
+<div class="bg-[#0D1321] min-h-screen text-white p-8">
+    <!-- Header -->
+    <header class="text-center py-16 bg-gradient-to-b from-[#0D1321] to-[#1E2A44]">
+        <h1 class="text-4xl font-bold mb-4">About Leadzap</h1>
+        <p class="text-xl text-[#A1A9B8] italic">Turning AI into Your Lead Generation Superpower</p>
+    </header>
 
-    <section class="content-section">
-        <div class="container">
-            <h1>About Leadzap</h1>
-            <p>Revolutionizing lead generation with AI-powered solutions for businesses.</p>
-            <div class="about-content">
-                <h2>Our Mission</h2>
-                <p>Empowering businesses with intelligent lead generation solutions that drive growth and success.</p>
+    <!-- Our Story -->
+    <section class="mb-16 bg-[#121721] py-16">
+        <h2 class="text-3xl font-bold text-center mb-8">Our Story</h2>
+        <div class="max-w-3xl mx-auto animate-fade-in">
+            <div class="flex justify-center mb-6">
+                <div class="w-12 h-12 bg-[#7B00FF] rounded-full animate-pulse"></div>
+            </div>
+            <p class="text-[#A1A9B8] text-base leading-7 text-center">Leadzap started with a simple idea: lead generation sucks for most businesses. Small biz owners waste hours chasing dead ends, and SaaS startups burn cash on ads that flop. We saw the chaos—manual outreach, generic lists, no results—and said, 'There's a better way.' Enter AI. We built Leadzap to harness cutting-edge tech, scraping the web, scoring leads, and delivering them straight to your inbox. From a garage hack to a game-changer, we're here to make lead gen effortless, precise, and scalable—for anyone.</p>
+        </div>
+    </section>
+
+    <!-- Our Mission -->
+    <section class="mb-16 bg-gradient-to-b from-[#0D1321] to-[#1E2A44] py-16">
+        <h2 class="text-3xl font-bold text-center mb-8">Our Mission</h2>
+        <div class="max-w-4xl mx-auto animate-fade-in">
+            <p class="text-white text-xl font-bold text-center mb-6">Empower every small business and SaaS startup with precision leads—fast, affordable, and AI-driven. We're here to level the playing field, turning chaos into opportunity, one lead at a time.</p>
+            <p class="text-[#A1A9B8] text-base leading-7 text-center">We believe lead gen shouldn't be a gamble. With AI, we target your niche, score the best prospects, and deliver results—whether it's 50 leads for a local plumber or 600 for a SaaS unicorn. Our mission is growth, made simple.</p>
+        </div>
+    </section>
+
+    <!-- Our Team -->
+    <section class="mb-16">
+        <h2 class="text-3xl font-bold text-center mb-12">Who We Are</h2>
+        <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Founder -->
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+                <div class="flex justify-center mb-4">
+                    <div class="w-24 h-24 bg-[#7B00FF] rounded-full"></div>
+                </div>
+                <h3 class="text-xl font-bold text-center mb-2">[Your Name]</h3>
+                <p class="text-[#A1A9B8] italic text-center mb-4">Founder & Lead AI Wizard</p>
+                <p class="text-[#A1A9B8] text-sm text-center">The brain behind Leadzap—obsessed with AI, leads, and making businesses win.</p>
+            </div>
+            <!-- Tech Lead -->
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in" style="animation-delay: 0.2s;">
+                <div class="flex justify-center mb-4">
+                    <div class="w-24 h-24 bg-[#7B00FF] rounded-full"></div>
+                </div>
+                <h3 class="text-xl font-bold text-center mb-2">Alex Doe</h3>
+                <p class="text-[#A1A9B8] italic text-center mb-4">Tech Lead</p>
+                <p class="text-[#A1A9B8] text-sm text-center">Master of code—keeps our AI humming and leads flowing.</p>
+            </div>
+            <!-- Growth Lead -->
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in" style="animation-delay: 0.4s;">
+                <div class="flex justify-center mb-4">
+                    <div class="w-24 h-24 bg-[#7B00FF] rounded-full"></div>
+                </div>
+                <h3 class="text-xl font-bold text-center mb-2">Sam Lee</h3>
+                <p class="text-[#A1A9B8] italic text-center mb-4">Growth Lead</p>
+                <p class="text-[#A1A9B8] text-sm text-center">Drives our mission—connects businesses with leads that convert.</p>
             </div>
         </div>
     </section>
 
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
-</body>
-</html>
+    <!-- CTA -->
+    <section class="text-center py-16">
+        <h2 class="text-3xl font-bold mb-6">Ready to Grow with Leadzap?</h2>
+        <p class="text-lg text-[#A1A9B8] mb-8">Join us—start with a $499 pilot or scale to $5,999 empires today.</p>
+        <a href="{{ url_for('pricing') }}" class="bg-[#7B00FF] text-white px-8 py-4 rounded-lg text-xl font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">See Pricing</a>
+    </section>
+</div>
+
+<style>
+    @keyframes fade-in {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+        animation: fade-in 0.5s ease-out;
+    }
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+    .animate-pulse {
+        animation: pulse 2s infinite;
+    }
+</style>
+{% endblock %}
