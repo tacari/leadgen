@@ -1,112 +1,134 @@
 {% extends "dashboard_base.html" %}
-{% block title %}Analytics{% endblock %}
 {% block content %}
 <div class="bg-[#0D1321] min-h-screen text-white p-8">
-    <h1 class="text-4xl font-bold text-center mb-12">Lead Performance Analytics</h1>
-    
+    <!-- Header -->
+    <h1 class="text-4xl font-bold text-center mb-4 animate-fade-in">Lead Performance Analytics</h1>
+    <p class="text-lg text-[#A1A9B8] italic text-center mb-12">Track your pipeline, measure success, optimize growth.</p>
+
+    <!-- Filters & Controls -->
+    <div class="sticky top-20 bg-[#0D1321] z-10 py-4">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row gap-4 items-center">
+            <select id="date-range" class="bg-[#0D1321] border border-[#7B00FF] rounded-lg px-4 py-2 text-[#A1A9B8] text-sm hover:bg-[#7B00FF] hover:text-white">
+                <option>Last 7 Days</option>
+                <option selected>Last 30 Days</option>
+                <option>Last 90 Days</option>
+                <option>All Time</option>
+                <option>Custom</option>
+            </select>
+            <select id="status-filter" class="bg-[#0D1321] border border-[#7B00FF] rounded-lg px-4 py-2 text-[#A1A9B8] text-sm hover:bg-[#7B00FF] hover:text-white">
+                <option>All</option>
+                <option>Pending</option>
+                <option>Emailed</option>
+                <option>Replied</option>
+                <option>Converted</option>
+            </select>
+            <select id="source-filter" class="bg-[#0D1321] border border-[#7B00FF] rounded-lg px-4 py-2 text-[#A1A9B8] text-sm hover:bg-[#7B00FF] hover:text-white">
+                <option>All</option>
+                {% for source in source_insights.keys() %}
+                <option>{{ source }}</option>
+                {% endfor %}
+            </select>
+            <button id="reset-filters" class="border border-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#7B00FF] hover:shadow-lg">Clear Filters</button>
+        </div>
+    </div>
+
     <!-- Overview Stats -->
-    <div class="max-w-6xl mx-auto space-y-8">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-4 text-center animate-fade-in">
-                <p class="text-2xl font-bold text-white">{{ analytics.total_leads }}</p>
-                <p class="text-[#A1A9B8] text-base">Total Leads</p>
-            </div>
-            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-4 text-center animate-fade-in">
-                <p class="text-2xl font-bold text-white">{{ analytics.emailed }}</p>
-                <p class="text-[#A1A9B8] text-base">Emailed</p>
-            </div>
-            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-4 text-center animate-fade-in">
-                <p class="text-2xl font-bold text-white">{{ analytics.replies }}</p>
-                <p class="text-[#A1A9B8] text-base">Replies</p>
-            </div>
-            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-4 text-center animate-fade-in">
-                <p class="text-2xl font-bold text-white">{{ analytics.conversions }}</p>
-                <p class="text-[#A1A9B8] text-base">Conversions</p>
+    <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 my-8">
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-4 text-center animate-fade-in">
+            <p class="text-white text-2xl font-bold">{{ analytics.total_leads }}</p>
+            <p class="text-[#A1A9B8] text-base">Total Leads</p>
+        </div>
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-4 text-center animate-fade-in">
+            <p class="text-white text-2xl font-bold">{{ analytics.emailed }}</p>
+            <p class="text-[#A1A9B8] text-base">Emailed</p>
+        </div>
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-4 text-center animate-fade-in">
+            <p class="text-white text-2xl font-bold">{{ analytics.replies }}</p>
+            <p class="text-[#A1A9B8] text-base">Replies</p>
+        </div>
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-4 text-center animate-fade-in">
+            <p class="text-white text-2xl font-bold">{{ analytics.conversions }}</p>
+            <p class="text-[#A1A9B8] text-base">Conversions</p>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+            <h3 class="text-xl font-bold mb-4">Leads Over Time</h3>
+            <canvas id="leadsChart" width="600" height="300"></canvas>
+            <div class="mt-4 flex gap-4 justify-center">
+                <button class="time-toggle bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF]" data-period="day">Day</button>
+                <button class="time-toggle bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF]" data-period="week">Week</button>
+                <button class="time-toggle bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF]" data-period="month">Month</button>
             </div>
         </div>
-
-        <!-- Charts -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Bar Chart -->
-            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
-                <h3 class="text-xl font-bold mb-4">Leads by Day</h3>
-                <div style="height: 300px;">
-                    <canvas id="leadsChart"></canvas>
-                </div>
-                <div class="mt-4 flex gap-4 justify-center">
-                    <button class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF]">Day</button>
-                    <button class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF]">Week</button>
-                    <button class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF]">Month</button>
-                </div>
-            </div>
-
-            <!-- Pie Chart -->
-            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
-                <h3 class="text-xl font-bold mb-4">Status Breakdown</h3>
-                <div style="height: 300px;">
-                    <canvas id="statusChart"></canvas>
-                </div>
-            </div>
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+            <h3 class="text-xl font-bold mb-4">Status Breakdown</h3>
+            <canvas id="statusChart" width="400" height="400"></canvas>
         </div>
+    </div>
 
-        <!-- Detailed Table -->
-        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold">Detailed Analytics</h3>
-                <input type="text" placeholder="Filter by date range" class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-[#A1A9B8]">
-            </div>
-            <div class="overflow-x-auto">
+    <!-- Detailed Table & Insights -->
+    <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="md:col-span-2">
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 overflow-x-auto">
                 <table class="w-full text-left text-[#A1A9B8] text-sm">
                     <thead>
                         <tr class="border-b border-[#7B00FF]">
-                            <th class="p-3">Date</th>
+                            <th class="p-3 cursor-pointer" onclick="sortTable('date')">Date</th>
                             <th class="p-3">Leads Added</th>
                             <th class="p-3">Emailed</th>
                             <th class="p-3">Replies</th>
                             <th class="p-3">Conversions</th>
-                            <th class="p-3">Avg Score</th>
+                            <th class="p-3 cursor-pointer" onclick="sortTable('avg_score')">Avg Score</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {% for lead in leads %}
-                        <tr class="border-b border-[#7B00FF] animate-fade-in">
-                            <td class="p-3">{{ lead.date_added }}</td>
-                            <td class="p-3">{{ lead.leads_added }}</td>
-                            <td class="p-3">{{ lead.emailed }}</td>
-                            <td class="p-3">{{ lead.replies }}</td>
-                            <td class="p-3">{{ lead.conversions }}</td>
-                            <td class="p-3">{{ lead.avg_score }}</td>
+                    <tbody id="analytics-table">
+                        {% for row in table_data %}
+                        <tr class="border-b border-[#7B00FF] animate-fade-in" data-date="{{ row.date }}" data-avg_score="{{ row.avg_score }}">
+                            <td class="p-3">{{ row.date }}</td>
+                            <td class="p-3 text-white">{{ row.added }}</td>
+                            <td class="p-3 text-white">{{ row.emailed }}</td>
+                            <td class="p-3 text-white">{{ row.replies }}</td>
+                            <td class="p-3 text-white">{{ row.conversions }}</td>
+                            <td class="p-3 {% if row.avg_score > 75 %}text-[#7B00FF]{% endif %}">{{ row.avg_score }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
+                <div class="mt-4 flex justify-between">
+                    <button class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] disabled:bg-gray-500" disabled>Prev</button>
+                    <a href="{{ url_for('download_analytics_pdf') }}" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg">Download Analytics (PDF)</a>
+                    <button class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] disabled:bg-gray-500" disabled>Next</button>
+                </div>
             </div>
-            <a href="#" class="mt-4 inline-block bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">
-                Download Analytics (CSV)
-            </a>
         </div>
-
-        <!-- Insights Box -->
-        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
-            <h3 class="text-xl font-bold mb-4">Key Insights</h3>
-            <p class="text-[#A1A9B8] text-lg">
-                Top Source: {{ insights.top_source }} ({{ insights.high_score_percentage }}% high-score leads)
-            </p>
+        <!-- Insights -->
+        <div class="md:col-span-1">
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+                <h2 class="text-xl font-bold text-white mb-4">Performance Insights</h2>
+                <ul class="space-y-2 text-[#A1A9B8] text-sm">
+                    <li>Top Source: {{ insights.top_source }}</li>
+                    <li>Best Day: {{ insights.best_day }}</li>
+                    <li>Conversion Rate: {{ insights.conversion_rate }}%</li>
+                </ul>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Chart.js -->
+<!-- Chart.js Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Bar Chart
+    // Leads Over Time Bar Chart
     const leadsCtx = document.getElementById('leadsChart').getContext('2d');
-    new Chart(leadsCtx, {
+    const leadsChart = new Chart(leadsCtx, {
         type: 'bar',
         data: {
             labels: {{ analytics.charts.dates | tojson }},
             datasets: [{
-                label: 'Leads',
+                label: 'Leads Added',
                 data: {{ analytics.charts.daily | tojson }},
                 backgroundColor: '#7B00FF',
                 borderColor: '#8F00FF',
@@ -114,74 +136,49 @@
             }]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: '#1A2236'
-                    },
-                    ticks: {
-                        color: '#A1A9B8'
-                    }
-                },
-                x: {
-                    grid: {
-                        color: '#1A2236'
-                    },
-                    ticks: {
-                        color: '#A1A9B8'
-                    }
-                }
-            }
+            scales: { y: { beginAtZero: true } },
+            plugins: { legend: { display: false } }
         }
     });
 
-    // Pie Chart
+    // Status Breakdown Pie Chart
     const statusCtx = document.getElementById('statusChart').getContext('2d');
-    new Chart(statusCtx, {
+    const statusChart = new Chart(statusCtx, {
         type: 'pie',
         data: {
             labels: {{ analytics.charts.status.labels | tojson }},
             datasets: [{
                 data: {{ analytics.charts.status.data | tojson }},
-                backgroundColor: ['#1A2236', '#7B00FF', '#8F00FF', '#A1A9B8'],
-                borderColor: '#0D1321',
-                borderWidth: 2
+                backgroundColor: ['#A1A9B8', '#7B00FF', '#00BFFF', '#00FF7F']
             }]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        color: '#A1A9B8',
-                        font: {
-                            family: 'Inter'
-                        }
-                    }
-                }
-            }
-        }
+        options: { plugins: { legend: { position: 'right', labels: { color: '#FFFFFF' } } } }
     });
+
+    // Sorting for Table
+    let sortDirection = {};
+    function sortTable(column) {
+        const tbody = document.getElementById('analytics-table');
+        const rows = Array.from(tbody.getElementsByTagName('tr'));
+        sortDirection[column] = !sortDirection[column] || false;
+        rows.sort((a, b) => {
+            let aValue = a.dataset[column];
+            let bValue = b.dataset[column];
+            if (column === 'avg_score') {
+                aValue = parseFloat(aValue);
+                bValue = parseFloat(bValue);
+            } else if (column === 'date') {
+                aValue = new Date(aValue);
+                bValue = new Date(bValue);
+            }
+            return sortDirection[column] ? aValue > bValue ? 1 : -1 : aValue < bValue ? 1 : -1;
+        });
+        rows.forEach(row => tbody.appendChild(row));
+    }
 </script>
 
 <style>
-    @keyframes fade-in {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .animate-fade-in {
-        animation: fade-in 0.5s ease-out;
-        animation-fill-mode: both;
-    }
+    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+    .animate-fade-in { animation: fade-in 0.5s ease-in; }
 </style>
 {% endblock %}

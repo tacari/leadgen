@@ -24,6 +24,7 @@ dependencies = [
     "flask-migrate>=4.1.0",
     "psycopg2-binary>=2.9.10",
     "supabase>=2.13.0",
+    "fpdf>=1.7.2",
 ]
 
 [tool.uv.sources]
