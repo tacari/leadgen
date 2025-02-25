@@ -42,6 +42,22 @@ document.addEventListener('DOMContentLoaded', () => {
         observer.observe(step);
     });
 
+    // Observe service cards
+    document.querySelectorAll('.service-card').forEach(card => {
+        observer.observe(card);
+    });
+
+    // Observe process steps
+    document.querySelectorAll('.process-step').forEach(step => {
+        observer.observe(step);
+    });
+
+    // Observe benefits list items
+    document.querySelectorAll('.benefits-list li').forEach(item => {
+        observer.observe(item);
+    });
+
+
     // Animate hero orb
     const orb = document.querySelector('.orb');
     if (orb) {

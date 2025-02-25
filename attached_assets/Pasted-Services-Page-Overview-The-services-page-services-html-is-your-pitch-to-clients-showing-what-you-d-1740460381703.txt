@@ -1,0 +1,79 @@
+Services Page Overview
+The services page (services.html) is your pitch to clients—showing what you do, how you do it, and why they should drop $499–$5,999 on your AI lead gen magic. It’s part of your full Flask site, accessible via the navbar, and designed to convince small biz owners (plumbers, gyms) and SaaS startups that you’re their ticket to growth. Extending base.html with your slick navbar, it’s dynamic, premium, and packed with value—educating, differentiating, and pushing users to Pricing or Sign Up.
+Purpose
+Highlight Services: Showcase your core offerings—targeted leads, multi-channel outreach, lead scoring, and analytics—tied to your packages.
+Educate Clients: Break down the AI-driven process—niche targeting, scraping, outreach, delivery—so they see the tech behind the cash.
+Stand Out: Flex what makes you better—precision AI, scalability, actionable insights—over generic lead mills.
+Drive Action: Hook ‘em with a CTA to Pricing—start at $499, scale to $5,999, building trust and urgency.
+Design Vibe
+Dark Mode: Obsidian (#0D1321) base, neon purple (#7B00FF) accents, steel gray (#A1A9B8) text—consistent with your site’s pro look.
+Typography: Inter font—40px bold for main title, 28px bold for section heads, 16px regular for body—clean, startup-ready.
+Layout: Single-column, 1440px max-width, responsive with Tailwind CSS—stacks tight on mobile (320px min).
+Animations: Fade-ins on scroll (0.5s via JavaScript Intersection Observer), hover effects on icons/buttons—subtle, premium feel.
+Page Structure: Full Overview
+Here’s how your services page lays out—top to bottom, updated with lead scoring and analytics:
+Header:  
+Title: “Our Services” in white (#FFFFFF), 40px, bold, Inter font, centered, 60px padding-top—kicks off with authority.  
+Sub-Title: “AI-Powered Lead Generation for Any Business” in steel gray (#A1A9B8), 20px, italic, centered, 20px padding-bottom—frames your “leads for anyone” pitch.  
+Background: Obsidian (#0D1321)—sets the dark, techy tone.
+What We Offer Section:  
+Title: “What We Deliver” in white, 28px, bold, centered, 40px padding-top—introduces your service suite.  
+Content: Four cards (25% width, 3% gap, stacks on mobile)—each with a neon purple icon, title, and description:  
+Targeted Leads:  
+Text: “50–600 qualified leads tailored to your niche—small biz or SaaS.” in steel gray, 16px, 20px padding.  
+Icon: Crosshair, neon purple, 50px, pulses on hover (CSS keyframes)—shows precision.
+Multi-Channel Outreach:  
+Text: “Emails, LinkedIn, SMS—AI crafts and sends up to 7 templates per lead.” in steel gray, 16px, 20px padding.  
+Icon: Envelope stack, neon purple, 50px, spins on hover (CSS)—highlights reach.
+Lead Scoring:  
+Text: “AI ranks your leads—focus on the best, close faster.” in steel gray, 16px, 20px padding.  
+Icon: Bar chart, neon purple, 50px, pulses on hover—emphasizes prioritization.
+Lead Analytics:  
+Text: “Track replies, conversions—know what works.” in steel gray, 16px, 20px padding.  
+Icon: Line graph, neon purple, 50px, lifts on hover (CSS translate)—drives insights.
+Styling: Cards in #1A2236, 1px neon purple border, 12px radius, fade in on scroll (0.2s delay per card).  
+Purpose: Flexes your full service stack—leads, outreach, scoring, analytics—tied to Lead Launch ($499) to Empire ($5,999).
+How It Works Section:  
+Title: “How We Generate Your Leads” in white, 28px, bold, centered, 40px padding-top—breaks down the magic.  
+Content: Four steps (22% width, 4% gap, centered, stacks on mobile):  
+Step 1: Define Your Niche  
+Text: “You tell us—plumbers, SaaS execs, anyone. We target.” in steel gray, 16px, below icon.  
+Icon: Magnifying glass, neon purple, 60px, spins on hover—starts with client input.
+Step 2: AI Scrapes Leads  
+Text: “Our AI hunts across the web—Yellow Pages, LinkedIn, more.” in steel gray, 16px.  
+Icon: Radar pulse, neon purple, 60px, pulses (JS)—shows the tech hunt.
+Step 3: Automated Outreach  
+Text: “Personalized emails, LinkedIn DMs—sent for you.” in steel gray, 16px.  
+Icon: Envelope, neon purple, 60px, opens on hover—covers multi-channel.
+Step 4: Leads Delivered  
+Text: “CSV, email, dashboard—daily or weekly, your call.” in steel gray, 16px.  
+Icon: Handshake, neon purple, 60px, shakes on hover—seals the deal.
+Styling: Steps in #1A2236 cards, 1px neon purple border, 12px radius, gradient background (#0D1321 to #1E2A44), fade in (0.3s delay per step).  
+Purpose: Educates—clients see the AI process behind their 50–600 leads, justifying package prices.
+Benefits Section:  
+Title: “Why Leadzap?” in white, 28px, bold, centered, 40px padding-top—sells your edge.  
+Content: Bullet list, max-width 800px, centered:  
+“Precision AI Targeting: Leads that fit your exact needs, not random lists.”  
+“Save Time & Money: No ad spend, no manual outreach—AI does it all.”  
+“Actionable Insights: Scoring and analytics—close more, faster.”  
+“Scalable Growth: From 50 to 600 leads—match your ambition.”  
+Styling: Steel gray (#A1A9B8), 16px, 15px line-height, neon purple bullet dots, fades in (0.5s).
+Background: Dark slate (#121721)—grounds the value prop.  
+Purpose: Differentiates—shows why your AI beats competitors, worth $1,499–$5,999.
+Call-to-Action (CTA) Section:  
+Title: “Ready to Zap Your Leads?” in white, 28px, bold, centered, 40px padding-top—hooks ‘em.  
+Content:  
+Text: “Pick a package and start today—leads in as little as 7 days.” in steel gray, 18px, centered, 20px padding-bottom.  
+Button: “See Pricing” in neon purple (#7B00FF), white text, 20px, bold, 18px padding-x, 12px padding-y, 8px radius, hover glow (#8F00FF + shadow), links to /pricing.
+Styling: Obsidian background, button scales on hover (0.2s CSS transition), fades in (0.5s).  
+Purpose: Converts—drives to Pricing for $499 pilots or $5,999 elite deals.
+Footer:  
+Matches site—Obsidian (#0D1321), “© 2025 Leadzap • leads@leadzap.io” in steel gray, 14px, centered, X/LinkedIn icons in neon purple, 30px, linking to profiles—wraps it pro.
+Visual Flow
+Structure: Header → What We Offer (4 cards) → How It Works (4 steps) → Benefits (list) → CTA (button) → Footer.
+Height: ~2200px desktop, smooth scroll—mobile stacks to ~3200px, tight and clean.
+Vibe: Dark, futuristic, premium—AI-driven, million-dollar startup energy.
+Ties to Your Setup
+Flask: Rendered via services.html, extends base.html with your navbar—dynamic with Flask-Login for user state.
+Packages: Reflects Lead Launch ($499, 50 leads, basic outreach) to Lead Empire ($5,999, 600 leads, scoring + analytics).
+Replit: Runs in your Flask app (app.py), leveraging your scraper (scraper.py) and emailer (emailer.py)—scoring/analytics add-ons enhance output (e.g., score column, reply tracking).
