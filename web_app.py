@@ -50,9 +50,11 @@ class UpdateEmailForm(FlaskForm):
 @login_manager.user_loader
 def load_user(user_id):
     from models.user import User
-    return User.get(user_id)
+    print(f"Loading user with ID: {user_id}", file=sys.stderr)
+    user = User.get(user_id)
+    print(f"User loaded: {user is not None}", file=sys.stderr)
+    return user
 
-# Routes
 @app.route('/')
 def landing():
     return render_template('landing.html', current_user=current_user)
@@ -79,15 +81,20 @@ def login():
         return redirect(url_for('dashboard'))
 
     form = LoginForm()
+    print(f"Login form submitted: {form.is_submitted()}", file=sys.stderr)
+    print(f"Login form validated: {form.validate()}", file=sys.stderr)
     if form.validate_on_submit():
+        print(f"Attempting login with email: {form.email.data}", file=sys.stderr)
         from models.user import User
         user = User.get_by_email(form.email.data)
+        print(f"User found: {user is not None}", file=sys.stderr)
         if user and user.check_password(form.password.data):
             login_user(user)
             next_page = request.args.get('next', url_for('dashboard'))
             flash('Welcome back!', 'success')
             return redirect(next_page)
         flash('Invalid email or password', 'error')
+        print("Login failed: Invalid credentials", file=sys.stderr)
     return render_template('login.html', form=form, current_user=current_user)
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -98,19 +105,31 @@ def register():
     from forms import RegisterForm
     form = RegisterForm()
 
+    print(f"Register form submitted: {form.is_submitted()}", file=sys.stderr)
+    print(f"Register form validated: {form.validate()}", file=sys.stderr)
+    if form.errors:
+        print(f"Form validation errors: {form.errors}", file=sys.stderr)
+
     if form.validate_on_submit():
-        from models.user import User
-        user = User.create(
-            email=form.email.data,
-            password=form.password.data,
-            name=form.username.data
-        )
-        if user:
-            login_user(user)
-            flash('Registration successful! Welcome to Leadzap.', 'success')
-            return redirect(url_for('dashboard'))
-        else:
+        print(f"Attempting to create user with email: {form.email.data}", file=sys.stderr)
+        try:
+            from models.user import User
+            user = User.create(
+                email=form.email.data,
+                password=form.password.data,
+                name=form.username.data
+            )
+            print(f"User creation result: {user is not None}", file=sys.stderr)
+            if user:
+                login_user(user)
+                flash('Registration successful! Welcome to Leadzap.', 'success')
+                return redirect(url_for('dashboard'))
+            else:
+                flash('Registration failed. Email may already be registered.', 'error')
+                print("Registration failed: Email exists", file=sys.stderr)
+        except Exception as e:
             flash('Registration failed. Please try again.', 'error')
+            print(f"Registration error: {str(e)}", file=sys.stderr)
 
     return render_template('register.html', form=form, current_user=current_user)
 
@@ -133,6 +152,8 @@ def dashboard():
             flash('Email updated successfully')
         except Exception as e:
             flash('Failed to update email')
+            print(f"Error updating email: {str(e)}", file=sys.stderr)
+
 
     # Get user's leads
     leads = Lead.get_by_user_id(current_user.id)
@@ -208,11 +229,14 @@ if __name__ == '__main__':
     try:
         # Create required JSON files if they don't exist
         for file_path in ['data/users.json', 'data/leads.json', 'data/user_packages.json']:
-            if not os.path.exists(file_path):
-                os.makedirs(os.path.dirname(file_path), exist_ok=True)
-                with open(file_path, 'w') as f:
-                    json.dump({}, f)
-                print(f"Created {file_path}", file=sys.stderr)
+            try:
+                if not os.path.exists(file_path):
+                    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                    with open(file_path, 'w') as f:
+                        json.dump({}, f)
+                    print(f"Created {file_path}", file=sys.stderr)
+            except Exception as e:
+                print(f"Error creating file {file_path}: {str(e)}", file=sys.stderr)
 
         # First, terminate any existing process on port 5000
         terminate_port_process(5000)
