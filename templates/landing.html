@@ -1,189 +1,198 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leadzap - AI-Powered Lead Generation</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-</head>
-<body>
-    <nav class="navbar">
-        <div class="navbar-container">
-            <a href="{{ url_for('landing') }}" class="navbar-logo">
-                <div class="logo-orb"></div>
-                Leadzap
-            </a>
-            <button class="hamburger" onclick="toggleMenu()">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-            <div class="nav-links">
-                <div class="nav-center">
-                    <a href="{{ url_for('landing') }}" class="active">Home</a>
-                    <a href="{{ url_for('about') }}">About</a>
-                    <a href="{{ url_for('services') }}">Services</a>
-                    <a href="#pricing">Pricing</a>
-                    <a href="{{ url_for('contact') }}">Contact</a>
-                </div>
-                <div class="nav-right">
-                    {% if current_user.is_authenticated %}
-                        <a href="{{ url_for('dashboard') }}">Dashboard</a>
-                        <a href="{{ url_for('logout') }}">Logout</a>
-                    {% else %}
-                        <a href="{{ url_for('login') }}">Login</a>
-                        <a href="{{ url_for('register') }}">Register</a>
-                    {% endif %}
-                </div>
+{% extends "base.html" %}
+{% block title %}Leadzap - AI-Powered Lead Generation{% endblock %}
+{% block content %}
+<div class="bg-[#0D1321] min-h-screen text-white">
+    <!-- Hero Section -->
+    <section class="bg-gradient-to-b from-[#0D1321] to-[#1E2A44] h-[800px] flex items-center justify-center text-center animate-fade-in">
+        <div class="max-w-4xl mx-auto px-4">
+            <h1 class="text-6xl font-bold text-white mb-6">Leadzap: AI-Powered Leads for Anyone</h1>
+            <p class="text-2xl text-[#A1A9B8] italic mb-8">50–600 Leads Delivered Fast, Starting at $499</p>
+            <a href="{{ url_for('pricing') }}" class="bg-[#7B00FF] text-white px-10 py-4 rounded-lg text-xl font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Launch Your Leads</a>
+            <div class="mt-10">
+                <div class="w-24 h-24 bg-[#7B00FF] rounded-full mx-auto animate-pulse"></div> <!-- AI Orb -->
             </div>
-        </div>
-    </nav>
-
-    <section class="hero">
-        <div class="container">
-            <div class="orb"></div>
-            <h1>Leadzap: Leads for Anyone, Powered by AI</h1>
-            <p>Small businesses and SaaS—100+ leads, delivered fast.</p>
-            <button onclick="document.getElementById('signup').scrollIntoView({behavior: 'smooth'})">
-                Launch Your Leads
-            </button>
         </div>
     </section>
 
-    <section class="pitch" id="pitch">
-        <div class="container">
-            <h2>Leads for Every Hustle</h2>
-            <div class="cards">
-                <div class="card">
-                    <h3>Small Businesses</h3>
-                    <p>Plumbers, cafes, gyms—50+ local leads, no ad spend.</p>
+    <!-- Why Leadzap? -->
+    <section class="py-16 bg-[#0D1321]">
+        <div class="max-w-6xl mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center text-white mb-12">Why Choose Leadzap?</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Precision Targeting -->
+                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+                    <div class="flex justify-center mb-4">
+                        <svg class="w-12 h-12 text-[#7B00FF] animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="12" r="6"/>
+                            <circle cx="12" cy="12" r="2"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-center text-white mb-4">Precision Targeting</h3>
+                    <p class="text-[#A1A9B8] text-center">AI finds leads that fit your exact niche—no more guesswork.</p>
                 </div>
-                <div class="card">
-                    <h3>SaaS Startups</h3>
-                    <p>100+ B2B leads—founders, execs, ready to buy.</p>
+                <!-- Automated Outreach -->
+                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in" style="animation-delay: 0.2s;">
+                    <div class="flex justify-center mb-4">
+                        <svg class="w-12 h-12 text-[#7B00FF] animate-spin-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M3 8l9-6 9 6v8l-9 6-9-6V8z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-center text-white mb-4">Automated Outreach</h3>
+                    <p class="text-[#A1A9B8] text-center">Emails, LinkedIn, SMS—AI handles it all, so you don't have to.</p>
                 </div>
-                <div class="card">
-                    <h3>Anyone Else</h3>
-                    <p>Your niche, your leads—AI finds 'em, we deliver.</p>
+                <!-- Smart Scoring -->
+                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in" style="animation-delay: 0.4s;">
+                    <div class="flex justify-center mb-4">
+                        <svg class="w-12 h-12 text-[#7B00FF] animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 20V10M18 20V4M6 20v-4"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-center text-white mb-4">Smart Scoring</h3>
+                    <p class="text-[#A1A9B8] text-center">AI ranks your leads—focus on the best, close faster.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="how-it-works">
-        <div class="container">
-            <h2>Your Lead Engine</h2>
-            <div class="steps">
-                <div class="step">
-                    <div class="icon">→</div>
-                    <p>Tell us your niche</p>
+    <!-- How It Works -->
+    <section class="py-16 bg-gradient-to-b from-[#0D1321] to-[#1E2A44]">
+        <div class="max-w-6xl mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center text-white mb-12">How We Zap Your Leads</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <!-- Step 1 -->
+                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+                    <div class="flex justify-center mb-4">
+                        <svg class="w-14 h-14 text-[#7B00FF] animate-spin-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </div>
+                    <p class="text-[#A1A9B8] text-center">1. Define Your Niche: Tell us your target—plumbers, SaaS execs, anyone.</p>
                 </div>
-                <div class="step">
-                    <div class="icon">↗</div>
-                    <p>AI hunts your leads</p>
+                <!-- Step 2 -->
+                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in" style="animation-delay: 0.2s;">
+                    <div class="flex justify-center mb-4">
+                        <svg class="w-14 h-14 text-[#7B00FF] animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                    </div>
+                    <p class="text-[#A1A9B8] text-center">2. AI Scrapes Leads: Our AI hunts across the web—Yellow Pages, LinkedIn, more.</p>
                 </div>
-                <div class="step">
-                    <div class="icon">↘</div>
-                    <p>Personalized outreach</p>
+                <!-- Step 3 -->
+                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in" style="animation-delay: 0.4s;">
+                    <div class="flex justify-center mb-4">
+                        <svg class="w-14 h-14 text-[#7B00FF] animate-open" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M3 8l9-6 9 6v8l-9 6-9-6V8z"/>
+                        </svg>
+                    </div>
+                    <p class="text-[#A1A9B8] text-center">3. Automated Outreach: Personalized emails, LinkedIn DMs—sent for you.</p>
                 </div>
-                <div class="step">
-                    <div class="icon">⭐</div>
-                    <p>Leads land in your hands</p>
+                <!-- Step 4 -->
+                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in" style="animation-delay: 0.6s;">
+                    <div class="flex justify-center mb-4">
+                        <svg class="w-14 h-14 text-[#7B00FF] animate-shake" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <p class="text-[#A1A9B8] text-center">4. Leads Delivered: CSV, email, dashboard—daily or weekly, your call.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <section id="signup" class="signup">
-        <div class="container">
-            <h2>Zap Your Leads Live</h2>
-            <div class="packages">
-                <div class="package">
-                    <div class="popular-tag">Most Popular</div>
-                    <h3>Lead Launch</h3>
-                    <p class="price">$499</p>
-                    <p class="tagline">Test the waters with AI leads</p>
-                    <ul>
-                        <li>50 qualified leads</li>
-                        <li>AI-targeted to your business</li>
-                        <li>7-day delivery</li>
-                        <li>1 cold email template</li>
-                    </ul>
-                    <button onclick="document.getElementById('signupForm').scrollIntoView({behavior: 'smooth'})">
-                        Get Started
-                    </button>
+    <!-- Testimonials -->
+    <section class="py-16 bg-[#121721]">
+        <div class="max-w-6xl mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center text-white mb-12">What Our Clients Say</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Testimonial 1 -->
+                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+                    <p class="text-[#A1A9B8] text-base italic mb-4">"Leadzap doubled my pipeline in 30 days—game-changer for my SaaS."</p>
+                    <p class="text-white text-sm font-bold">—Jane, SaaS Founder</p>
                 </div>
-                <div class="package">
-                    <h3>Lead Engine</h3>
-                    <p class="price">$1,499/month</p>
-                    <p class="tagline">Steady leads to grow your biz</p>
-                    <ul>
-                        <li>150 leads/month</li>
-                        <li>Weekly delivery</li>
-                        <li>3 email templates</li>
-                        <li>Basic stats tracking</li>
-                    </ul>
-                    <button onclick="document.getElementById('signupForm').scrollIntoView({behavior: 'smooth'})">
-                        Get Started
-                    </button>
+                <!-- Testimonial 2 -->
+                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in" style="animation-delay: 0.2s;">
+                    <p class="text-[#A1A9B8] text-base italic mb-4">"50 leads in a week—closed 5 deals already. Worth every penny."</p>
+                    <p class="text-white text-sm font-bold">—Mike, Plumber</p>
                 </div>
-                <div class="package">
-                    <h3>Lead Accelerator</h3>
-                    <p class="price">$2,999/month</p>
-                    <p class="tagline">Ramp up with serious lead flow</p>
-                    <ul>
-                        <li>300 leads/month</li>
-                        <li>Daily delivery</li>
-                        <li>5 email templates</li>
-                        <li>Detailed reports</li>
-                    </ul>
-                    <button onclick="document.getElementById('signupForm').scrollIntoView({behavior: 'smooth'})">
-                        Get Started
-                    </button>
-                </div>
-                <div class="package">
-                    <h3>Lead Empire</h3>
-                    <p class="price">$5,999/month</p>
-                    <p class="tagline">Dominate your market with AI</p>
-                    <ul>
-                        <li>600 leads/month</li>
-                        <li>Priority delivery</li>
-                        <li>7 multi-channel templates</li>
-                        <li>VIP support</li>
-                    </ul>
-                    <button onclick="document.getElementById('signupForm').scrollIntoView({behavior: 'smooth'})">
-                        Get Started
-                    </button>
+                <!-- Testimonial 3 -->
+                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in" style="animation-delay: 0.4s;">
+                    <p class="text-[#A1A9B8] text-base italic mb-4">"AI scoring is legit—focused on the best leads, saved hours."</p>
+                    <p class="text-white text-sm font-bold">—Alex, Gym Owner</p>
                 </div>
             </div>
-
-            <form id="signupForm" class="signup-form">
-                <input type="text" name="name" placeholder="Your Name" required>
-                <input type="email" name="email" placeholder="Email" required>
-                <input type="text" name="niche" placeholder="Your Niche (e.g., plumber, SaaS)" required>
-                <select name="package" required>
-                    <option value="">Select Your Package</option>
-                    <option value="launch">Lead Launch - $499</option>
-                    <option value="engine">Lead Engine - $1,499/mo</option>
-                    <option value="accelerator">Lead Accelerator - $2,999/mo</option>
-                    <option value="empire">Lead Empire - $5,999/mo</option>
-                </select>
-                <button type="submit">Zap My Leads</button>
-            </form>
         </div>
     </section>
 
-    <footer>
-        <div class="container">
-            <p>© 2025 Leadzap • leads@leadzap.io</p>
-            <div class="social">
-                <a href="#" target="_blank">Twitter</a>
-                <a href="#" target="_blank">LinkedIn</a>
+    <!-- CTA -->
+    <section class="py-16 bg-[#0D1321] text-center">
+        <div class="max-w-4xl mx-auto px-4">
+            <h2 class="text-3xl font-bold text-white mb-6">Ready to Zap Your Leads?</h2>
+            <p class="text-lg text-[#A1A9B8] mb-8">Start with a $499 pilot or scale to $5,999 domination—grow your business today.</p>
+            <a href="{{ url_for('pricing') }}" class="bg-[#7B00FF] text-white px-10 py-4 rounded-lg text-xl font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Get Started</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-[#0D1321] py-8 text-center">
+        <div class="max-w-6xl mx-auto px-4">
+            <p class="text-[#A1A9B8] text-sm">© 2025 Leadzap • leads@leadzap.io</p>
+            <div class="mt-2 flex justify-center gap-4">
+                <a href="#" class="text-[#7B00FF] hover:text-[#8F00FF] transition-colors duration-200">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/>
+                    </svg>
+                </a>
+                <a href="#" class="text-[#7B00FF] hover:text-[#8F00FF] transition-colors duration-200">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                    </svg>
+                </a>
             </div>
         </div>
     </footer>
+</div>
 
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
-</body>
-</html>
+<style>
+    @keyframes fade-in {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+        animation: fade-in 0.5s ease-out;
+    }
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+    .animate-pulse {
+        animation: pulse 2s infinite;
+    }
+    @keyframes spin-slow {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    .animate-spin-slow {
+        animation: spin-slow 3s linear infinite;
+    }
+    @keyframes open {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+    .animate-open {
+        animation: open 1.5s infinite;
+    }
+    @keyframes shake {
+        0% { transform: translateX(0); }
+        25% { transform: translateX(-2px); }
+        50% { transform: translateX(2px); }
+        75% { transform: translateX(-2px); }
+        100% { transform: translateX(0); }
+    }
+    .animate-shake {
+        animation: shake 0.5s infinite;
+    }
+</style>
+{% endblock %}
