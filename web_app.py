@@ -36,7 +36,8 @@ app.config.update(
     SECRET_KEY=os.environ.get('FLASK_SECRET_KEY', os.urandom(24)),
     SESSION_COOKIE_SECURE=False,  # Set to True in production
     SESSION_COOKIE_HTTPONLY=True,
-    PERMANENT_SESSION_LIFETIME=3600
+    PERMANENT_SESSION_LIFETIME=3600,
+    WTF_CSRF_ENABLED=True
 )
 
 # Configure Flask-Login
@@ -46,7 +47,17 @@ login_manager.login_view = 'login'
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.get(user_id)
+    try:
+        logger.debug(f"Loading user with ID: {user_id}")
+        user = User.get(user_id)
+        if user:
+            logger.debug(f"User {user_id} loaded successfully")
+        else:
+            logger.warning(f"No user found with ID: {user_id}")
+        return user
+    except Exception as e:
+        logger.error(f"Error loading user {user_id}: {str(e)}")
+        return None
 
 @app.route('/')
 def landing():
@@ -55,48 +66,94 @@ def landing():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
+    try:
+        logger.debug("Processing login request")
+        if current_user.is_authenticated:
+            logger.debug("User already authenticated, redirecting to dashboard")
+            return redirect(url_for('dashboard'))
 
-    form = LoginForm()
-    if form.validate_on_submit():
-        user = User.get_by_email(form.email.data)
-        if user and user.check_password(form.password.data):
-            login_user(user)
-            next_page = request.args.get('next')
-            return redirect(next_page or url_for('dashboard'))
-        flash('Invalid email or password')
-    return render_template('login.html', form=form)
+        form = LoginForm()
+        if form.validate_on_submit():
+            logger.debug(f"Login form submitted for email: {form.email.data}")
+            user = User.get_by_email(form.email.data)
+            if user and user.check_password(form.password.data):
+                login_user(user)
+                logger.info(f"User {user.id} logged in successfully")
+                next_page = request.args.get('next')
+                return redirect(next_page or url_for('dashboard'))
+            logger.warning(f"Invalid login attempt for email: {form.email.data}")
+            flash('Invalid email or password')
+        elif request.method == 'POST':
+            logger.warning("Login form validation failed")
+            logger.debug(f"Form errors: {form.errors}")
+        return render_template('login.html', form=form)
+    except Exception as e:
+        logger.error(f"Error in login route: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        flash('An error occurred during login')
+        return redirect(url_for('landing'))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
-
-    form = RegisterForm()
-    if form.validate_on_submit():
-        user = User.create(
-            email=form.email.data,
-            password=form.password.data,
-            name=form.name.data
-        )
-        if user:
-            login_user(user)
+    try:
+        logger.debug("Processing registration request")
+        if current_user.is_authenticated:
+            logger.debug("User already authenticated, redirecting to dashboard")
             return redirect(url_for('dashboard'))
-        flash('Email already registered')
-    return render_template('register.html', form=form)
+
+        form = RegisterForm()
+        if form.validate_on_submit():
+            logger.debug(f"Registration form submitted for email: {form.email.data}")
+            user = User.create(
+                email=form.email.data,
+                password=form.password.data,
+                name=form.name.data
+            )
+            if user:
+                login_user(user)
+                logger.info(f"User {user.id} registered and logged in successfully")
+                return redirect(url_for('dashboard'))
+            logger.warning(f"Registration failed - email already exists: {form.email.data}")
+            flash('Email already registered')
+        elif request.method == 'POST':
+            logger.warning("Registration form validation failed")
+            logger.debug(f"Form errors: {form.errors}")
+        return render_template('register.html', form=form)
+    except Exception as e:
+        logger.error(f"Error in register route: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        flash('An error occurred during registration')
+        return redirect(url_for('landing'))
 
 @app.route('/logout')
 @login_required
 def logout():
-    logout_user()
-    return redirect(url_for('landing'))
+    try:
+        logger.debug("Processing logout request")
+        logout_user()
+        logger.info("User logged out successfully")
+        return redirect(url_for('landing'))
+    except Exception as e:
+        logger.error(f"Error in logout route: {str(e)}")
+        flash('An error occurred during logout')
+        return redirect(url_for('dashboard'))
 
 @app.route('/dashboard')
 @login_required
 def dashboard():
     """User dashboard"""
-    return render_template('dashboard.html')
+    try:
+        logger.debug("Loading dashboard for user")
+        stats = {
+            'dentist_count': 0,
+            'saas_count': 0,
+            'last_update': 'Never'
+        }
+        return render_template('dashboard.html', stats=stats)
+    except Exception as e:
+        logger.error(f"Error loading dashboard: {str(e)}")
+        flash('Error loading dashboard')
+        return redirect(url_for('landing'))
 
 @app.route('/health')
 def health():
@@ -111,7 +168,24 @@ def test():
 if __name__ == '__main__':
     try:
         logger.info("Starting Flask application...")
-        # ALWAYS serve the app on port 5000
+        logger.info(f"Template directory contents: {os.listdir(template_dir)}")
+        logger.info(f"Static directory contents: {os.listdir(static_dir)}")
+        logger.info(f"Data directory contents: {os.listdir(data_dir)}")
+
+        # Try to open a test socket first to check port availability
+        test_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        test_socket.settimeout(1)
+
+        try:
+            test_socket.bind(('0.0.0.0', 5000))
+            test_socket.close()
+            logger.info("Port 5000 is available")
+        except socket.error as e:
+            logger.error(f"Port 5000 is not available: {e}")
+            logger.error("Please ensure no other process is using port 5000")
+            exit(1)
+
+        # Start the Flask app
         app.run(host='0.0.0.0', port=5000, debug=True)
     except Exception as e:
         logger.error(f"Failed to start server: {str(e)}")
