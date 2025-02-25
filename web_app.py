@@ -1,9 +1,6 @@
 import os
 import logging
 import traceback
-import socket
-import signal
-import time
 from flask import Flask, render_template, redirect, url_for, flash, request
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from forms import LoginForm, RegisterForm
@@ -168,24 +165,7 @@ def test():
 if __name__ == '__main__':
     try:
         logger.info("Starting Flask application...")
-        logger.info(f"Template directory contents: {os.listdir(template_dir)}")
-        logger.info(f"Static directory contents: {os.listdir(static_dir)}")
-        logger.info(f"Data directory contents: {os.listdir(data_dir)}")
-
-        # Try to open a test socket first to check port availability
-        test_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        test_socket.settimeout(1)
-
-        try:
-            test_socket.bind(('0.0.0.0', 5000))
-            test_socket.close()
-            logger.info("Port 5000 is available")
-        except socket.error as e:
-            logger.error(f"Port 5000 is not available: {e}")
-            logger.error("Please ensure no other process is using port 5000")
-            exit(1)
-
-        # Start the Flask app
+        # ALWAYS serve the app on port 5000
         app.run(host='0.0.0.0', port=5000, debug=True)
     except Exception as e:
         logger.error(f"Failed to start server: {str(e)}")
