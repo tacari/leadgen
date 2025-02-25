@@ -1,0 +1,73 @@
+Lead History Page (/lead-history): Full Details
+Overview
+Purpose: Archive and manage all leads—beyond the dashboard’s latest snapshot—letting users dig into their full pipeline, track progress, and take action. Think of it as the “everything” view for their $499 Lead Launch (50 leads) to $5,999 Empire (600/month) packages.  
+Goals:  
+Depth: Show every lead ever generated—Empire users need to handle 600+ leads without losing track.  
+Control: Edit, filter, and act on leads—keeps ‘em engaged, ups value.  
+Insight: Surface trends (e.g., top sources)—proves AI worth, nudges upgrades.  
+Utility: Exportable, searchable—makes their $5k–$10k to $100k/month journey tangible.
+Design: Dark mode (#0D1321 base, #7B00FF neon purple accents), Tailwind CSS, Supabase-powered—consistent with dashboard swagger.
+Design & Content
+1. Header
+Title: “Your Lead History”  
+Style: White (#FFFFFF), 40px, bold, Inter font, centered, 40px padding-top—big, commanding opener.
+Sub-Title: “Every lead, every detail—your full pipeline at a glance.”  
+Style: Steel gray (#A1A9B8), 18px, italic, centered, 10px padding-bottom—sets the vibe.
+Styling: Fades in (0.5s)—premium entry, ties to navbar’s dark #0D1321 background.
+2. Search & Filters Section
+Purpose: Let ‘em zero in—search, sort, and filter their lead archive fast.  
+Layout: Flex row (desktop), stacks on mobile—top of page, sticky on scroll (CSS position: sticky).  
+Content:  
+Search Bar:  
+Placeholder: “Search by name, email, or source” (steel gray, 14px).  
+Style: #1A2236 input, 1px neon purple border, 16px text, 40px wide (desktop), full-width (mobile)—live filters table (JS).  
+Icon: Neon purple magnifying glass (20px), right side, glows on hover.
+Filters: Dropdowns (neon purple outline, 14px text, hover fills #7B00FF):  
+Date Range: “All Time” (default), “Last 7 Days,” “Last 30 Days,” “Last 90 Days,” “Custom” (date picker pops up)—narrows by date_added.  
+Status: “All” (default), “Pending,” “Emailed,” “Replied,” “Converted”—filters status column.  
+Score: “All” (default), “High (>75),” “Medium (50–75),” “Low (<50)”—filters score column.  
+Source: “All” (default), “Yellow Pages,” “LinkedIn,” “Google Maps” (dynamic from data)—filters source column.
+Reset Button: “Clear Filters” (neon purple outline, 14px, bold, 20px padding-x)—resets all filters, glows on hover.
+Styling: #1A2236 background, 1px neon purple border, 12px radius—fades in (0.5s), sticky top 80px (below navbar).
+3. Lead Table
+Purpose: The meat—displays all leads with sortable, editable, actionable details.  
+Layout: Full-width table (desktop), stacks to cards (mobile)—scrollable, paginated.  
+Content:  
+Columns:  
+Name: E.g., “Joe’s Plumbing” (steel gray, 14px)—sortable (click header).  
+Email: E.g., “joe@example.com” (steel gray, 14px)—clickable (mailto link).  
+Source: E.g., “Yellow Pages” (steel gray, 14px)—sortable.  
+Score: E.g., “85” (neon purple if >75, steel gray else, 14px)—sortable.  
+Verified: “Yes”/“No” (steel gray, 14px)—toggleable (checkbox, updates Supabase).  
+Status: Dropdown—“Pending,” “Emailed,” “Replied,” “Converted” (editable, #1A2236, neon purple border)—updates Supabase on change.  
+Date Added: E.g., “2025-02-25” (steel gray, 14px)—sortable.  
+Notes: Text input (e.g., “Called 2/26”)—editable, #1A2236, neon purple border, saves to Supabase on blur.  
+Actions:  
+“Email Now” (neon purple, 12px padding-x)—triggers POST to /lead/<id>/email.  
+“Delete” (red #FF4444 outline, 12px padding-x)—POST to /lead/<id>/delete, confirms via JS popup.
+Pagination: 50 leads/page—neon purple “Prev”/“Next” buttons (12px padding-x)—handles Empire’s 600+ leads.  
+Export: “Download Lead History (PDF)” (neon purple, 16px, bold, 20px padding-x, glows on hover)—links to /download_lead_history_pdf, exports filtered table.
+Styling: #1A2236 table, 1px neon purple border, 12px radius—rows fade in (0.5s stagger), mobile cards (100% width, 10px gap).  
+Interactivity:  
+Sortable headers—JS toggles ascending/descending (e.g., leads.sort((a, b) => a.score - b.score)).  
+Editable fields—POST updates to Supabase via inline forms (e.g., <form action="/lead/{{lead.id}}/status" method="POST">).
+4. Quick Stats Bar
+Purpose: Snapshot of their lead history—reinforces value, teases deeper analytics.  
+Layout: Sticky below filters (desktop), collapses to card above table (mobile).  
+Content:  
+“Total Leads”: E.g., “600” (white, 20px, bold).  
+“High Score (>75)”: E.g., “200” (neon purple, 20px, bold).  
+“Converted”: E.g., “20” (white, 20px, bold).  
+“Avg Score”: E.g., “68” (steel gray, 20px, bold).
+Styling: #1A2236 card, neon purple border, 12px radius—fades in (0.5s).
+5. Source Insights Box
+Purpose: Highlights top lead sources—shows AI’s smarts, builds trust.  
+Layout: Right sidebar (desktop, 300px wide), below table (mobile).  
+Content:  
+Title: “Top Lead Sources” (white, 20px, bold).  
+List:  
+“LinkedIn: 250 leads, 80% high-score” (steel gray, 14px).  
+“Yellow Pages: 200 leads, 60% high-score” (steel gray, 14px).  
+“Google Maps: 150 leads, 50% high-score” (steel gray, 14px).
+Styling: #1A2236 card, neon purple border, 12px radius—fades in (0.5s).  
+Data: Aggregated from leads—e.g., supabase.table('leads').select('source, score').eq('user_id', session['user_id']).execute(), grouped by source.

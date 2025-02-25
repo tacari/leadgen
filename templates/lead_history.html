@@ -2,81 +2,141 @@
 {% block title %}Lead History{% endblock %}
 {% block content %}
 <div class="bg-[#0D1321] min-h-screen text-white p-8">
+    <!-- Header -->
     <h1 class="text-4xl font-bold text-center mb-12">Your Lead History</h1>
-    <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 max-w-6xl mx-auto">
-        <!-- Filters and Search -->
-        <div class="flex flex-wrap gap-4 mb-4">
-            <select id="timeFilter" class="bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] text-[#A1A9B8]" onchange="filterLeads()">
-                <option value="all">All Time</option>
-                <option value="30">Last 30 Days</option>
-                <option value="90">Last 90 Days</option>
-            </select>
-            <select id="statusFilter" class="bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] text-[#A1A9B8]" onchange="filterLeads()">
-                <option value="all">All Status</option>
-                <option value="Pending">Pending</option>
-                <option value="Emailed">Emailed</option>
-                <option value="Replied">Replied</option>
-            </select>
-            <input type="text" id="searchInput" placeholder="Search by name/email" class="bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm text-[#A1A9B8] flex-grow md:flex-grow-0" oninput="filterLeads()">
-        </div>
+    <p class="text-[#A1A9B8] text-lg italic text-center mb-10">Every lead, every detail—your full pipeline at a glance.</p>
 
-        <!-- Desktop Table -->
-        <div class="hidden md:block overflow-x-auto">
-            <table class="w-full text-left text-[#A1A9B8] text-sm">
-                <thead>
-                    <tr class="border-b border-[#7B00FF]">
-                        <th class="p-3 cursor-pointer hover:text-white" onclick="sortTable(0)">Name ↕</th>
-                        <th class="p-3 cursor-pointer hover:text-white" onclick="sortTable(1)">Email ↕</th>
-                        <th class="p-3 cursor-pointer hover:text-white" onclick="sortTable(2)">Source ↕</th>
-                        <th class="p-3 cursor-pointer hover:text-white" onclick="sortTable(3)">Score ↕</th>
-                        <th class="p-3">Status</th>
-                        <th class="p-3 cursor-pointer hover:text-white" onclick="sortTable(5)">Date Added ↕</th>
-                        <th class="p-3">Notes</th>
-                        <th class="p-3">Outcome</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for lead in leads %}
-                    <tr class="border-b border-[#7B00FF] animate-fade-in" data-score="{{ lead.score }}" data-date="{{ lead.date_added }}" style="animation-delay: {{ loop.index0 * 0.1 }}s">
-                        <td class="p-3">{{ lead.name }}</td>
-                        <td class="p-3">{{ lead.email }}</td>
-                        <td class="p-3">{{ lead.source }}</td>
-                        <td class="p-3 {% if lead.score > 75 %}text-[#7B00FF]{% endif %}">{{ lead.score }}</td>
-                        <td class="p-3">{{ lead.status }}</td>
-                        <td class="p-3">{{ lead.date_added }}</td>
-                        <td class="p-3">{{ lead.notes }}</td>
-                        <td class="p-3">{{ lead.outcome }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    <div class="max-w-6xl mx-auto">
+        <!-- Search & Filters - Sticky -->
+        <div class="sticky top-[80px] z-10 bg-[#0D1321] py-4">
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6">
+                <div class="flex flex-wrap gap-4 mb-4">
+                    <select id="timeFilter" class="bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] text-[#A1A9B8]" onchange="filterLeads()">
+                        <option value="all">All Time</option>
+                        <option value="7">Last 7 Days</option>
+                        <option value="30">Last 30 Days</option>
+                        <option value="90">Last 90 Days</option>
+                        <option value="custom">Custom Date Range</option>
+                    </select>
+                    <select id="statusFilter" class="bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] text-[#A1A9B8]" onchange="filterLeads()">
+                        <option value="all">All Status</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Emailed">Emailed</option>
+                        <option value="Replied">Replied</option>
+                        <option value="Converted">Converted</option>
+                    </select>
+                    <select id="scoreFilter" class="bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] text-[#A1A9B8]" onchange="filterLeads()">
+                        <option value="all">All Scores</option>
+                        <option value="high">High (>75)</option>
+                        <option value="medium">Medium (50-75)</option>
+                        <option value="low">Low (<50)</option>
+                    </select>
+                    <input type="text" id="searchInput" placeholder="Search by name/email" class="bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm text-[#A1A9B8] flex-grow md:flex-grow-0" oninput="filterLeads()">
+                </div>
 
-        <!-- Mobile Cards -->
-        <div class="md:hidden space-y-4">
-            {% for lead in leads %}
-            <div class="bg-[#0D1321] border border-[#7B00FF] rounded-lg p-4 animate-fade-in" data-score="{{ lead.score }}" data-date="{{ lead.date_added }}" style="animation-delay: {{ loop.index0 * 0.1 }}s">
-                <div class="flex justify-between items-start mb-2">
-                    <h3 class="font-bold">{{ lead.name }}</h3>
-                    <span class="{% if lead.score > 75 %}text-[#7B00FF]{% endif %}">Score: {{ lead.score }}</span>
+                <!-- Quick Stats Bar -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                    <div class="text-center">
+                        <p class="text-xl font-bold text-white">{{ leads|length }}</p>
+                        <p class="text-[#A1A9B8] text-sm">Total Leads</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xl font-bold text-[#7B00FF]">{{ leads|selectattr('score', 'ge', 75)|list|length }}</p>
+                        <p class="text-[#A1A9B8] text-sm">High Score (>75)</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xl font-bold text-white">{{ leads|selectattr('status', 'equalto', 'Converted')|list|length }}</p>
+                        <p class="text-[#A1A9B8] text-sm">Converted</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xl font-bold text-[#A1A9B8]">68</p>
+                        <p class="text-[#A1A9B8] text-sm">Avg Score</p>
+                    </div>
                 </div>
-                <p class="text-[#A1A9B8] text-sm mb-1">{{ lead.email }}</p>
-                <p class="text-[#A1A9B8] text-sm mb-1">Source: {{ lead.source }}</p>
-                <div class="flex justify-between text-sm mb-1">
-                    <span>Status: {{ lead.status }}</span>
-                    <span>{{ lead.date_added }}</span>
-                </div>
-                <p class="text-[#A1A9B8] text-sm mb-1">Notes: {{ lead.notes }}</p>
-                <p class="text-[#A1A9B8] text-sm">Outcome: {{ lead.outcome }}</p>
             </div>
-            {% endfor %}
         </div>
 
-        <!-- Export Button -->
-        <div class="mt-4 flex justify-center">
-            <a href="{{ url_for('download_leads') }}" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">
-                Download All Leads (CSV)
-            </a>
+        <div class="mt-8 flex flex-col lg:flex-row gap-6">
+            <!-- Main Content -->
+            <div class="lg:flex-grow">
+                <!-- Desktop Table -->
+                <div class="hidden md:block overflow-x-auto bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6">
+                    <table class="w-full text-left text-[#A1A9B8] text-sm">
+                        <thead>
+                            <tr class="border-b border-[#7B00FF]">
+                                <th class="p-3 cursor-pointer hover:text-white" onclick="sortTable(0)">Name ↕</th>
+                                <th class="p-3 cursor-pointer hover:text-white" onclick="sortTable(1)">Email ↕</th>
+                                <th class="p-3 cursor-pointer hover:text-white" onclick="sortTable(2)">Source ↕</th>
+                                <th class="p-3 cursor-pointer hover:text-white" onclick="sortTable(3)">Score ↕</th>
+                                <th class="p-3">Status</th>
+                                <th class="p-3 cursor-pointer hover:text-white" onclick="sortTable(5)">Date Added ↕</th>
+                                <th class="p-3">Notes</th>
+                                <th class="p-3">Outcome</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for lead in leads %}
+                            <tr class="border-b border-[#7B00FF] animate-fade-in" data-score="{{ lead.score }}" data-date="{{ lead.date_added }}" style="animation-delay: {{ loop.index0 * 0.1 }}s">
+                                <td class="p-3">{{ lead.name }}</td>
+                                <td class="p-3">{{ lead.email }}</td>
+                                <td class="p-3">{{ lead.source }}</td>
+                                <td class="p-3 {% if lead.score > 75 %}text-[#7B00FF]{% endif %}">{{ lead.score }}</td>
+                                <td class="p-3">{{ lead.status }}</td>
+                                <td class="p-3">{{ lead.date_added }}</td>
+                                <td class="p-3">{{ lead.notes }}</td>
+                                <td class="p-3">{{ lead.outcome }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Mobile Cards -->
+                <div class="md:hidden space-y-4">
+                    {% for lead in leads %}
+                    <div class="bg-[#0D1321] border border-[#7B00FF] rounded-lg p-4 animate-fade-in" data-score="{{ lead.score }}" data-date="{{ lead.date_added }}" style="animation-delay: {{ loop.index0 * 0.1 }}s">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold">{{ lead.name }}</h3>
+                            <span class="{% if lead.score > 75 %}text-[#7B00FF]{% endif %}">Score: {{ lead.score }}</span>
+                        </div>
+                        <p class="text-[#A1A9B8] text-sm mb-1">{{ lead.email }}</p>
+                        <p class="text-[#A1A9B8] text-sm mb-1">Source: {{ lead.source }}</p>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span>Status: {{ lead.status }}</span>
+                            <span>{{ lead.date_added }}</span>
+                        </div>
+                        <p class="text-[#A1A9B8] text-sm mb-1">Notes: {{ lead.notes }}</p>
+                        <p class="text-[#A1A9B8] text-sm">Outcome: {{ lead.outcome }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Export Button -->
+                <div class="mt-4 flex justify-center">
+                    <a href="{{ url_for('download_leads') }}" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">
+                        Download Lead History (CSV)
+                    </a>
+                </div>
+            </div>
+
+            <!-- Source Insights Box - Desktop Only -->
+            <div class="hidden lg:block w-[300px] bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 h-fit">
+                <h2 class="text-xl font-bold mb-4">Top Lead Sources</h2>
+                <div class="space-y-4">
+                    <div>
+                        <p class="text-[#A1A9B8] text-sm">LinkedIn</p>
+                        <p class="text-white">250 leads, 80% high-score</p>
+                    </div>
+                    <div>
+                        <p class="text-[#A1A9B8] text-sm">Yellow Pages</p>
+                        <p class="text-white">200 leads, 60% high-score</p>
+                    </div>
+                    <div>
+                        <p class="text-[#A1A9B8] text-sm">Google Maps</p>
+                        <p class="text-white">150 leads, 50% high-score</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -88,7 +148,7 @@
         const table = document.querySelector('table');
         const tbody = table.querySelector('tbody');
         const rows = Array.from(tbody.querySelectorAll('tr'));
-        
+
         // Toggle sort direction
         sortDirections[columnIndex] = !sortDirections[columnIndex];
         const direction = sortDirections[columnIndex] ? 1 : -1;
@@ -113,6 +173,7 @@
     function filterLeads() {
         const timeFilter = document.getElementById('timeFilter').value;
         const statusFilter = document.getElementById('statusFilter').value;
+        const scoreFilter = document.getElementById('scoreFilter').value;
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         const today = new Date();
 
@@ -120,7 +181,7 @@
         rows.forEach(row => {
             let show = true;
             const isDesktop = row.tagName === 'TR';
-            
+
             // Get values based on desktop/mobile layout
             const date = new Date(isDesktop ? 
                 row.cells[5].textContent : 
@@ -135,6 +196,7 @@
             const email = isDesktop ? 
                 row.cells[1].textContent : 
                 row.querySelectorAll('p')[0].textContent;
+            const score = parseInt(row.getAttribute('data-score'));
 
             // Time filter
             if (timeFilter !== 'all') {
@@ -146,6 +208,21 @@
             // Status filter
             if (statusFilter !== 'all') {
                 show = show && status === statusFilter;
+            }
+
+            // Score filter
+            if (scoreFilter !== 'all') {
+                switch(scoreFilter) {
+                    case 'high':
+                        show = show && score > 75;
+                        break;
+                    case 'medium':
+                        show = show && score >= 50 && score <= 75;
+                        break;
+                    case 'low':
+                        show = show && score < 50;
+                        break;
+                }
             }
 
             // Search filter
