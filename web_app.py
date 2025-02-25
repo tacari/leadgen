@@ -2,6 +2,7 @@ import os
 import logging
 import traceback
 import socket
+import signal
 import time
 from flask import Flask, render_template, redirect, url_for, flash, request
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -109,18 +110,8 @@ def test():
 
 if __name__ == '__main__':
     try:
-        # Clean socket handling
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        try:
-            sock.bind(('0.0.0.0', 5000))
-            sock.close()
-        except socket.error as e:
-            logger.error(f"Port 5000 is not available: {e}")
-            # Wait briefly to allow port to be released
-            time.sleep(1)
-
-        logger.info("Starting Flask application on port 5000...")
+        logger.info("Starting Flask application...")
+        # ALWAYS serve the app on port 5000
         app.run(host='0.0.0.0', port=5000, debug=True)
     except Exception as e:
         logger.error(f"Failed to start server: {str(e)}")
