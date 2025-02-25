@@ -46,7 +46,7 @@ task = "packager.installForAll"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python web_app.py"
-waitForPort = 3000
+waitForPort = 5000
 
 [deployment]
 run = ["sh", "-c", "python main.py --type dentist --city 'New York' --limit 5"]
