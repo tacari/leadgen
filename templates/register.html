@@ -11,23 +11,27 @@
     <section class="auth-section">
         <div class="container">
             <h1>Create Your Leadzap Account</h1>
-            <div class="auth-form">
+            <p>Sign up to start zapping leads—takes 30 seconds.</p>
+
+            <div class="auth-form animate-fade-in">
                 <form method="POST" action="{{ url_for('register') }}">
                     {{ form.hidden_tag() }}
+
                     <div class="form-group">
-                        {{ form.name.label }}
-                        {{ form.name(class="form-control") }}
-                        {% if form.name.errors %}
+                        <label for="username">Username</label>
+                        {{ form.username(class="form-control", placeholder="e.g., johndoe") }}
+                        {% if form.username.errors %}
                             <div class="errors">
-                                {% for error in form.name.errors %}
+                                {% for error in form.username.errors %}
                                     <span>{{ error }}</span>
                                 {% endfor %}
                             </div>
                         {% endif %}
                     </div>
+
                     <div class="form-group">
-                        {{ form.email.label }}
-                        {{ form.email(class="form-control") }}
+                        <label for="email">Email</label>
+                        {{ form.email(class="form-control", placeholder="e.g., john@example.com") }}
                         {% if form.email.errors %}
                             <div class="errors">
                                 {% for error in form.email.errors %}
@@ -36,9 +40,10 @@
                             </div>
                         {% endif %}
                     </div>
+
                     <div class="form-group">
-                        {{ form.password.label }}
-                        {{ form.password(class="form-control") }}
+                        <label for="password">Password</label>
+                        {{ form.password(class="form-control", placeholder="••••••••") }}
                         {% if form.password.errors %}
                             <div class="errors">
                                 {% for error in form.password.errors %}
@@ -47,9 +52,10 @@
                             </div>
                         {% endif %}
                     </div>
+
                     <div class="form-group">
-                        {{ form.confirm_password.label }}
-                        {{ form.confirm_password(class="form-control") }}
+                        <label for="confirm_password">Confirm Password</label>
+                        {{ form.confirm_password(class="form-control", placeholder="••••••••") }}
                         {% if form.confirm_password.errors %}
                             <div class="errors">
                                 {% for error in form.confirm_password.errors %}
@@ -58,13 +64,24 @@
                             </div>
                         {% endif %}
                     </div>
+
                     {{ form.submit(class="btn btn-primary") }}
                 </form>
                 <p class="auth-link">
-                    Already have an account? <a href="{{ url_for('login') }}">Sign in here</a>
+                    Already have an account? <a href="{{ url_for('login') }}">Log in</a>
                 </p>
             </div>
         </div>
     </section>
+
+    <style>
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fade-in 0.5s ease-out;
+        }
+    </style>
 </body>
 </html>

@@ -8,11 +8,17 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Sign In')
 
 class RegisterForm(FlaskForm):
-    name = StringField('Name', validators=[DataRequired(), Length(min=2, max=100)])
+    username = StringField('Username', validators=[
+        DataRequired(),
+        Length(min=4, max=64, message='Username must be between 4 and 64 characters')
+    ])
     email = StringField('Email', validators=[DataRequired(), Email()])
-    password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
+    password = PasswordField('Password', validators=[
+        DataRequired(),
+        Length(min=8, message='Password must be at least 8 characters long')
+    ])
     confirm_password = PasswordField(
-        'Confirm Password', 
+        'Confirm Password',
         validators=[DataRequired(), EqualTo('password', message='Passwords must match')]
     )
     submit = SubmitField('Register')
