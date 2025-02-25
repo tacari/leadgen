@@ -108,14 +108,29 @@ def register():
             session['user_id'] = user.user.id
             session['user_email'] = user.user.email
             flash('Registration successful! Welcome to Leadzap.', 'success')
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('welcome'))
         except Exception as e:
             print(f"Registration failed: {str(e)}", file=sys.stderr)
             flash('Registration failed. Please try again.', 'error')
 
     return render_template('register.html')
 
-@app.route('/dashboard', methods=['GET', 'POST'])
+@app.route('/welcome')
+def welcome():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    try:
+        user = supabase.auth.get_user(session['user_id'])
+        user_data = supabase.table('users').select('username').eq('id', user.user.id).execute()
+        username = user_data.data[0]['username'] if user_data.data else user.user.email.split('@')[0]
+        return render_template('welcome.html', username=username)
+    except Exception as e:
+        print(f"Error getting user data: {str(e)}", file=sys.stderr)
+        session.clear()
+        return redirect(url_for('login'))
+
+@app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session:
         return redirect(url_for('login'))
