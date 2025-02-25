@@ -19,21 +19,21 @@
                 <span></span>
                 <span></span>
             </button>
-            <div class="nav-links">
+            <div class="nav-links" id="navLinks">
                 <div class="nav-center">
-                    <a href="/">Home</a>
-                    <a href="/about">About</a>
-                    <a href="/services">Services</a>
-                    <a href="/pricing">Pricing</a>
-                    <a href="/contact">Contact</a>
+                    <a href="/" onclick="window.location.href='/'">Home</a>
+                    <a href="/about" onclick="window.location.href='/about'">About</a>
+                    <a href="/services" onclick="window.location.href='/services'">Services</a>
+                    <a href="/pricing" onclick="window.location.href='/pricing'">Pricing</a>
+                    <a href="/contact" onclick="window.location.href='/contact'">Contact</a>
                 </div>
                 <div class="nav-right">
                     {% if current_user.is_authenticated %}
-                        <a href="/dashboard" class="active">Dashboard</a>
-                        <a href="/logout">Logout</a>
+                        <a href="/dashboard" class="active" onclick="window.location.href='/dashboard'">Dashboard</a>
+                        <a href="/logout" onclick="window.location.href='/logout'">Logout</a>
                     {% else %}
-                        <a href="/login">Login</a>
-                        <a href="/register">Register</a>
+                        <a href="/login" onclick="window.location.href='/login'">Login</a>
+                        <a href="/register" onclick="window.location.href='/register'">Register</a>
                     {% endif %}
                 </div>
             </div>
@@ -72,6 +72,23 @@
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+    function toggleMenu() {
+        document.getElementById('navLinks').classList.toggle('active');
+    }
+
+    // Ensure links are clickable
+    document.addEventListener('DOMContentLoaded', function() {
+        const links = document.querySelectorAll('a');
+        links.forEach(link => {
+            link.style.cursor = 'pointer';
+            link.addEventListener('click', function(e) {
+                if (this.getAttribute('href')) {
+                    window.location.href = this.getAttribute('href');
+                }
+            });
+        });
+    });
+    </script>
 </body>
 </html>
