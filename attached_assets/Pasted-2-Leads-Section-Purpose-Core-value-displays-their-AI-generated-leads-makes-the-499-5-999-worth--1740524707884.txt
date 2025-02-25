@@ -1,0 +1,38 @@
+2. Leads Section
+Purpose: Core value—displays their AI-generated leads, makes the $499–$5,999 worth it.  
+Title: “Your Lead Pipeline”  
+Style: White, 28px, bold, centered, 30px padding-top—draws eyes instantly.
+Content: Responsive table (stacks to cards on mobile):  
+Columns:  
+Name: Lead’s name (e.g., “Joe’s Plumbing”), steel gray (#A1A9B8), 14px.  
+Email: Lead’s email (e.g., “joe@example.com”), steel gray, 14px.  
+Source: Where it came from (e.g., “Yellow Pages”), steel gray, 14px.  
+Score: AI score (1–100, e.g., “85”), neon purple if >75, steel gray else, 14px—hot leads pop.  
+Verified: “Yes”/“No” (email check), steel gray, 14px—shows quality.  
+Status: “Pending,” “Emailed,” “Replied” (steel gray, 14px)—tracks outreach.  
+Date Added: When it landed (e.g., “2025-02-25”), steel gray, 14px.
+Filters: Buttons above table—  
+“All,” “Verified Only,” “High Score (>75),” “Last 7 Days”—neon purple outline, 14px, toggleable (basic JS/CSS).  
+Style: Hover fills neon purple, active state stays filled—intuitive UX.
+Pagination: 25 leads/page (Empire’s 600 needs it)—“Prev/Next” buttons, neon purple, 12px padding-x.  
+Export: “Download Leads (CSV)” button below—neon purple, white text, 16px, bold, 20px padding-x, 10px padding-y, glows on hover—exports filtered table as CSV.
+Styling: Table in #1A2236, 1px neon purple border, 12px radius, 10px padding per cell—rows fade in (0.5s stagger). Mobile: Cards (100% width, 10px gap).  
+Data: Fetched from Supabase leads table—e.g., supabase.table('leads').select('*').eq('user_id', session['user_id']).execute().  
+Example: Lead Launch user sees 50 leads; Empire user sees 600 (25/page).  
+Purpose: Immediate payoff—leads are real, scored, actionable—keeps ‘em coming back.
+3. Subscription Section
+Purpose: Shows their plan—reinforces value, nudges upgrades.  
+Title: “Your Leadzap Plan”  
+Style: White, 28px, bold, centered, 30px padding-top—clear focus.
+Content: Card (max-width 400px, centered):  
+Package: E.g., “Lead Engine” (white, 20px, bold).  
+Price: E.g., “$1,499/month” (steel gray, 16px)—placeholder, Stripe fills later.  
+Lead Volume: E.g., “150 leads/month” (steel gray, 16px).  
+Next Billing: E.g., “March 25, 2025” (steel gray, 16px)—placeholder, Stripe later.  
+Status: “Active” (neon purple, 16px, bold).  
+Buttons:  
+“Upgrade Plan” (neon purple, white text, 16px, bold, 20px padding-x, links to /pricing)—glows on hover.  
+“Manage Subscription” (neon purple outline, white text, same size)—placeholder for Stripe portal (future).
+Styling: #1A2236 card, 1px neon purple border, 12px radius, 20px padding—fades in (0.5s).  
+Data: From Supabase user_packages table—e.g., supabase.table('user_packages').select('*').eq('user_id', session['user_id']).execute().  
+Purpose: Shows what they’ve got, teases more (e.g., “150/month? Get 600 with Empire!”).

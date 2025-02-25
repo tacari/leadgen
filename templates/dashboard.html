@@ -87,24 +87,26 @@
         <h2 class="text-3xl font-bold text-center mb-6">Lead Analytics</h2>
         <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 max-w-[600px] mx-auto animate-fade-in">
             <div class="grid grid-cols-2 gap-4 mb-6">
-                <div class="text-center">
+                <div class="text-center animate-fade-in" style="animation-delay: 0.1s">
                     <p class="text-2xl font-bold text-white">{{ analytics.total }}</p>
-                    <p class="text-[#A1A9B8]">Total Leads</p>
+                    <p class="text-[#A1A9B8] text-base">Total Leads</p>
                 </div>
-                <div class="text-center">
-                    <p class="text-2xl font-bold text-white">{{ analytics.emailed }}</p>
-                    <p class="text-[#A1A9B8]">Emailed</p>
+                <div class="text-center animate-fade-in" style="animation-delay: 0.2s">
+                    <p class="text-2xl font-bold text-[#A1A9B8]">{{ analytics.emailed }}</p>
+                    <p class="text-[#A1A9B8] text-base">Emailed</p>
                 </div>
-                <div class="text-center">
-                    <p class="text-2xl font-bold text-white">{{ analytics.replies }}</p>
-                    <p class="text-[#A1A9B8]">Replies</p>
+                <div class="text-center animate-fade-in" style="animation-delay: 0.3s">
+                    <p class="text-2xl font-bold text-[#A1A9B8]">{{ analytics.replies }}</p>
+                    <p class="text-[#A1A9B8] text-base">Replies</p>
                 </div>
-                <div class="text-center">
-                    <p class="text-2xl font-bold text-white">{{ analytics.conversions }}</p>
-                    <p class="text-[#A1A9B8]">Conversions</p>
+                <div class="text-center animate-fade-in" style="animation-delay: 0.4s">
+                    <p class="text-2xl font-bold text-[#A1A9B8]">{{ analytics.conversions }}</p>
+                    <p class="text-[#A1A9B8] text-base">Conversions</p>
                 </div>
             </div>
-            <canvas id="analyticsChart" width="400" height="200"></canvas>
+            <div style="height: 200px; width: 400px; margin: 0 auto;">
+                <canvas id="analyticsChart"></canvas>
+            </div>
         </div>
     </section>
 
@@ -112,7 +114,21 @@
     <section class="mb-12">
         <h2 class="text-3xl font-bold text-center mb-6">Next Lead Drop</h2>
         <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 max-w-[400px] mx-auto animate-fade-in">
-            <p class="text-[#A1A9B8] text-center">{{ delivery_status }}</p>
+            {% if subscription %}
+                {% if subscription.package_name == 'Lead Launch' %}
+                    <p class="text-[#A1A9B8] text-base text-center">Your 50 leads arrive by {{ (now + timedelta(days=7)).strftime('%B %d, %Y') }}</p>
+                {% elif subscription.package_name == 'Lead Engine' %}
+                    <p class="text-[#A1A9B8] text-base text-center">Next 37-38 leads: Weekly delivery</p>
+                {% elif subscription.package_name == 'Lead Accelerator' %}
+                    <p class="text-[#A1A9B8] text-base text-center">Next 12-13 leads: Tomorrow</p>
+                {% elif subscription.package_name == 'Empire' %}
+                    <p class="text-[#A1A9B8] text-base text-center">Next 25 leads: Tomorrow</p>
+                {% else %}
+                    <p class="text-[#A1A9B8] text-base text-center">{{ delivery_status }}</p>
+                {% endif %}
+            {% else %}
+                <p class="text-[#A1A9B8] text-base text-center">No active subscription</p>
+            {% endif %}
         </div>
     </section>
 </div>
@@ -135,6 +151,7 @@
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
                     display: false
@@ -161,41 +178,6 @@
             }
         }
     });
-
-    // Lead Filtering
-    function filterLeads(filter) {
-        const rows = document.querySelectorAll('tbody tr, .md\\:hidden > div');
-        const today = new Date();
-        const sevenDaysAgo = new Date(today.setDate(today.getDate() - 7));
-
-        rows.forEach(row => {
-            let show = true;
-            const score = parseInt(row.dataset.score);
-            const date = new Date(row.dataset.date);
-
-            switch(filter) {
-                case 'verified':
-                    show = row.querySelector('td:nth-child(5), .text-sm').textContent.includes('Verified');
-                    break;
-                case 'highScore':
-                    show = score > 75;
-                    break;
-                case 'recent':
-                    show = date >= sevenDaysAgo;
-                    break;
-                default:
-                    show = true;
-            }
-
-            row.style.display = show ? '' : 'none';
-        });
-
-        // Update active filter button
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.classList.remove('active', 'bg-[#7B00FF]', 'text-white');
-        });
-        event.target.classList.add('active', 'bg-[#7B00FF]', 'text-white');
-    }
 </script>
 
 <style>
@@ -206,10 +188,6 @@
     .animate-fade-in {
         animation: fade-in 0.5s ease-out;
         animation-fill-mode: both;
-    }
-    .filter-btn.active {
-        background-color: #7B00FF;
-        color: white;
     }
 </style>
 {% endblock %}

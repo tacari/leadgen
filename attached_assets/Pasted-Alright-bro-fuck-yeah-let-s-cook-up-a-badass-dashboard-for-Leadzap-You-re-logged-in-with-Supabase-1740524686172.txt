@@ -1,0 +1,21 @@
+Alright, bro—fuck yeah, let’s cook up a badass dashboard for Leadzap! You’re logged in with Supabase, and when users hit that /dashboard after login, it’s gotta slap ‘em with value—personalized, premium, and packed with everything to make this a $100k/month AI lead gen beast. No half-assing—full details, every section, deep dive, dark mode swagger, neon purple fire. Register/login’s on the back burner—we’re focusing on what they see post-login, starting with “Hey [Username]” to set the tone. Supabase is in play, so we’ll leverage it for user data. Let’s fucking go—here’s the full dashboard breakdown!
+Dashboard Overview: What Users See Post-Login
+The dashboard (dashboard.html) is the heart of Leadzap—where clients land after logging in via /login, powered by Flask on Replit with Supabase auth. It’s their control hub—showing AI-generated leads, subscription details, analytics, and delivery status—tied to their package (Lead Launch: $499, 50 leads; Empire: $5,999/month, 600 leads). It’s gotta be slick, intuitive, and scream “You’re getting your money’s worth”—keeping ‘em hooked for that $5k–$10k quick win and $100k/month grind. Dark mode (#0D1321 base, #7B00FF accents), Tailwind CSS, and dynamic data from Supabase make it pop.
+Purpose
+Personalize: Greet ‘em with “Hey [Username]”—feels custom, builds connection.  
+Value Upfront: Show leads—name, email, score—right away, no bullshit.  
+Engage: Filters, stats, controls—keep ‘em clicking, not bouncing.  
+Upsell: Highlight their plan, tease bigger tiers—$499 to $5,999 upgrades.  
+Trust: Premium design, real-time data—feels like a million-dollar tool.
+Dashboard Design: Full Details
+Here’s every section—visuals, functionality, styling—when users log in, starting with that “Hey [Username]” hook.
+1. Header
+Purpose: Sets a personal, premium tone—welcomes ‘em, offers logout.  
+Title: “Hey [Username], Welcome to Your Leadzap Dashboard”  
+Style: White (#FFFFFF), 40px, bold, Inter font, centered, 40px padding-top—big, personal kickoff.  
+Data: [Username] pulled from Supabase users table (supabase.table('users').select('username').eq('id', session['user_id'])).
+Logout Button:  
+Text: “Logout”  
+Style: Neon purple (#7B00FF), white text, 16px, bold, 20px padding-x, 10px padding-y, 8px radius, absolute top-right—glows on hover (#8F00FF + shadow), scales (0.2s), links to /logout.
+Background: Obsidian (#0D1321)—grounds the page in dark mode.  
+Animation: Fades in (0.5s)—smooth, pro entry.

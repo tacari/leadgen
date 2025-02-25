@@ -2,7 +2,7 @@ import os
 import sys
 import json
 import csv
-from datetime import datetime
+from datetime import datetime, timedelta
 from io import StringIO
 import psutil
 from flask import Flask, render_template, redirect, url_for, flash, request, make_response, session, jsonify
@@ -50,7 +50,8 @@ def pricing():
 
 @app.route('/dashboard')
 def dashboard():
-    # For development, using sample data
+    # Sample data for development
+    now = datetime.now()
     leads = [
         {
             'name': "Joe's Plumbing",
@@ -79,15 +80,15 @@ def dashboard():
         'replies': 0,
         'conversions': 0
     }
-    delivery_status = "Next 37-38 leads: Weekly delivery"
 
     return render_template(
         'dashboard.html',
         leads=leads,
         subscription=subscription,
         analytics=analytics,
-        delivery_status=delivery_status,
-        username="Developer"  # Hardcoded for development
+        delivery_status="Next 37-38 leads: Weekly delivery",
+        username="Developer",  # Hardcoded for development
+        now=now  # Pass current time for delivery calculations
     )
 
 @app.route('/lead-history')
