@@ -1,0 +1,102 @@
+{% extends "dashboard_base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<div class="bg-[#0D1321] min-h-screen text-white p-8">
+    <h1 class="text-4xl font-bold text-center mb-12">Account Settings</h1>
+    
+    <!-- Profile Section -->
+    <div class="max-w-2xl mx-auto space-y-8">
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+            <h2 class="text-2xl font-bold mb-6">Profile</h2>
+            <form method="POST" class="space-y-4">
+                <div>
+                    <label class="block text-white text-base font-bold mb-2">Username</label>
+                    <input 
+                        type="text" 
+                        name="username" 
+                        value="{{ user.username }}"
+                        class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white"
+                    >
+                </div>
+                <div>
+                    <label class="block text-white text-base font-bold mb-2">Email</label>
+                    <input 
+                        type="email" 
+                        name="email" 
+                        value="{{ user.email }}"
+                        class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white"
+                    >
+                </div>
+                <button type="submit" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">
+                    Update Profile
+                </button>
+            </form>
+        </div>
+
+        <!-- Notifications Section -->
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+            <h2 class="text-2xl font-bold mb-6">Notifications</h2>
+            <form method="POST" class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <label class="text-white">Email me new leads daily</label>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="new_leads" class="sr-only peer" {{ 'checked' if user.notifications.new_leads }}>
+                        <div class="w-11 h-6 bg-[#1A2236] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#7B00FF]"></div>
+                    </label>
+                </div>
+                <div class="flex items-center justify-between">
+                    <label class="text-white">Weekly performance summary</label>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="weekly_summary" class="sr-only peer" {{ 'checked' if user.notifications.weekly_summary }}>
+                        <div class="w-11 h-6 bg-[#1A2236] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#7B00FF]"></div>
+                    </label>
+                </div>
+                <div class="flex items-center justify-between">
+                    <label class="text-white">Support updates</label>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="support_updates" class="sr-only peer" {{ 'checked' if user.notifications.support_updates }}>
+                        <div class="w-11 h-6 bg-[#1A2236] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#7B00FF]"></div>
+                    </label>
+                </div>
+                <button type="submit" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">
+                    Save Preferences
+                </button>
+            </form>
+        </div>
+
+        <!-- Billing Section -->
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+            <h2 class="text-2xl font-bold mb-6">Billing</h2>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-[#A1A9B8] text-lg">Current Plan</p>
+                    <p class="text-white text-xl">{{ subscription.package_name }}, ${{ "{:,.0f}".format(subscription.price) }}/month</p>
+                </div>
+                <div>
+                    <p class="text-[#A1A9B8] text-lg">Next Billing Date</p>
+                    <p class="text-white text-xl">{{ subscription.next_billing }}</p>
+                </div>
+                <div class="flex gap-4">
+                    <a href="{{ url_for('pricing') }}" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">
+                        Change Plan
+                    </a>
+                    <a href="#" class="border border-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#7B00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">
+                        Manage Billing
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes fade-in {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+        animation: fade-in 0.5s ease-out;
+        animation-fill-mode: both;
+    }
+</style>
+{% endblock %}

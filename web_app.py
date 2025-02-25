@@ -169,6 +169,82 @@ def download_leads():
     response.headers['Content-type'] = 'text/csv'
     return response
 
+@app.route('/analytics')
+def analytics():
+    # Sample analytics data for development
+    leads = [
+        {
+            'date_added': '2025-02-25',
+            'leads_added': 10,
+            'emailed': 8,
+            'replies': 2,
+            'conversions': 1,
+            'avg_score': 82
+        },
+        {
+            'date_added': '2025-02-24',
+            'leads_added': 15,
+            'emailed': 12,
+            'replies': 3,
+            'conversions': 1,
+            'avg_score': 78
+        }
+    ]
+
+    analytics = {
+        'total_leads': 25,
+        'emailed': 20,
+        'replies': 5,
+        'conversions': 2,
+        'charts': {
+            'daily': [10, 15],
+            'dates': ['Feb 24', 'Feb 25'],
+            'status': {
+                'labels': ['Pending', 'Emailed', 'Replied', 'Converted'],
+                'data': [5, 15, 3, 2]
+            }
+        }
+    }
+
+    insights = {
+        'top_source': 'LinkedIn',
+        'high_score_percentage': 80
+    }
+
+    return render_template('analytics.html', 
+                         analytics=analytics, 
+                         leads=leads, 
+                         insights=insights)
+
+@app.route('/settings', methods=['GET', 'POST'])
+def settings():
+    # Sample user data for development
+    user = {
+        'username': 'Developer',
+        'email': 'dev@example.com',
+        'notifications': {
+            'new_leads': True,
+            'weekly_summary': True,
+            'support_updates': False
+        }
+    }
+
+    subscription = {
+        'package_name': 'Lead Engine',
+        'price': 1499,
+        'next_billing': '2025-03-25',
+        'lead_volume': 150
+    }
+
+    if request.method == 'POST':
+        # Handle form submissions (just flash a message for now)
+        flash('Settings updated successfully!', 'success')
+        return redirect(url_for('settings'))
+
+    return render_template('settings.html', 
+                         user=user, 
+                         subscription=subscription)
+
 if __name__ == '__main__':
     try:
         # Create required JSON files if they don't exist

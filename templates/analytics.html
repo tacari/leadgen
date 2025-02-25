@@ -1,0 +1,187 @@
+{% extends "dashboard_base.html" %}
+{% block title %}Analytics{% endblock %}
+{% block content %}
+<div class="bg-[#0D1321] min-h-screen text-white p-8">
+    <h1 class="text-4xl font-bold text-center mb-12">Lead Performance Analytics</h1>
+    
+    <!-- Overview Stats -->
+    <div class="max-w-6xl mx-auto space-y-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-4 text-center animate-fade-in">
+                <p class="text-2xl font-bold text-white">{{ analytics.total_leads }}</p>
+                <p class="text-[#A1A9B8] text-base">Total Leads</p>
+            </div>
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-4 text-center animate-fade-in">
+                <p class="text-2xl font-bold text-white">{{ analytics.emailed }}</p>
+                <p class="text-[#A1A9B8] text-base">Emailed</p>
+            </div>
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-4 text-center animate-fade-in">
+                <p class="text-2xl font-bold text-white">{{ analytics.replies }}</p>
+                <p class="text-[#A1A9B8] text-base">Replies</p>
+            </div>
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-4 text-center animate-fade-in">
+                <p class="text-2xl font-bold text-white">{{ analytics.conversions }}</p>
+                <p class="text-[#A1A9B8] text-base">Conversions</p>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Bar Chart -->
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+                <h3 class="text-xl font-bold mb-4">Leads by Day</h3>
+                <div style="height: 300px;">
+                    <canvas id="leadsChart"></canvas>
+                </div>
+                <div class="mt-4 flex gap-4 justify-center">
+                    <button class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF]">Day</button>
+                    <button class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF]">Week</button>
+                    <button class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF]">Month</button>
+                </div>
+            </div>
+
+            <!-- Pie Chart -->
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+                <h3 class="text-xl font-bold mb-4">Status Breakdown</h3>
+                <div style="height: 300px;">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Table -->
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Detailed Analytics</h3>
+                <input type="text" placeholder="Filter by date range" class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-[#A1A9B8]">
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-[#A1A9B8] text-sm">
+                    <thead>
+                        <tr class="border-b border-[#7B00FF]">
+                            <th class="p-3">Date</th>
+                            <th class="p-3">Leads Added</th>
+                            <th class="p-3">Emailed</th>
+                            <th class="p-3">Replies</th>
+                            <th class="p-3">Conversions</th>
+                            <th class="p-3">Avg Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lead in leads %}
+                        <tr class="border-b border-[#7B00FF] animate-fade-in">
+                            <td class="p-3">{{ lead.date_added }}</td>
+                            <td class="p-3">{{ lead.leads_added }}</td>
+                            <td class="p-3">{{ lead.emailed }}</td>
+                            <td class="p-3">{{ lead.replies }}</td>
+                            <td class="p-3">{{ lead.conversions }}</td>
+                            <td class="p-3">{{ lead.avg_score }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <a href="#" class="mt-4 inline-block bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">
+                Download Analytics (CSV)
+            </a>
+        </div>
+
+        <!-- Insights Box -->
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+            <h3 class="text-xl font-bold mb-4">Key Insights</h3>
+            <p class="text-[#A1A9B8] text-lg">
+                Top Source: {{ insights.top_source }} ({{ insights.high_score_percentage }}% high-score leads)
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Bar Chart
+    const leadsCtx = document.getElementById('leadsChart').getContext('2d');
+    new Chart(leadsCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ analytics.charts.dates | tojson }},
+            datasets: [{
+                label: 'Leads',
+                data: {{ analytics.charts.daily | tojson }},
+                backgroundColor: '#7B00FF',
+                borderColor: '#8F00FF',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#1A2236'
+                    },
+                    ticks: {
+                        color: '#A1A9B8'
+                    }
+                },
+                x: {
+                    grid: {
+                        color: '#1A2236'
+                    },
+                    ticks: {
+                        color: '#A1A9B8'
+                    }
+                }
+            }
+        }
+    });
+
+    // Pie Chart
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    new Chart(statusCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ analytics.charts.status.labels | tojson }},
+            datasets: [{
+                data: {{ analytics.charts.status.data | tojson }},
+                backgroundColor: ['#1A2236', '#7B00FF', '#8F00FF', '#A1A9B8'],
+                borderColor: '#0D1321',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: '#A1A9B8',
+                        font: {
+                            family: 'Inter'
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+
+<style>
+    @keyframes fade-in {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+        animation: fade-in 0.5s ease-out;
+        animation-fill-mode: both;
+    }
+</style>
+{% endblock %}

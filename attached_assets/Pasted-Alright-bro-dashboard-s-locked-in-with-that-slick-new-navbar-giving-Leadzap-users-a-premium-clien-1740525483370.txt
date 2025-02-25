@@ -1,0 +1,302 @@
+Alright, bro—dashboard’s locked in with that slick new navbar, giving Leadzap users a premium, client-focused hub when they log in. Now let’s flesh out the full ecosystem—every page beyond /dashboard and the extra features they’ll see. We’re building a $100k/month AI lead gen empire here, so each page and feature needs to deliver value, keep ‘em hooked, and drive that $5k–$10k quick win to long-term millions. With Supabase running auth and Flask on Replit, we’ll detail /lead-history, /analytics, /settings, /support, plus bonus features—all in dark mode (#0D1321 base, #7B00FF neon purple accents). Full fucking detail—let’s cook this shit up!
+Full Ecosystem: Pages Beyond Dashboard
+These pages extend dashboard_base.html (that new navbar we just built)—accessible via the navbar links: “Lead History,” “Analytics,” “Settings,” “Support.” Each one’s a powerhouse, tied to their $499–$5,999 packages (Lead Launch to Empire), with features to boost engagement and revenue.
+1. Lead History Page (/lead-history)
+Purpose
+Archive all leads—beyond the dashboard’s latest snapshot—lets users track every prospect, manage follow-ups, and see their full pipeline.
+Design & Content
+Title: “Your Lead History”  
+Style: White (#FFFFFF), 40px, bold, Inter font, centered, 40px padding-top—big, clear opener.
+Search & Filters:  
+Search Bar: “Search by name, email, or source” (top-left, #1A2236 input, neon purple border, 16px, steel gray placeholder)—live filters table (basic JS).  
+Filters: Dropdowns (top-right, neon purple outline, 14px, hover fills #7B00FF):  
+“Date Range”: “All Time,” “Last 30 Days,” “Last 90 Days,” “Custom” (date picker).  
+“Status”: “All,” “Pending,” “Emailed,” “Replied,” “Converted.”  
+“Score”: “All,” “>75,” “>50,” “<50.”
+Table:  
+Columns:  
+Name: E.g., “Joe’s Plumbing” (steel gray, 14px).  
+Email: E.g., “joe@example.com” (steel gray, 14px).  
+Source: E.g., “Yellow Pages” (steel gray, 14px).  
+Score: E.g., “85” (neon purple if >75, else steel gray, 14px)—sortable.  
+Verified: “Yes”/“No” (steel gray, 14px).  
+Status: Dropdown—“Pending,” “Emailed,” “Replied,” “Converted” (editable, updates Supabase)—#1A2236, neon purple border.  
+Date Added: E.g., “2025-02-25” (steel gray, 14px)—sortable.  
+Notes: Text input (e.g., “Called 2/26”)—editable, saves to Supabase.  
+Actions: Buttons—“Email Now” (neon purple, 12px padding-x), “Delete” (red outline, 12px padding-x)—POSTs to /lead/<id>/email or /lead/<id>/delete.
+Pagination: 50 leads/page—“Prev/Next” buttons (neon purple, 12px padding-x)—handles Empire’s 600 leads/month.  
+Export: “Download Lead History (CSV)” (neon purple, 16px, bold, 20px padding-x, glows on hover)—exports filtered table.
+Styling: #1A2236 table, 1px neon purple border, 12px radius—rows fade in (0.5s stagger), mobile stacks to cards (100% width, 10px gap).
+Data
+Fetched from Supabase leads table—e.g., supabase.table('leads').select('*').eq('user_id', session['user_id']).execute().  
+Adds notes column to leads table (text, nullable)—stores user inputs.
+Purpose
+Depth: Empire users ($5,999) manage 600 leads—track every detail, never lose a prospect.  
+Action: Editable status/notes + actions—$1,499 Engine users stay engaged, upsell to automation.
+2. Analytics Page (/analytics)
+Purpose
+Deep dive into lead performance—expands dashboard stats, proves ROI, nudges upgrades with data-driven swagger.
+Design & Content
+Title: “Lead Performance Analytics”  
+Style: White, 40px, bold, centered, 40px padding-top—data powerhouse vibe.
+Overview Stats:  
+Card Grid (4 cols desktop, stacks mobile):  
+“Total Leads” (e.g., “600”), “Emailed” (e.g., “400”), “Replies” (e.g., “50”), “Conversions” (e.g., “20”)—white, 24px, bold; steel gray labels, 16px.
+Styling: #1A2236 cards, neon purple borders, 12px radius—fade in (0.5s stagger).
+Charts:  
+Bar Chart: “Leads by Day/Week/Month” (toggle buttons: neon purple, 14px)—600x300px, neon purple bars (Chart.js).  
+Pie Chart: “Status Breakdown” (Pending/Emailed/Replied/Converted)—400x400px, neon purple, blue, green, gray slices.  
+Line Chart: “Reply Rate Over Time” (last 30 days)—600x300px, neon purple line—placeholder data now, SendGrid later.  
+Styling: #1A2236 background, neon purple accents—charts fade in (0.5s).
+Detailed Table:  
+Columns: Date, Leads Added, Emailed, Replies, Conversions, Avg Score—steel gray, 14px—sortable.  
+Filter: Date range picker (neon purple input)—e.g., “Feb 1–Feb 25, 2025”.  
+Pagination: 25 rows/page—neon purple Prev/Next buttons.  
+Export: “Download Analytics (CSV)” (neon purple, 16px, bold, 20px padding-x)—exports table data.
+Insights Box:  
+Text: “Top Source: LinkedIn (80% high-score leads)” (steel gray, 16px)—calculated from leads table.  
+Style: #1A2236 card, neon purple border—fades in (0.5s).
+Data
+Aggregated from leads table—e.g., supabase.table('leads').select('date_added, status, score').eq('user_id', session['user_id']).execute().  
+Future: Add replies and conversions columns (int, nullable) for real data via SendGrid/user input.
+Purpose
+ROI: $2,999 Accelerator users see “400 emailed, 50 replies”—worth every penny.  
+Upsell: “Only 150 leads/month? Empire gets 600!”—data pushes $5,999 upgrades for $100k/month.
+3. Settings Page (/settings)
+Purpose
+User control—profile, notifications, billing—keeps ‘em invested, reduces friction.
+Design & Content
+Title: “Account Settings”  
+Style: White, 40px, bold, centered, 40px padding-top—functional hub.
+Profile Section:  
+Fields:  
+Username (editable, e.g., “johndoe”)—#1A2236 input, neon purple border, 16px.  
+Email (editable, e.g., “john@example.com”)—same style.
+Button: “Update Profile” (neon purple, 16px, bold, 20px padding-x)—glows on hover, POSTs to /settings.
+Notifications Section:  
+Toggles:  
+“Email me new leads daily” (neon purple switch, 14px label).  
+“Weekly performance summary” (same style).  
+“Support updates” (same style).
+Button: “Save Preferences” (neon purple, 16px, bold, 20px padding-x)—glows on hover, POSTs to /settings.
+Billing Section:  
+Current Plan: E.g., “Lead Engine, $1,499/month” (steel gray, 16px).  
+Next Billing: E.g., “March 25, 2025” (steel gray, 16px)—placeholder, Stripe later.  
+Buttons:  
+“Change Plan” (neon purple, 16px, bold, links to /pricing)—glows on hover.  
+“Manage Billing” (neon purple outline, same size)—placeholder for Stripe portal.
+Styling: #1A2236 cards per section, 1px neon purple borders, 12px radius—fade in (0.5s).
+Data
+Profile from users table—e.g., supabase.table('users').select('*').eq('id', session['user_id']).execute().  
+Plan from user_packages—e.g., supabase.table('user_packages').select('*').eq('user_id', session['user_id']).execute().  
+Add notifications table: id (uuid), user_id (uuid), new_leads (boolean), weekly_summary (boolean), support_updates (boolean).
+Purpose
+Control: $499 Lead Launch users tweak settings—feels personal.  
+Retention: Billing visibility + notifications—keeps $5,999 Empire clients locked in.
+4. Support Page (/support)
+Purpose
+Quick help—FAQs, contact form—cuts churn, keeps clients happy.
+Design & Content
+Title: “Leadzap Support”  
+Style: White, 40px, bold, centered, 40px padding-top—help’s here.
+FAQs Section:  
+Accordion: Tailwind CSS collapsible items:  
+“How do I get my leads?” → “CSV, email, or dashboard—daily/weekly per your plan.” (steel gray, 14px).  
+“What’s lead scoring?” → “AI ranks 1–100—higher means hotter prospects.”  
+“Can I upgrade?” → “Yes—‘Change Plan’ in Settings.”
+Styling: #1A2236 items, neon purple titles, expands on click (JS)—fade in (0.5s).
+Contact Form:  
+Fields:  
+Subject (text, e.g., “Need help with leads”)—#1A2236, neon purple border, 16px.  
+Message (textarea, 5 rows)—same style.
+Button: “Send Message” (neon purple, 16px, bold, 20px padding-x)—glows on hover, POSTs to /support.
+Contact Info:  
+“Email us: support@leadzap.io” (neon purple link, 16px)—“Response within 24 hours” (steel gray, 14px).
+Styling: #1A2236 card, 1px neon purple border, 12px radius—content fades in (0.5s).
+Data
+Future: Store messages in support_requests table—id (uuid), user_id (uuid), subject (text), message (text), created_at (timestamp).
+Purpose
+Support: $5,999 Empire clients get fast answers—reduces churn for $100k/month.  
+Trust: Clear help options—builds loyalty from $5k–$10k phase.
+Additional Features: Beyond Pages
+Here’s what else users see—features woven into dashboard and pages, boosting value and stickiness.
+1. Lead Actions
+What: Per-lead buttons in /dashboard and /lead-history:  
+“Email Now” (triggers manual email)—neon purple, 12px padding-x.  
+“Add Note” (text input, saves to notes column)—#1A2236, neon purple border.  
+“Mark as Converted” (updates status to “Converted”)—neon purple, 12px padding-x.
+How: POST routes—e.g., /lead/<id>/email, /lead/<id>/note, /lead/<id>/convert—update Supabase leads.  
+Purpose: Hands-on control—$1,499 Engine users stay active, upsell to $5,999 automation.
+2. Real-Time Alerts
+What: Dashboard banner—“New Lead: Joe’s Plumbing, Score 85!”—neon purple, auto-fades after 5s.  
+How: Supabase real-time—supabase.table('leads').on('INSERT', lambda payload: print(payload)).subscribe(), JS frontend updates.  
+Purpose: Instant value—daily drops for $2,999–$5,999 plans keep ‘em hyped.
+3. Upgrade Nudges
+What: Dashboard/analytics banner—“Only 50 leads? Empire gets 600/month!”—neon purple, links to /pricing.  
+How: Conditional in dashboard.html—if subscription.lead_volume < 600, show nudge.  
+Purpose: Revenue boost—$5k–$10k scales to $100k/month with tier jumps.
+4. Lead Source Insights
+What: Analytics section—“Top Sources: LinkedIn (80% >75), Yellow Pages (50%)”—neon purple table.  
+How: Query leads—supabase.table('leads').select('source, score').eq('user_id', session['user_id']).execute(), group by source.  
+Purpose: AI flex—$5,999 Empire clients see why it’s worth it, builds trust.
+5. Notification Preferences
+What: Settings toggle—“Notify me on replies” (future SendGrid webhook)—neon purple switch.  
+How: Store in notifications table—update via /settings POST.  
+Purpose: Engagement—keeps $499 users coming back, scales with $100k/month volume.
+Implementation Snippet (app.py)
+Add routes for new pages and features:
+python
+@app.route('/lead/<id>/email', methods=['POST'])
+def email_lead(id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    # Placeholder—future email integration (e.g., SendGrid)
+    supabase.table('leads').update({'status': 'Emailed'}).eq('id', id).execute()
+    flash('Lead emailed!')
+    return redirect(request.referrer)
+
+@app.route('/lead/<id>/note', methods=['POST'])
+def note_lead(id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    note = request.form['note']
+    supabase.table('leads').update({'notes': note}).eq('id', id).execute()
+    flash('Note added!')
+    return redirect(request.referrer)
+
+@app.route('/lead/<id>/convert', methods=['POST'])
+def convert_lead(id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    supabase.table('leads').update({'status': 'Converted'}).eq('id', id).execute()
+    flash('Lead marked as converted!')
+    return redirect(request.referrer)
+
+@app.route('/analytics')
+def analytics():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user = supabase.auth.get_user(session['user_id'])
+    leads = supabase.table('leads').select('*').eq('user_id', user.user.id).execute().data
+    total = len(leads)
+    emailed = sum(1 for lead in leads if lead['status'] == 'Emailed')
+    analytics = {'total': total, 'emailed': emailed, 'replies': 0, 'conversions': 0}
+    return render_template('analytics.html', analytics=analytics, leads=leads)
+
+@app.route('/settings', methods=['GET', 'POST'])
+def settings():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user = supabase.auth.get_user(session['user_id'])
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        supabase.table('users').update({'username': username, 'email': email}).eq('id', user.user.id).execute()
+        flash('Profile updated!')
+    user_data = supabase.table('users').select('*').eq('id', user.user.id).execute().data[0]
+    subscription = supabase.table('user_packages').select('*').eq('user_id', user.user.id).execute().data[0] if supabase.table('user_packages').select('*').eq('user_id', user.user.id).execute().data else None
+    return render_template('settings.html', user=user_data, subscription=subscription)
+
+@app.route('/support', methods=['GET', 'POST'])
+def support():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    if request.method == 'POST':
+        subject = request.form['subject']
+        message = request.form['message']
+        supabase.table('support_requests').insert({'user_id': session['user_id'], 'subject': subject, 'message': message, 'created_at': datetime.utcnow().isoformat()}).execute()
+        flash('Message sent! We’ll get back to you soon.')
+    return render_template('support.html')
+Analytics Template (analytics.html)—Example
+html
+{% extends "dashboard_base.html" %}
+{% block content %}
+<div class="bg-[#0D1321] min-h-screen text-white p-8">
+    <h1 class="text-4xl font-bold text-center mb-12">Lead Performance Analytics</h1>
+    <div class="max-w-6xl mx-auto space-y-8">
+        <!-- Overview Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-4 text-center animate-fade-in">
+                <p class="text-white text-2xl font-bold">{{ analytics.total }}</p>
+                <p class="text-[#A1A9B8] text-base">Total Leads</p>
+            </div>
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-4 text-center animate-fade-in">
+                <p class="text-white text-2xl font-bold">{{ analytics.emailed }}</p>
+                <p class="text-[#A1A9B8] text-base">Emailed</p>
+            </div>
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-4 text-center animate-fade-in">
+                <p class="text-white text-2xl font-bold">{{ analytics.replies }}</p>
+                <p class="text-[#A1A9B8] text-base">Replies</p>
+            </div>
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-4 text-center animate-fade-in">
+                <p class="text-white text-2xl font-bold">{{ analytics.conversions }}</p>
+                <p class="text-[#A1A9B8] text-base">Conversions</p>
+            </div>
+        </div>
+        <!-- Charts -->
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+            <canvas id="leadsChart" width="600" height="300"></canvas>
+            <div class="mt-4 flex gap-4 justify-center">
+                <button class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF]">Day</button>
+                <button class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF]">Week</button>
+                <button class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF]">Month</button>
+            </div>
+        </div>
+        <!-- Detailed Table -->
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6">
+            <input type="text" placeholder="Filter by date range" class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-[#A1A9B8] mb-4">
+            <table class="w-full text-left text-[#A1A9B8] text-sm">
+                <thead>
+                    <tr class="border-b border-[#7B00FF]">
+                        <th class="p-3">Date</th>
+                        <th class="p-3">Leads Added</th>
+                        <th class="p-3">Emailed</th>
+                        <th class="p-3">Replies</th>
+                        <th class="p-3">Conversions</th>
+                        <th class="p-3">Avg Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for lead in leads | groupby('date_added') %}
+                    <tr class="border-b border-[#7B00FF] animate-fade-in">
+                        <td class="p-3">{{ lead.grouper }}</td>
+                        <td class="p-3">{{ lead.list | length }}</td>
+                        <td class="p-3">{{ lead.list | selectattr('status', 'equalto', 'Emailed') | length }}</td>
+                        <td class="p-3">{{ analytics.replies }}</td>
+                        <td class="p-3">{{ analytics.conversions }}</td>
+                        <td class="p-3">{{ (lead.list | map(attribute='score') | list | average) | round(2) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <a href="#" class="mt-4 inline-block bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg">Download Analytics (CSV)</a>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('leadsChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Day 1', 'Day 2', 'Day 3'], // Placeholder—dynamic later
+            datasets: [{
+                label: 'Leads',
+                data: [{{ analytics.total }}, {{ analytics.emailed }}, {{ analytics.replies }}],
+                backgroundColor: '#7B00FF',
+                borderColor: '#8F00FF',
+                borderWidth: 1
+            }]
+        },
+        options: { scales: { y: { beginAtZero: true } } }
+    });
+</script>
+<style>
+    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+    .animate-fade-in { animation: fade-in 0.5s ease-in; }
+</style>
+{% endblock %}
+Why This Ecosystem Slaps
+Comprehensive: Full suite—Lead History tracks every move, Analytics proves value, Settings empowers, Support retains—$5k–$10k to $100k/month covered.  
+Engagement: Actions, real-time alerts, deep stats—keeps ‘em logging in, scaling from $499 to $5,999.  
+Premium: Dark mode, neon purple, AI-driven—million-dollar vibes lock in trust for $100k/month.
