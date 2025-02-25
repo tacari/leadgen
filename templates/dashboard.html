@@ -1,81 +1,209 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lead Generation Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-</head>
-<body>
-    <nav class="navbar">
-        <div class="navbar-container">
-            <a href="/" class="navbar-logo">
-                <div class="logo-orb"></div>
-                Leadzap
-            </a>
-            <button class="hamburger" onclick="toggleMenu()">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-            <div class="nav-links" id="navLinks">
-                <div class="nav-center">
-                    <a href="/">Home</a>
-                    <a href="/about">About</a>
-                    <a href="/services">Services</a>
-                    <a href="/pricing">Pricing</a>
-                    <a href="/contact">Contact</a>
-                </div>
-                <div class="nav-right">
-                    {% if current_user.is_authenticated %}
-                        <a href="/dashboard" class="active">Dashboard</a>
-                        <a href="/logout">Logout</a>
-                    {% else %}
-                        <a href="/login">Login</a>
-                        <a href="/register">Register</a>
-                    {% endif %}
-                </div>
+{% extends "base.html" %}
+{% block title %}Dashboard - Leadzap{% endblock %}
+{% block content %}
+<div class="bg-[#0D1321] min-h-screen text-white p-8">
+    <!-- Header -->
+    <header class="text-center py-10 relative">
+        <h1 class="text-4xl font-bold">Your Leadzap Dashboard</h1>
+        <p class="text-lg text-[#A1A9B8] italic mt-2">Welcome back, {{ current_user.name or current_user.email }}</p>
+    </header>
+
+    <!-- Leads -->
+    <section class="mb-12">
+        <h2 class="text-3xl font-bold text-center mb-6">Your Leads</h2>
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6">
+            <div class="flex flex-wrap gap-4 mb-4">
+                <button class="filter-btn bg-[#0D1321] border border-[#7B00FF] text-[#A1A9B8] px-4 py-2 rounded-lg hover:bg-[#7B00FF] hover:text-white active" onclick="filterLeads('all')">All</button>
+                <button class="filter-btn bg-[#0D1321] border border-[#7B00FF] text-[#A1A9B8] px-4 py-2 rounded-lg hover:bg-[#7B00FF] hover:text-white" onclick="filterLeads('verified')">Verified Only</button>
+                <button class="filter-btn bg-[#0D1321] border border-[#7B00FF] text-[#A1A9B8] px-4 py-2 rounded-lg hover:bg-[#7B00FF] hover:text-white" onclick="filterLeads('highScore')">High Score (>75)</button>
+                <button class="filter-btn bg-[#0D1321] border border-[#7B00FF] text-[#A1A9B8] px-4 py-2 rounded-lg hover:bg-[#7B00FF] hover:text-white" onclick="filterLeads('recent')">Last 7 Days</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-[#A1A9B8] text-sm">
+                    <thead>
+                        <tr class="border-b border-[#7B00FF]">
+                            <th class="p-3">Name</th>
+                            <th class="p-3">Email</th>
+                            <th class="p-3">Source</th>
+                            <th class="p-3">Score</th>
+                            <th class="p-3">Status</th>
+                            <th class="p-3">Date Added</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lead in leads %}
+                        <tr class="border-b border-[#7B00FF] animate-fade-in" data-score="{{ lead.score }}" data-date="{{ lead.date_added.strftime('%Y-%m-%d') }}">
+                            <td class="p-3">{{ lead.name }}</td>
+                            <td class="p-3">{{ lead.email }}</td>
+                            <td class="p-3">{{ lead.source }}</td>
+                            <td class="p-3 {% if lead.score > 75 %}text-[#7B00FF]{% endif %}">{{ lead.score }}</td>
+                            <td class="p-3">{{ lead.status }}</td>
+                            <td class="p-3">{{ lead.date_added.strftime('%Y-%m-%d') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <a href="{{ url_for('download_leads') }}" class="mt-4 inline-block bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg">Export Leads (CSV)</a>
+        </div>
+    </section>
+
+    <!-- Subscription -->
+    <section class="mb-12">
+        <h2 class="text-3xl font-bold text-center mb-6">Your Subscription</h2>
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 max-w-[400px] mx-auto animate-fade-in">
+            <p class="text-xl font-bold text-center">{{ subscription.package_name if subscription else 'No Active Plan' }}</p>
+            <p class="text-[#A1A9B8] text-center mb-2">{{ subscription.lead_volume if subscription else '0' }} leads/month</p>
+            <p class="text-[#A1A9B8] text-center mb-2">${{ "{:,.0f}".format(subscription.lead_volume * 10 if subscription else 0) }}/month</p>
+            <p class="text-[#7B00FF] font-bold text-center mb-4">Active</p>
+            <div class="flex gap-4 justify-center">
+                <a href="{{ url_for('pricing') }}" class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg">Upgrade Plan</a>
+                <button class="bg-[#FF4444] text-white px-4 py-2 rounded-lg hover:bg-[#FF6666] hover:shadow-lg">Cancel</button>
             </div>
         </div>
-    </nav>
+    </section>
 
-    <div class="content-section">
-        <div class="container">
-            <h1>Dashboard</h1>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Dentist Leads</h5>
-                            <p class="card-text">Total Leads: {{ stats.dentist_count if stats else 0 }}</p>
-                            <a href="/leads/dentist" class="btn btn-primary">View Leads</a>
-                            <a href="/download/dentist" class="btn btn-secondary">Download CSV</a>
-                        </div>
-                    </div>
+    <!-- Analytics -->
+    <section class="mb-12">
+        <h2 class="text-3xl font-bold text-center mb-6">Your Lead Analytics</h2>
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 max-w-[600px] mx-auto animate-fade-in">
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="text-center">
+                    <p class="text-2xl font-bold text-white">{{ analytics.total }}</p>
+                    <p class="text-[#A1A9B8]">Total Leads</p>
                 </div>
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">SaaS Leads</h5>
-                            <p class="card-text">Total Leads: {{ stats.saas_count if stats else 0 }}</p>
-                            <a href="/leads/saas" class="btn btn-primary">View Leads</a>
-                            <a href="/download/saas" class="btn btn-secondary">Download CSV</a>
-                        </div>
-                    </div>
+                <div class="text-center">
+                    <p class="text-2xl font-bold text-white">{{ analytics.emailed }}</p>
+                    <p class="text-[#A1A9B8]">Emailed</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-2xl font-bold text-white">{{ analytics.replies }}</p>
+                    <p class="text-[#A1A9B8]">Replies</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-2xl font-bold text-white">{{ analytics.conversions }}</p>
+                    <p class="text-[#A1A9B8]">Conversions</p>
                 </div>
             </div>
-
-            <div class="mt-4 text-muted">
-                Last updated: {{ stats.last_update if stats else 'Never' }}
-            </div>
+            <canvas id="analyticsChart" width="400" height="200"></canvas>
         </div>
-    </div>
+    </section>
 
-    <script>
-    function toggleMenu() {
-        document.getElementById('navLinks').classList.toggle('active');
+    <!-- Delivery Status -->
+    <section class="mb-12">
+        <h2 class="text-3xl font-bold text-center mb-6">Next Delivery</h2>
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 max-w-[400px] mx-auto animate-fade-in">
+            <p class="text-[#A1A9B8] text-center">{{ delivery_status }}</p>
+        </div>
+    </section>
+
+    <!-- Settings -->
+    <section class="mb-12">
+        <h2 class="text-3xl font-bold text-center mb-6">Settings</h2>
+        <form method="POST" class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 max-w-[400px] mx-auto animate-fade-in">
+            {{ form.hidden_tag() }}
+            <div class="mb-4">
+                <label class="block text-white text-base font-bold mb-2">Email</label>
+                {{ form.email(class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white placeholder-[#A1A9B8]") }}
+            </div>
+            {{ form.submit(class="w-full bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg") }}
+        </form>
+    </section>
+</div>
+
+<!-- Chart.js for Analytics -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Analytics Chart
+    const ctx = document.getElementById('analyticsChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Total', 'Emailed', 'Replies', 'Conversions'],
+            datasets: [{
+                label: 'Lead Stats',
+                data: [{{ analytics.total }}, {{ analytics.emailed }}, {{ analytics.replies }}, {{ analytics.conversions }}],
+                backgroundColor: '#7B00FF',
+                borderColor: '#8F00FF',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#1A2236'
+                    },
+                    ticks: {
+                        color: '#A1A9B8'
+                    }
+                },
+                x: {
+                    grid: {
+                        color: '#1A2236'
+                    },
+                    ticks: {
+                        color: '#A1A9B8'
+                    }
+                }
+            }
+        }
+    });
+
+    // Lead Filtering
+    function filterLeads(filter) {
+        const rows = document.querySelectorAll('tbody tr');
+        const today = new Date();
+        const sevenDaysAgo = new Date(today.setDate(today.getDate() - 7));
+
+        rows.forEach(row => {
+            let show = true;
+            const score = parseInt(row.dataset.score);
+            const date = new Date(row.dataset.date);
+
+            switch(filter) {
+                case 'verified':
+                    show = row.querySelector('td:nth-child(3)').textContent === 'Verified';
+                    break;
+                case 'highScore':
+                    show = score > 75;
+                    break;
+                case 'recent':
+                    show = date >= sevenDaysAgo;
+                    break;
+                default:
+                    show = true;
+            }
+
+            row.style.display = show ? '' : 'none';
+        });
+
+        // Update active filter button
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('active', 'bg-[#7B00FF]', 'text-white');
+        });
+        event.target.classList.add('active', 'bg-[#7B00FF]', 'text-white');
     }
-    </script>
-</body>
-</html>
+</script>
+
+<style>
+    @keyframes fade-in {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+        animation: fade-in 0.5s ease-out;
+    }
+    .filter-btn.active {
+        background-color: #7B00FF;
+        color: white;
+    }
+</style>
+{% endblock %}

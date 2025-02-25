@@ -1,0 +1,427 @@
+Alright, bro—let’s keep the momentum going! Your Leadzap site’s landing page and core pages are locked in, and we’re shifting gears to make this a $100k/month AI lead gen agency. Since we’re planning what users see post-login, let’s start there—it’s the heart of the client experience. When users log in, they hit the dashboard, and that’s gotta be a badass hub showing their leads, subscription status, and actionable insights. It’s their first taste of value after dropping $499–$5,999 on your packages (Lead Launch, Engine, Accelerator, Empire), so it needs to deliver the goods—keep ‘em hooked, prove the AI’s worth, and push upgrades. Let’s dive in deep—full details on the dashboard, why it matters, and how we’ll build it in Flask on Replit. Then we’ll decide what’s next. Here we go!
+Why Start with the Dashboard?
+First Post-Login Impression: Users log in expecting results—leads, stats, proof their money’s working. A weak dashboard kills trust; a slick one locks them in.
+Retention Driver: If they see value (scored leads, outreach status), they stick around—$5k–$10k turns into $100k/month with upgrades and renewals.
+Scalability Prep: A robust dashboard now sets up Stripe integration, lead delivery automation, and analytics—core to hitting $100k/month.
+Priority: It’s what clients interact with daily—nail this, then backend (scraper, emailer) flows naturally.
+Dashboard Overview: What Users See Post-Login
+When users log in (via /login), they’re redirected to /dashboard—a dynamic, user-specific hub built with Flask, Flask-Login, Flask-SQLAlchemy, and Tailwind CSS. It’s responsive, dark-themed (Obsidian #0D1321, neon purple #7B00FF accents), and packed with features tied to their package (Lead Launch: 50 leads, Empire: 600/month). Here’s the full vision—every section, purpose, and detail.
+Purpose
+Show Leads: Display their AI-generated leads—name, email, score, status—so they can act fast.
+Subscription Info: Detail their package, lead volume, billing—push upgrades or confirm value.
+Analytics: Basic stats (leads delivered, emailed, replies)—prove ROI, hint at scaling benefits.
+Control: Let ‘em filter, download leads, tweak settings—make it feel like their tool.
+Engage: Keep ‘em coming back—daily/weekly updates, clean UX, actionable data.
+Design Principles
+Dark Mode: Obsidian (#0D1321) base, neon purple (#7B00FF) accents, steel gray (#A1A9B8) text—consistent premium vibe.
+Typography: Inter font—40px bold for titles, 16px regular for body—sharp, startup-ready.
+Layout: Single-column, 1440px max-width, responsive (stacks on mobile, 320px min)—Tailwind CSS grids.
+Animations: Subtle fade-ins on load (0.5s), button hovers scale (0.2s)—polished, not distracting.
+Dashboard Design: Full Details
+Here’s every section of the dashboard—what users see when they log in, styled and structured for impact.
+1. Header
+Title: “Your Leadzap Dashboard” in white (#FFFFFF), 40px, bold, centered, 40px padding-top—sets the tone.  
+Greeting: “Welcome back, [Username]” in steel gray (#A1A9B8), 18px, italic, centered, 10px padding-bottom—personal touch.  
+Logout Button: Top-right corner, “Logout” in neon purple (#7B00FF), white text on hover, 16px, bold, 12px padding-x, 8px radius, links to /logout—scales on hover (0.2s).  
+Background: Obsidian (#0D1321)—grounds the page in your dark theme.
+2. Leads Section
+Purpose: Core feature—shows their AI-generated leads, makes ‘em feel the value instantly.
+Title: “Your Leads” in white, 28px, bold, centered, 30px padding-top—draws focus.  
+Content: Responsive table (collapses to cards on mobile):  
+Columns:  
+Name: Lead name (e.g., “Joe’s Plumbing”), steel gray, 14px.  
+Email: Lead email (e.g., “joe@example.com”), steel gray, 14px.  
+Source: Where it came from (e.g., “Yellow Pages”), steel gray, 14px.  
+Score: AI-ranked (1–100, e.g., “85”), neon purple if >75, steel gray else, 14px—highlights hot leads.  
+Status: “Pending,” “Emailed,” “Replied” (steel gray, 14px)—tracks outreach.  
+Date Added: When it landed (e.g., “2025-02-25”), steel gray, 14px.
+Filters: Buttons above table—“All,” “Verified Only,” “High Score (>75),” “Last 7 Days”—neon purple outline, 14px, toggleable (JS/CSS).  
+Download: “Export Leads (CSV)” button, neon purple, white text, 16px, bold, 12px padding-x, 8px padding-y, 8px radius—downloads table data as CSV.
+Styling: Table in #1A2236, 1px neon purple border, 10px padding per cell—rows fade in on load (0.5s stagger). Mobile: Each row becomes a card (100% width, 10px margin).  
+Data: Pulled from Lead model via Flask-SQLAlchemy—e.g., Lead.query.filter_by(user_id=current_user.id).all().  
+Example: Lead Launch user sees 50 leads, Empire user sees 600 (paginated, 25 per page).  
+Purpose: Immediate value—leads are tangible, scored, and actionable—keeps ‘em engaged.
+3. Subscription Section
+Purpose: Shows their package details—reinforces value, nudges upgrades.  
+Title: “Your Subscription” in white, 28px, bold, centered, 30px padding-top—clear focus.  
+Content: Card layout (max-width 400px, centered):  
+Package Name: E.g., “Lead Accelerator” in white, 20px, bold.  
+Price: E.g., “$2,999/month” in steel gray, 16px.  
+Lead Volume: E.g., “300 leads/month” in steel gray, 16px.  
+Next Billing: E.g., “March 25, 2025” (from Stripe), steel gray, 16px.  
+Status: E.g., “Active” in neon purple, 16px, bold.  
+Buttons:  
+“Upgrade Plan” (neon purple, white text, 16px, bold, 12px padding-x, links to /pricing)—glows on hover.  
+“Cancel Subscription” (red #FF4444, white text, 16px, bold, 12px padding-x)—placeholder for Stripe cancel (future webhook).
+Styling: #1A2236 card, 1px neon purple border, 12px radius, 20px padding—fades in (0.5s).  
+Data: Pulled from UserPackage model—e.g., UserPackage.query.filter_by(user_id=current_user.id).first().  
+Purpose: Transparency—shows what they’re paying for, teases higher tiers (e.g., Empire’s 600 leads).
+4. Analytics Section
+Purpose: Proves ROI—shows lead performance, builds case for upgrades.  
+Title: “Your Lead Analytics” in white, 28px, bold, centered, 30px padding-top—data-driven hook.  
+Content: Simple stats card (max-width 600px, centered):  
+Total Leads: E.g., “300” in white, 20px, bold.  
+Emailed: E.g., “150” in steel gray, 16px—tracks outreach.  
+Replies: E.g., “20” in steel gray, 16px—placeholder (future SendGrid webhook).  
+Conversions: E.g., “5” in steel gray, 16px—manual input for now.  
+Chart: Basic bar chart (Tailwind + Chart.js)—e.g., “Leads vs. Emailed vs. Replies” over time.
+Styling: #1A2236 card, 1px neon purple border, 12px radius, 20px padding—fades in (0.5s).  
+Data: Aggregated from Lead model—e.g., total = Lead.query.filter_by(user_id=current_user.id).count(), emailed = Lead.query.filter_by(user_id=current_user.id, status='Emailed').count().  
+Purpose: Shows results—keeps clients engaged, hints at scaling (e.g., “More leads = more replies”).
+5. Delivery Status Section
+Purpose: Keeps ‘em informed—shows when their next leads drop, reinforces value.  
+Title: “Next Delivery” in white, 28px, bold, centered, 30px padding-top—sets expectation.  
+Content:  
+Text: Based on package:  
+Lead Launch: “Your 50 leads arrive by [date]” (7 days from signup).  
+Engine: “Next 37–38 leads: [date]” (weekly).  
+Accelerator/Empire: “Next 10–25 leads: Tomorrow” (daily).
+Style: Steel gray, 16px, centered.
+Styling: #1A2236 card, 1px neon purple border, 12px radius, 20px padding—fades in (0.5s).  
+Data: Hardcoded for now—future scheduler (Flask-APScheduler) will calculate dynamically.  
+Purpose: Keeps ‘em coming back—daily/weekly value drip builds loyalty.
+6. Settings Section
+Purpose: Basic control—lets ‘em tweak their profile, feel in charge.  
+Title: “Settings” in white, 28px, bold, centered, 30px padding-top—simple utility.  
+Content: Form (max-width 400px, centered):  
+Email Field: Pre-filled (e.g., “user@example.com”), editable, steel gray placeholder, #1A2236 background, neon purple border, 15px padding, 8px radius.  
+Update Button: “Update Email” (neon purple, white text, 16px, bold, 12px padding-x)—glows on hover, submits POST.
+Styling: #1A2236 card, 1px neon purple border, 12px radius, 20px padding—fades in (0.5s).  
+Purpose: Minimal but useful—future expansion (e.g., password reset).
+Visual Flow
+Order: Header → Leads → Subscription → Analytics → Delivery Status → Settings.  
+Height: ~2000px desktop, scrolls smooth—mobile stacks to ~2800px.  
+Vibe: Dark, techy, actionable—million-dollar AI agency feel with real-time value.
+Implementation in Replit with Flask
+Here’s how we’ll build this dashboard—full code, tied to your existing Flask setup.
+Flask App (app.py)
+Update with enhanced dashboard logic—assumes you’ve got user auth and Stripe basics:
+python
+from flask import Flask, render_template, request, redirect, url_for, flash, make_response
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_sqlalchemy import SQLAlchemy
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, SubmitField
+from wtforms.validators import DataRequired, Email, EqualTo, Length
+from werkzeug.security import generate_password_hash, check_password_hash
+import stripe
+import os
+import io
+import csv
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key')  # Add to Replit Secrets
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///leadzap.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['STRIPE_API_KEY'] = os.environ.get('STRIPE_API_KEY')  # Add to Secrets
+app.config['STRIPE_PUB_KEY'] = os.environ.get('STRIPE_PUB_KEY')  # Add to Secrets
+
+stripe.api_key = app.config['STRIPE_API_KEY']
+
+db = SQLAlchemy(app)
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+
+# Models
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64), unique=True, index=True)
+    email = db.Column(db.String(120), unique=True, index=True)
+    password_hash = db.Column(db.String(128))
+    leads = db.relationship('Lead', backref='user', lazy=True)
+    user_package = db.relationship('UserPackage', backref='user', uselist=False)
+
+class Lead(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120))
+    email = db.Column(db.String(120))
+    source = db.Column(db.String(120))
+    score = db.Column(db.Integer, default=50)  # AI score
+    verified = db.Column(db.Boolean, default=False)  # Email verified
+    status = db.Column(db.String(50), default='Pending')  # Pending, Emailed, Replied
+    date_added = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+class UserPackage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    package_name = db.Column(db.String(50))
+    lead_volume = db.Column(db.Integer)
+    stripe_subscription_id = db.Column(db.String(120))
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+# Forms
+class LoginForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    submit = SubmitField('Log In')
+
+class RegisterForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired(), Length(min=4, max=64)])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Password', validators=[DataRequired(), Length(min=8)])
+    confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField('Register')
+
+class UpdateEmailForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    submit = SubmitField('Update Email')
+
+# Routes
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
+@app.route('/services')
+def services():
+    return render_template('services.html')
+
+@app.route('/pricing')
+def pricing():
+    return render_template('pricing.html')
+
+@app.route('/contact')
+def contact():
+    return render_template('contact.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user and check_password_hash(user.password_hash, form.password.data):
+            login_user(user)
+            next_page = request.args.get('next', url_for('dashboard'))
+            return redirect(next_page)
+        flash('Invalid email or password')
+    return render_template('login.html', form=form)
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    form = RegisterForm()
+    if form.validate_on_submit():
+        if User.query.filter_by(username=form.username.data).first():
+            flash('Username already taken')
+            return redirect(url_for('register'))
+        if User.query.filter_by(email=form.email.data).first():
+            flash('Email already registered')
+            return redirect(url_for('register'))
+        hashed_password = generate_password_hash(form.password.data, method='pbkdf2:sha256')
+        user = User(username=form.username.data, email=form.email.data, password_hash=hashed_password)
+        db.session.add(user)
+        db.session.commit()
+        login_user(user)
+        flash('Registration successful! Welcome to Leadzap.')
+        return redirect(url_for('dashboard'))
+    return render_template('register.html', form=form)
+
+@app.route('/dashboard', methods=['GET', 'POST'])
+@login_required
+def dashboard():
+    form = UpdateEmailForm(email=current_user.email)
+    if form.validate_on_submit():
+        current_user.email = form.email.data
+        db.session.commit()
+        flash('Email updated successfully')
+    leads = Lead.query.filter_by(user_id=current_user.id).order_by(Lead.date_added.desc()).all()
+    subscription = UserPackage.query.filter_by(user_id=current_user.id).first()
+    total_leads = len(leads)
+    emailed_leads = sum(1 for lead in leads if lead.status == 'Emailed')
+    # Placeholder analytics—replace with real data later
+    analytics = {'total': total_leads, 'emailed': emailed_leads, 'replies': 0, 'conversions': 0}
+    delivery_status = "Next batch: 25 leads tomorrow"  # Hardcode for now—scheduler later
+    return render_template('dashboard.html', leads=leads, subscription=subscription, form=form, analytics=analytics, delivery_status=delivery_status)
+
+@app.route('/download_leads')
+@login_required
+def download_leads():
+    leads = Lead.query.filter_by(user_id=current_user.id).all()
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Name', 'Email', 'Source', 'Score', 'Verified', 'Status', 'Date Added'])
+    for lead in leads:
+        writer.writerow([lead.name, lead.email, lead.source, lead.score, lead.verified, lead.status, lead.date_added])
+    response = make_response(output.getvalue())
+    response.headers['Content-Disposition'] = 'attachment; filename=leads.csv'
+    response.headers['Content-type'] = 'text/csv'
+    return response
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('home'))
+
+# Add other routes (pricing, checkout, etc.) as needed...
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080)
+Dashboard Template (templates/dashboard.html)
+Update with the full design—extends base.html:
+html
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="bg-[#0D1321] min-h-screen text-white p-8">
+    <!-- Header -->
+    <header class="text-center py-10 relative">
+        <h1 class="text-4xl font-bold">Your Leadzap Dashboard</h1>
+        <p class="text-lg text-[#A1A9B8] italic mt-2">Welcome back, {{ current_user.username }}</p>
+        <a href="{{ url_for('logout') }}" class="absolute top-4 right-4 bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Logout</a>
+    </header>
+
+    <!-- Leads -->
+    <section class="mb-12">
+        <h2 class="text-3xl font-bold text-center mb-6">Your Leads</h2>
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6">
+            <div class="flex flex-wrap gap-4 mb-4">
+                <button class="filter-btn bg-[#0D1321] border border-[#7B00FF] text-[#A1A9B8] px-4 py-2 rounded-lg hover:bg-[#7B00FF] hover:text-white">All</button>
+                <button class="filter-btn bg-[#0D1321] border border-[#7B00FF] text-[#A1A9B8] px-4 py-2 rounded-lg hover:bg-[#7B00FF] hover:text-white">Verified Only</button>
+                <button class="filter-btn bg-[#0D1321] border border-[#7B00FF] text-[#A1A9B8] px-4 py-2 rounded-lg hover:bg-[#7B00FF] hover:text-white">High Score (>75)</button>
+                <button class="filter-btn bg-[#0D1321] border border-[#7B00FF] text-[#A1A9B8] px-4 py-2 rounded-lg hover:bg-[#7B00FF] hover:text-white">Last 7 Days</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-[#A1A9B8] text-sm">
+                    <thead>
+                        <tr class="border-b border-[#7B00FF]">
+                            <th class="p-3">Name</th>
+                            <th class="p-3">Email</th>
+                            <th class="p-3">Source</th>
+                            <th class="p-3">Score</th>
+                            <th class="p-3">Status</th>
+                            <th class="p-3">Date Added</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lead in leads %}
+                        <tr class="border-b border-[#7B00FF] animate-fade-in">
+                            <td class="p-3">{{ lead.name }}</td>
+                            <td class="p-3">{{ lead.email }}</td>
+                            <td class="p-3">{{ lead.source }}</td>
+                            <td class="p-3 {% if lead.score > 75 %}text-[#7B00FF]{% endif %}">{{ lead.score }}</td>
+                            <td class="p-3">{{ lead.status }}</td>
+                            <td class="p-3">{{ lead.date_added.strftime('%Y-%m-%d') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <a href="{{ url_for('download_leads') }}" class="mt-4 inline-block bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg">Export Leads (CSV)</a>
+        </div>
+    </section>
+
+    <!-- Subscription -->
+    <section class="mb-12">
+        <h2 class="text-3xl font-bold text-center mb-6">Your Subscription</h2>
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 max-w-[400px] mx-auto animate-fade-in">
+            <p class="text-xl font-bold text-center">{{ subscription.package_name if subscription else 'No Active Plan' }}</p>
+            <p class="text-[#A1A9B8] text-center">{{ subscription.lead_volume if subscription else '0' }} leads/month</p>
+            <p class="text-[#A1A9B8] text-center">${{ "{:,.0f}".format(subscription.lead_volume * 10 if subscription else 0) }}/month</p> <!-- Placeholder pricing logic -->
+            <p class="text-[#A1A9B8] text-center">Next Billing: [Stripe Date]</p>
+            <p class="text-[#7B00FF] font-bold text-center">Active</p>
+            <div class="mt-4 flex gap-4 justify-center">
+                <a href="{{ url_for('pricing') }}" class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg">Upgrade Plan</a>
+                <a href="#" class="bg-[#FF4444] text-white px-4 py-2 rounded-lg hover:bg-[#FF6666]">Cancel</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Analytics -->
+    <section class="mb-12">
+        <h2 class="text-3xl font-bold text-center mb-6">Your Lead Analytics</h2>
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 max-w-[600px] mx-auto animate-fade-in">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-white text-xl font-bold">{{ analytics.total }}</p>
+                    <p class="text-[#A1A9B8] text-sm">Total Leads</p>
+                </div>
+                <div>
+                    <p class="text-white text-xl font-bold">{{ analytics.emailed }}</p>
+                    <p class="text-[#A1A9B8] text-sm">Emailed</p>
+                </div>
+                <div>
+                    <p class="text-white text-xl font-bold">{{ analytics.replies }}</p>
+                    <p class="text-[#A1A9B8] text-sm">Replies</p>
+                </div>
+                <div>
+                    <p class="text-white text-xl font-bold">{{ analytics.conversions }}</p>
+                    <p class="text-[#A1A9B8] text-sm">Conversions</p>
+                </div>
+            </div>
+            <!-- Placeholder for Chart.js bar chart -->
+            <div class="mt-6">
+                <canvas id="analyticsChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- Delivery Status -->
+    <section class="mb-12">
+        <h2 class="text-3xl font-bold text-center mb-6">Next Delivery</h2>
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 max-w-[400px] mx-auto animate-fade-in">
+            <p class="text-[#A1A9B8] text-center">{{ delivery_status }}</p>
+        </div>
+    </section>
+
+    <!-- Settings -->
+    <section class="mb-12">
+        <h2 class="text-3xl font-bold text-center mb-6">Settings</h2>
+        <form method="POST" action="{{ url_for('dashboard') }}" class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 max-w-[400px] mx-auto animate-fade-in">
+            {{ form.hidden_tag() }}
+            <div class="mb-4">
+                <label class="block text-white text-base font-bold mb-2">Email</label>
+                {{ form.email(class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white placeholder-[#A1A9B8]") }}
+            </div>
+            {{ form.submit(class="w-full bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg") }}
+        </form>
+    </section>
+</div>
+
+<!-- Chart.js for Analytics -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('analyticsChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Total', 'Emailed', 'Replies', 'Conversions'],
+            datasets: [{
+                label: 'Lead Stats',
+                data: [{{ analytics.total }}, {{ analytics.emailed }}, {{ analytics.replies }}, {{ analytics.conversions }}],
+                backgroundColor: '#7B00FF',
+                borderColor: '#8F00FF',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+</script>
+
+<style>
+    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+    .animate-fade-in { animation: fade-in 0.5s ease-in; }
+    .filter-btn.active { background-color: #7B00FF; color: white; }
+</style>
+{% endblock %}
+Setup Steps
+Install Chart.js: Already added via CDN in dashboard.html—no extra setup needed.
+Update Models: Add score, verified, status to Lead model in app.py—run db.create_all() in Replit shell to update leadzap.db.
+Test Data: Manually add a few leads to leadzap.db via Flask shell—e.g., lead = Lead(name='Joe Plumbing', email='joe@example.com', source='Yellow Pages', score=85, verified=True, status='Emailed', user_id=1).
+Run: Update app.py and dashboard.html, hit “Run”—test login, check dashboard at yourname.replit.app/dashboard.
+Why This Dashboard Rocks
+Immediate Value: Leads table with scores and status—users see their $499–$5,999 investment working day one.  
+Engagement: Filters and exports keep ‘em active—feels like a tool, not a static page.  
+Upsell Power: Subscription card with “Upgrade” nudges Lead Launch ($499) to Empire ($5,999).  
+Trust: Analytics (even basic) show ROI—builds confidence for renewals.
+This is your $100k/month foundation—clients log in, see leads, stay hooked.
