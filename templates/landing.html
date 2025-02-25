@@ -19,6 +19,84 @@
         </div>
     </section>
 
+    <section id="signup" class="signup">
+        <div class="container">
+            <h2>Zap Your Leads Live</h2>
+            <div class="packages">
+                <!-- Starter Package -->
+                <div class="package">
+                    <h3>Lead Launch</h3>
+                    <p class="price">$499 One-Time</p>
+                    <p class="tagline">Test the waters with AI leads</p>
+                    <ul>
+                        <li>50 Qualified Leads</li>
+                        <li>AI-Powered Lead Generation</li>
+                        <li>7-Day Delivery via Email</li>
+                        <li>1 Cold Email Template</li>
+                    </ul>
+                    <button onclick="document.getElementById('signup-form').scrollIntoView({behavior: 'smooth'})">Get Started</button>
+                </div>
+
+                <!-- Core Package -->
+                <div class="package">
+                    <h3>Lead Engine</h3>
+                    <p class="price">$1,499/month</p>
+                    <p class="tagline">Steady leads to grow your biz</p>
+                    <ul>
+                        <li>150 Leads Monthly</li>
+                        <li>Weekly CSV + Sheets Updates</li>
+                        <li>3 Email Templates + Automation</li>
+                        <li>Basic Stats Dashboard</li>
+                    </ul>
+                    <button onclick="document.getElementById('signup-form').scrollIntoView({behavior: 'smooth'})">Get Started</button>
+                </div>
+
+                <!-- Pro Package -->
+                <div class="package popular">
+                    <div class="popular-tag">Most Popular</div>
+                    <h3>Lead Accelerator</h3>
+                    <p class="price">$2,999/month</p>
+                    <p class="tagline">Ramp up with serious lead flow</p>
+                    <ul>
+                        <li>300 Leads Monthly</li>
+                        <li>Daily Updates + Live Dashboard</li>
+                        <li>5 Templates + LinkedIn Scripts</li>
+                        <li>Detailed Monthly Reports</li>
+                    </ul>
+                    <button onclick="document.getElementById('signup-form').scrollIntoView({behavior: 'smooth'})">Get Started</button>
+                </div>
+
+                <!-- Elite Package -->
+                <div class="package">
+                    <h3>Lead Empire</h3>
+                    <p class="price">$5,999/month</p>
+                    <p class="tagline">Dominate your market with AI</p>
+                    <ul>
+                        <li>600 Leads Monthly</li>
+                        <li>Daily Priority Updates</li>
+                        <li>7 Multi-Channel Templates</li>
+                        <li>VIP Support + Weekly Calls</li>
+                    </ul>
+                    <button onclick="document.getElementById('signup-form').scrollIntoView({behavior: 'smooth'})">Get Started</button>
+                </div>
+            </div>
+
+            <form id="signup-form" class="signup-form" action="{{ url_for('signup') }}" method="POST">
+                <input type="text" name="name" placeholder="Your Name" required>
+                <input type="email" name="email" placeholder="Email" required>
+                <input type="text" name="niche" placeholder="Your Niche (e.g., plumber, SaaS)" required>
+                <select name="package" required>
+                    <option value="">Select Your Package</option>
+                    <option value="launch">Lead Launch ($499 One-Time)</option>
+                    <option value="engine">Lead Engine ($1,499/month)</option>
+                    <option value="accelerator">Lead Accelerator ($2,999/month)</option>
+                    <option value="empire">Lead Empire ($5,999/month)</option>
+                </select>
+                <button type="submit">Start Your Lead Generation</button>
+            </form>
+        </div>
+    </section>
+
     <section class="pitch" id="pitch">
         <div class="container">
             <h2>Leads for Every Hustle</h2>
@@ -99,85 +177,17 @@
         </div>
     </section>
 
-    <section class="signup" id="signup">
-        <div class="container">
-            <h2>Zap Your Leads Live</h2>
-            <div class="packages">
-                <!-- Pilot Package -->
-                <div class="package">
-                    <h3>Lead Spark</h3>
-                    <div class="price-toggle">
-                        <p class="price active" data-type="small-biz">$499 One-Time</p>
-                        <p class="price" data-type="saas">$749 One-Time</p>
-                    </div>
-                    <ul>
-                        <li>50-100 Qualified Leads</li>
-                        <li>AI-Powered Targeting</li>
-                        <li>CSV + Email Delivery (7 Days)</li>
-                        <li>1 Email Outreach Template</li>
-                    </ul>
-                    <button onclick="document.getElementById('signup-form').scrollIntoView({behavior: 'smooth'})">Get Started</button>
-                </div>
-
-                <!-- Standard Package -->
-                <div class="package popular">
-                    <div class="popular-tag">Most Popular</div>
-                    <h3>Lead Surge</h3>
-                    <div class="price-toggle">
-                        <p class="price active" data-type="small-biz">$1,499/month</p>
-                        <p class="price" data-type="saas">$2,499/month</p>
-                    </div>
-                    <ul>
-                        <li>100-200 Leads Monthly</li>
-                        <li>Weekly CSV + Email Updates</li>
-                        <li>3 Email Templates + Automation</li>
-                        <li>Basic Report (Google Sheets)</li>
-                    </ul>
-                    <button onclick="document.getElementById('signup-form').scrollIntoView({behavior: 'smooth'})">Get Started</button>
-                </div>
-
-                <!-- Premium Package -->
-                <div class="package">
-                    <h3>Lead Titan</h3>
-                    <p class="price">$4,999/month</p>
-                    <ul>
-                        <li>500 Leads Monthly</li>
-                        <li>Daily Updates + Live Dashboard</li>
-                        <li>5 Templates + Multi-Channel</li>
-                        <li>Detailed Reports + VIP Support</li>
-                    </ul>
-                    <button onclick="document.getElementById('signup-form').scrollIntoView({behavior: 'smooth'})">Get Started</button>
-                </div>
-            </div>
-
-            <form id="signup-form" class="signup-form" action="/signup" method="POST">
-                <input type="text" name="name" placeholder="Your Name" required>
-                <input type="email" name="email" placeholder="Email" required>
-                <input type="text" name="niche" placeholder="Your Niche (e.g., plumber, SaaS)" required>
-                <select name="package" required>
-                    <option value="">Select Your Package</option>
-                    <option value="spark-small">Lead Spark - Small Business ($499)</option>
-                    <option value="spark-saas">Lead Spark - SaaS ($749)</option>
-                    <option value="surge-small">Lead Surge - Small Business ($1,499/mo)</option>
-                    <option value="surge-saas">Lead Surge - SaaS ($2,499/mo)</option>
-                    <option value="titan">Lead Titan ($4,999/mo)</option>
-                </select>
-                <button type="submit">Start Your Lead Generation</button>
-            </form>
-        </div>
-    </section>
-
     <footer>
         <div class="container">
-            <p>© 2025 Leadzap • leads@leadzap.io</p>
+            <p>&copy; 2025 Leadzap &bull; leads@leadzap.io</p>
             <div class="social">
                 <a href="#" target="_blank">
-                    <svg viewBox="0 0 24 24" fill="#7B00FF" width="30" height="30">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="30" height="30">
                         <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/>
                     </svg>
                 </a>
                 <a href="#" target="_blank">
-                    <svg viewBox="0 0 24 24" fill="#7B00FF" width="30" height="30">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="30" height="30">
                         <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
                         <rect x="2" y="9" width="4" height="12"/>
                         <circle cx="4" cy="4" r="2"/>

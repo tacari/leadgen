@@ -1,65 +1,35 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify, send_file
-from lead_manager import LeadManager
+from flask import Flask
 import os
-from datetime import datetime
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-lead_manager = LeadManager()
+app.debug = True  # Enable debug mode
 
 @app.route('/')
 def landing():
-    """Landing page"""
-    return render_template('landing.html')
+    """Landing page - temporary basic version"""
+    return "Welcome to the Lead Generation Platform"
 
-@app.route('/signup', methods=['POST'])
-def signup():
-    """Handle signup form submission"""
-    if request.method == 'POST':
-        name = request.form.get('name')
-        email = request.form.get('email')
-        niche = request.form.get('niche')
-
-        # For now, just redirect back to landing page
-        # TODO: Implement proper signup handling
-        return redirect(url_for('landing'))
-
-@app.route('/leads/<lead_type>')
-def view_leads(lead_type):
-    """View leads of specific type"""
-    if lead_type not in ['dentist', 'saas']:
-        return 'Invalid lead type', 400
-
-    leads = lead_manager.get_leads(lead_type)
-    return render_template('leads.html', leads=leads, lead_type=lead_type)
-
-@app.route('/download/<lead_type>')
-def download_leads(lead_type):
-    """Download leads as CSV"""
-    if lead_type not in ['dentist', 'saas']:
-        return 'Invalid lead type', 400
-
-    filename = 'dentist_leads.csv' if lead_type == 'dentist' else 'saas_leads.csv'
-    filepath = os.path.join('output', filename)
-
-    if not os.path.exists(filepath):
-        return 'No leads available', 404
-
-    return send_file(filepath, as_attachment=True)
-
-@app.route('/dashboard')
-def dashboard():
-    """Main dashboard showing lead statistics"""
-    dentist_leads = lead_manager.get_leads('dentist')
-    saas_leads = lead_manager.get_leads('saas')
-
-    stats = {
-        'dentist_count': len(dentist_leads),
-        'saas_count': len(saas_leads),
-        'last_update': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    }
-
-    return render_template('dashboard.html', stats=stats)
+@app.route('/test')
+def test():
+    """Test endpoint to verify Flask is working"""
+    return "Hello World! Flask is running."
 
 if __name__ == '__main__':
-    # Ensure the app is accessible externally
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    try:
+        # Create output directory if it doesn't exist
+        if not os.path.exists('output'):
+            os.makedirs('output')
+
+        logger.info("Starting Flask application...")
+        # Ensure the app is accessible externally
+        app.run(host='0.0.0.0', port=5000, debug=True)
+    except Exception as e:
+        logger.error(f"Failed to start server: {str(e)}")
