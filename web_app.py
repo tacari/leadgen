@@ -44,9 +44,11 @@ def landing():
 def services():
     return render_template('services.html', current_user=current_user)
 
-@app.route('/pricing')
+@app.route('/pricing', methods=['GET', 'POST'])
 def pricing():
-    return render_template('pricing.html', current_user=current_user)
+    from forms import RegisterForm
+    form = RegisterForm()  # Create form instance for the signup section
+    return render_template('pricing.html', current_user=current_user, form=form)
 
 @app.route('/about')
 def about():
