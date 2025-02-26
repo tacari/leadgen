@@ -1,112 +1,143 @@
 import os
-import csv
 import logging
-import pandas as pd
-from datetime import datetime
-from config import DENTIST_LEADS_FILE, SAAS_LEADS_FILE, OUTPUT_DIR
+import psycopg2
+from datetime import datetime, timedelta
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
+import base64
+import csv
+import io
 
 class LeadManager:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-        self._ensure_output_dir()
-        self.email_dir = os.path.join(OUTPUT_DIR, 'emails')
-        self._ensure_email_dir()
+        self.conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        self.cur = self.conn.cursor()
+        self.sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
 
-    def _ensure_output_dir(self):
-        """Ensure output directory exists"""
-        if not os.path.exists(OUTPUT_DIR):
-            os.makedirs(OUTPUT_DIR)
-
-    def _ensure_email_dir(self):
-        """Ensure email output directory exists"""
-        if not os.path.exists(self.email_dir):
-            os.makedirs(self.email_dir)
-
-    def save_leads(self, leads, lead_type):
-        """Save leads to CSV file"""
+    def get_due_deliveries(self):
+        """Get all packages due for lead delivery"""
         try:
-            if not leads:
-                self.logger.warning(f"No {lead_type} leads to save")
-                return False
-
-            filename = DENTIST_LEADS_FILE if lead_type == 'dentist' else SAAS_LEADS_FILE
-
-            # Add timestamp to leads
-            for lead in leads:
-                lead['timestamp'] = datetime.now().isoformat()
-
-            # Determine if file exists to handle headers
-            file_exists = os.path.exists(filename)
-
-            mode = 'a' if file_exists else 'w'
-            with open(filename, mode, newline='') as f:
-                writer = csv.DictWriter(f, fieldnames=leads[0].keys())
-                if not file_exists:
-                    writer.writeheader()
-                writer.writerows(leads)
-
-            self.logger.info(f"Saved {len(leads)} {lead_type} leads to {filename}")
-            return True
-
+            self.cur.execute("""
+                SELECT up.user_id, up.package_name, up.lead_volume, u.email
+                FROM user_packages up
+                JOIN users u ON u.id = up.user_id
+                WHERE up.next_delivery <= NOW()
+            """)
+            return self.cur.fetchall()
         except Exception as e:
-            self.logger.error(f"Error saving {lead_type} leads: {str(e)}")
-            return False
-
-    def save_email(self, lead_id, lead_type, subject, content):
-        """Save generated email content to file"""
-        try:
-            if not lead_id or not lead_type or not content:
-                self.logger.warning("Missing required parameters for saving email")
-                return False
-
-            filename = os.path.join(
-                self.email_dir, 
-                f"{lead_type}_{lead_id}_email.txt"
-            )
-
-            with open(filename, 'w') as f:
-                f.write(f"Subject: {subject}\n\n")
-                f.write(content)
-
-            self.logger.info(f"Saved email content to {filename}")
-            return True
-
-        except Exception as e:
-            self.logger.error(f"Error saving email content: {str(e)}")
-            return False
-
-    def get_leads(self, lead_type, limit=None):
-        """Retrieve leads from CSV file"""
-        try:
-            filename = DENTIST_LEADS_FILE if lead_type == 'dentist' else SAAS_LEADS_FILE
-            if not os.path.exists(filename):
-                self.logger.warning(f"Leads file {filename} does not exist")
-                return []
-
-            df = pd.read_csv(filename)
-            if limit:
-                df = df.head(limit)
-
-            return df.to_dict('records')
-
-        except Exception as e:
-            self.logger.error(f"Error retrieving {lead_type} leads: {str(e)}")
+            self.logger.error(f"Error getting due deliveries: {str(e)}")
             return []
 
-    def mark_lead_contacted(self, lead_id, lead_type, status):
-        """Mark a lead as contacted"""
+    def get_leads_for_user(self, user_id, limit=None):
+        """Get leads for a specific user"""
         try:
-            if not lead_id:
-                self.logger.warning("No lead ID provided for marking as contacted")
-                return False
+            query = """
+                SELECT id, name, email, source, score, verified, status, date_added
+                FROM leads
+                WHERE user_id = %s AND status = 'Pending'
+                ORDER BY date_added DESC
+            """
+            if limit:
+                query += " LIMIT %s"
+                self.cur.execute(query, (user_id, limit))
+            else:
+                self.cur.execute(query, (user_id,))
 
-            filename = DENTIST_LEADS_FILE if lead_type == 'dentist' else SAAS_LEADS_FILE
-            df = pd.read_csv(filename)
-            df.loc[df['id'] == lead_id, 'contacted'] = status
-            df.loc[df['id'] == lead_id, 'contacted_date'] = datetime.now().isoformat()
-            df.to_csv(filename, index=False)
-            return True
-
+            return [dict(zip([
+                'id', 'name', 'email', 'source', 'score',
+                'verified', 'status', 'date_added'
+            ], row)) for row in self.cur.fetchall()]
         except Exception as e:
-            self.logger.error(f"Error marking lead as contacted: {str(e)}")
+            self.logger.error(f"Error getting leads for user: {str(e)}")
+            return []
+
+    def send_lead_email(self, user_email, leads, package_name):
+        """Send leads via email"""
+        try:
+            # Generate CSV
+            output = io.StringIO()
+            writer = csv.writer(output)
+            writer.writerow(['Name', 'Email', 'Source', 'Score', 'Verified', 'Status', 'Date Added'])
+            for lead in leads:
+                writer.writerow([
+                    lead['name'], lead['email'], lead['source'],
+                    lead['score'], lead['verified'], lead['status'],
+                    lead['date_added'].strftime('%Y-%m-%d %H:%M:%S')
+                ])
+            csv_content = output.getvalue()
+            csv_base64 = base64.b64encode(csv_content.encode('utf-8')).decode('utf-8')
+
+            # Create email
+            message = Mail(
+                from_email='leads@leadzap.io',
+                to_emails=user_email,
+                subject=f'Your {package_name} Lead Update - {datetime.now().strftime("%Y-%m-%d")}',
+                html_content=f'<p>Here are your latest leads for your {package_name} package!</p>'
+            )
+
+            # Attach CSV
+            attachment = Attachment(
+                FileContent(csv_base64),
+                FileName(f'leads_{datetime.now().strftime("%Y%m%d")}.csv'),
+                FileType('text/csv'),
+                Disposition('attachment')
+            )
+            message.attachment = attachment
+
+            # Send email
+            self.sg.send(message)
+            return True
+        except Exception as e:
+            self.logger.error(f"Error sending lead email: {str(e)}")
             return False
+
+    def process_scheduled_deliveries(self):
+        """Process all scheduled lead deliveries"""
+        deliveries = self.get_due_deliveries()
+        for user_id, package_name, lead_volume, user_email in deliveries:
+            try:
+                # Get leads
+                leads = self.get_leads_for_user(user_id, lead_volume)
+                if not leads:
+                    continue
+
+                # Send email
+                if self.send_lead_email(user_email, leads, package_name):
+                    # Update lead status and next delivery
+                    self.cur.execute("""
+                        UPDATE leads SET status = 'Emailed'
+                        WHERE id = ANY(%s)
+                    """, ([lead['id'] for lead in leads],))
+
+                    # Calculate next delivery based on package
+                    next_delivery = datetime.now()
+                    if package_name in ['Accelerator', 'Empire']:
+                        next_delivery += timedelta(days=1)  # Daily
+                    elif package_name == 'Engine':
+                        next_delivery += timedelta(days=7)  # Weekly
+                    else:  # Lead Launch
+                        next_delivery += timedelta(days=30)  # One-time, set far future
+
+                    self.cur.execute("""
+                        UPDATE user_packages
+                        SET next_delivery = %s
+                        WHERE user_id = %s
+                    """, (next_delivery, user_id))
+
+                    self.conn.commit()
+
+            except Exception as e:
+                self.logger.error(f"Error processing delivery for user {user_id}: {str(e)}")
+                self.conn.rollback()
+
+    def __del__(self):
+        """Clean up database connections"""
+        if hasattr(self, 'cur') and self.cur:
+            self.cur.close()
+        if hasattr(self, 'conn') and self.conn:
+            self.conn.close()
+
+if __name__ == "__main__":
+    lead_manager = LeadManager()
+    lead_manager.process_scheduled_deliveries()

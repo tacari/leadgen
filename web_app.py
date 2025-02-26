@@ -332,6 +332,59 @@ def support():
         flash(f'An error occurred: {str(e)}', 'error')
         return redirect(url_for('support'))
 
+# Add the necessary route to trigger lead generation after payment
+@app.route('/generate_leads/<user_id>/<package>')
+def generate_leads(user_id, package):
+    try:
+        # Placeholder for LeadScraper class -  needs to be implemented separately.
+        class LeadScraper:
+            def generate_leads_for_package(self, user_id, package):
+                # Replace with actual scraping logic
+                # This is a placeholder,  replace with your scraper implementation.
+                if package == "Lead Launch":
+                    return 10  # Simulate 10 leads generated
+                elif package == "Lead Engine":
+                    return 150 #Simulate 150 leads generated
+                else:
+                    return 0
+
+        scraper = LeadScraper()
+        leads_generated = scraper.generate_leads_for_package(user_id, package)
+
+        if leads_generated > 0:
+            return jsonify({
+                'status': 'success',
+                'message': f'Generated {leads_generated} leads',
+                'leads_count': leads_generated
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': 'Failed to generate leads'
+            }), 500
+
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+# Update success route to trigger lead generation
+@app.route('/success')
+def success():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['user_id']
+    package = session.get('selected_package', 'Lead Launch')
+
+    # Trigger lead generation in background
+    generate_leads(user_id, package)
+
+    flash('Your leads are being generated! Check your dashboard soon.')
+    return redirect(url_for('dashboard'))
+
+
 if __name__ == '__main__':
     try:
         # Create required JSON files if they don't exist

@@ -4,6 +4,9 @@ import logging
 import requests
 from bs4 import BeautifulSoup
 from config import YELP_BASE_URL, CRUNCHBASE_BASE_URL, SCRAPING_DELAY
+import psycopg2
+from datetime import datetime
+import os
 
 class LeadScraper:
     def __init__(self):
@@ -18,11 +21,84 @@ class LeadScraper:
             'Cache-Control': 'max-age=0'
         })
         self.logger = logging.getLogger(__name__)
+        # Connect to PostgreSQL
+        self.conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        self.cur = self.conn.cursor()
 
     def _delay_request(self):
         """Add delay between requests to avoid rate limiting"""
         delay = SCRAPING_DELAY + random.uniform(1, 3)  # Randomize delay
         time.sleep(delay)
+
+    def _calculate_lead_score(self, lead_data):
+        """Calculate lead score based on various factors"""
+        score = 50  # Base score
+
+        # Source quality
+        source_scores = {
+            'LinkedIn': 20,
+            'Yelp': 15,
+            'Crunchbase': 18,
+            'Yellow Pages': 12
+        }
+        score += source_scores.get(lead_data.get('source', ''), 10)
+
+        # Email verification (dummy logic for now)
+        if '@' in lead_data.get('email', ''):
+            score += 10
+
+        # Normalize score to 0-100 range
+        return min(max(score, 0), 100)
+
+    def save_leads_to_db(self, leads, user_id):
+        """Save scraped leads to PostgreSQL database"""
+        try:
+            for lead in leads:
+                # Calculate lead score
+                score = self._calculate_lead_score(lead)
+
+                # Insert into database
+                self.cur.execute("""
+                    INSERT INTO leads (user_id, name, email, source, score, verified, status, date_added)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                """, (
+                    user_id,
+                    lead['name'],
+                    lead['email'],
+                    lead['source'],
+                    score,
+                    False,  # verified
+                    'Pending',  # status
+                    datetime.now()
+                ))
+
+            self.conn.commit()
+            return True
+        except Exception as e:
+            self.logger.error(f"Error saving leads: {str(e)}")
+            self.conn.rollback()
+            return False
+
+    def generate_leads_for_package(self, user_id, package_name):
+        """Generate leads based on package type"""
+        volumes = {
+            'Lead Launch': 50,
+            'Engine': 150,
+            'Accelerator': 300,
+            'Empire': 600
+        }
+        volume = volumes.get(package_name, 50)
+
+        # Get mix of leads from different sources
+        dentist_leads = self.scrape_dentists('San Francisco', volume // 2)
+        saas_leads = self.scrape_saas(volume // 2)
+
+        # Combine and save leads
+        all_leads = dentist_leads + saas_leads
+        if self.save_leads_to_db(all_leads, user_id):
+            self.logger.info(f"Successfully generated {len(all_leads)} leads for user {user_id}")
+            return len(all_leads)
+        return 0
 
     def scrape_dentists(self, city, limit=50):
         """Scrape dentist leads from Yelp"""
@@ -72,17 +148,6 @@ class LeadScraper:
         except Exception as e:
             self.logger.debug(f"Failed to extract lead: {str(e)}")
             return None
-
-    def _generate_sample_dentist_leads(self, city, count):
-        """Generate sample dentist leads"""
-        return [{
-            'name': f'Dr. Smith {i+1}',
-            'business_name': f'Bright Smile Dental {i+1}',
-            'email': f'dr.smith{i+1}@brightsmile.example.com',
-            'phone': f'(555) 555-{1000+i}',
-            'city': city,
-            'source': 'Sample Data'
-        } for i in range(count)]
 
     def scrape_saas(self, limit=100):
         """Scrape SaaS company leads"""
@@ -135,6 +200,17 @@ class LeadScraper:
             self.logger.debug(f"Failed to extract lead: {str(e)}")
             return None
 
+    def _generate_sample_dentist_leads(self, city, count):
+        """Generate sample dentist leads"""
+        return [{
+            'name': f'Dr. Smith {i+1}',
+            'business_name': f'Bright Smile Dental {i+1}',
+            'email': f'dr.smith{i+1}@brightsmile.example.com',
+            'phone': f'(555) 555-{1000+i}',
+            'city': city,
+            'source': 'Sample Data'
+        } for i in range(count)]
+
     def _generate_sample_saas_leads(self, count):
         """Generate sample SaaS leads"""
         return [{
@@ -144,3 +220,10 @@ class LeadScraper:
             'website': f'https://saassolution{i+1}.example.com',
             'source': 'Sample Data'
         } for i in range(count)]
+
+    def __del__(self):
+        """Clean up database connections"""
+        if hasattr(self, 'cur') and self.cur:
+            self.cur.close()
+        if hasattr(self, 'conn') and self.conn:
+            self.conn.close()
