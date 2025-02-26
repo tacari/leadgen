@@ -73,6 +73,11 @@ def login():
     login_user(user)
     return redirect(url_for('dashboard'))
 
+@app.route('/register')
+def register():
+    # For development, redirect to login which auto-logs in
+    return redirect(url_for('login'))
+
 @app.route('/logout')
 @login_required
 def logout():
@@ -83,7 +88,6 @@ def logout():
 @login_required
 def dashboard():
     # Sample data for development
-    now = datetime.now()
     leads = [
         {
             'name': "Joe's Plumbing",
@@ -112,6 +116,7 @@ def dashboard():
         'replies': 0,
         'conversions': 0
     }
+    now = datetime.now()
 
     return render_template(
         'dashboard.html',
@@ -120,7 +125,7 @@ def dashboard():
         analytics=analytics,
         delivery_status="Next 37-38 leads: Weekly delivery",
         username="Developer",  # Hardcoded for development
-        now=now  # Pass current time for delivery calculations
+        now=now
     )
 
 @app.route('/lead-history')

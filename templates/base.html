@@ -45,13 +45,18 @@
             <div class="flex justify-between items-center">
                 <a href="/" class="text-2xl font-bold text-white">Leadzap</a>
                 <div class="hidden md:flex space-x-6">
-                    <a href="/" class="text-white hover:text-[#7B00FF]">Home</a>
-                    <a href="/about" class="text-white hover:text-[#7B00FF]">About</a>
-                    <a href="/services" class="text-white hover:text-[#7B00FF]">Services</a>
-                    <a href="/pricing" class="text-white hover:text-[#7B00FF]">Pricing</a>
-                    <a href="/contact" class="text-white hover:text-[#7B00FF]">Contact</a>
-                    <a href="/dashboard" class="text-white hover:text-[#7B00FF]">Dashboard</a>
-                    <a href="/lead-history" class="text-white hover:text-[#7B00FF]">Lead History</a>
+                    <a href="{{ url_for('landing') }}" class="text-white hover:text-[#7B00FF]">Home</a>
+                    <a href="{{ url_for('about') }}" class="text-white hover:text-[#7B00FF]">About</a>
+                    <a href="{{ url_for('services') }}" class="text-white hover:text-[#7B00FF]">Services</a>
+                    <a href="{{ url_for('pricing') }}" class="text-white hover:text-[#7B00FF]">Pricing</a>
+                    <a href="{{ url_for('contact') }}" class="text-white hover:text-[#7B00FF]">Contact</a>
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('dashboard') }}" class="text-white hover:text-[#7B00FF]">Dashboard</a>
+                        <a href="{{ url_for('logout') }}" class="text-white hover:text-[#7B00FF]">Logout</a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="text-white hover:text-[#7B00FF]">Login</a>
+                        <a href="{{ url_for('register') }}" class="text-white hover:text-[#7B00FF]">Register</a>
+                    {% endif %}
                 </div>
             </div>
         </div>
