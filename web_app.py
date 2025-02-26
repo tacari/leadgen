@@ -373,77 +373,61 @@ def generate_leads(user_id, package):
 
 @app.route('/checkout/<string:package>')
 def checkout(package):
-    if 'user_id' not in session:
-        flash('Please log in first.')
-        return redirect(url_for('landing'))
-
-    prices = {
-        'launch': 'price_1QwcjxGsSuGLiAUEuP63WhPh',  # Lead Launch
-        'engine': 'price_1Qwcl0GsSuGLiAUEr9cJ8TtG',  # Lead Engine
-        'accelerator': 'price_1QwclsGsSuGLiAUELcCnSDHQ',  # Lead Accelerator
-        'empire': 'price_1Qwcn5GsSuGLiAUE3qhtbxxy'  # Lead Empire
-    }
-
-    if package not in prices:
-        flash('Invalid package selected.')
-        return redirect(url_for('pricing'))
-
     try:
+        # Check if package is valid
+        prices = {
+            'launch': 'price_1QwcjxGsSuGLiAUEuP63WhPh',  # Lead Launch
+            'engine': 'price_1Qwcl0GsSuGLiAUEr9cJ8TtG',  # Lead Engine
+            'accelerator': 'price_1QwclsGsSuGLiAUELcCnSDHQ',  # Lead Accelerator
+            'empire': 'price_1Qwcn5GsSuGLiAUE3qhtbxxy'  # Lead Empire
+        }
+
+        if package not in prices:
+            flash('Invalid package selected.')
+            return redirect(url_for('pricing'))
+
+        # Create Stripe checkout session
         checkout_session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
             line_items=[{
                 'price': prices[package],
                 'quantity': 1,
             }],
             mode='payment' if package == 'launch' else 'subscription',
-            success_url=url_for('success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
-            cancel_url=url_for('pricing', _external=True),
+            success_url=request.host_url.rstrip('/') + url_for('success') + '?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url=request.host_url.rstrip('/') + url_for('pricing'),
             metadata={
-                'user_id': session.get('user_id'),
                 'package': package
             }
         )
-        return redirect(checkout_session.url, code=303)
+
+        print(f"Created checkout session: {checkout_session.id}")  # Debug log
+        return redirect(checkout_session.url)
+
     except Exception as e:
+        print(f"Checkout error: {str(e)}")  # Debug log
         flash(f"Checkout failed: {str(e)}")
         return redirect(url_for('pricing'))
 
 @app.route('/success')
 def success():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-
-    session_id = request.args.get('session_id')
-    if not session_id:
-        flash('Invalid session. Please try again.')
-        return redirect(url_for('pricing'))
-
     try:
-        stripe_session = stripe.checkout.Session.retrieve(session_id)
-        package = stripe_session.metadata.get('package')
-        user_id = stripe_session.metadata.get('user_id')
+        session_id = request.args.get('session_id')
+        if not session_id:
+            flash('Invalid session. Please try again.')
+            return redirect(url_for('pricing'))
 
-        if not user_id or not package:
-            flash('Payment metadata missing.')
-            return redirect(url_for('dashboard'))
+        print(f"Retrieved session ID: {session_id}")  # Debug log
+        checkout_session = stripe.checkout.Session.retrieve(session_id)
+        package = checkout_session.metadata.get('package')
 
-        # Trigger scraper in background
-        generate_leads(user_id, package)
+        # Trigger scraper
+        generate_leads('test_user', package)  # For testing, replace with real user ID later
 
-        # Update subscription
-        volumes = {'launch': 50, 'engine': 150, 'accelerator': 300, 'empire': 600}
-        subscription = {
-            'user_id': user_id,
-            'package_name': package,
-            'lead_volume': volumes.get(package, 0),
-            'stripe_subscription_id': stripe_session.subscription if package != 'launch' else None
-        }
-
-        # Update subscription in database (replace with your database logic)
         flash('Payment successful! Leads are being scraped—check your dashboard soon.')
         return redirect(url_for('dashboard'))
 
     except Exception as e:
+        print(f"Success handler error: {str(e)}")  # Debug log
         flash(f"Payment confirmation failed: {str(e)}")
         return redirect(url_for('dashboard'))
 
