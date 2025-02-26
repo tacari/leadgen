@@ -1,14 +1,14 @@
-import os
-import sys
-import json
-import csv
 from datetime import datetime, timedelta
 from io import StringIO
 import psutil
 from flask import Flask, render_template, redirect, url_for, flash, request, make_response, session, jsonify
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from fpdf import FPDF
 from collections import defaultdict
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+import os
+import sys
+import json
+import csv
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
@@ -28,23 +28,6 @@ class User(UserMixin):
 @login_manager.user_loader
 def load_user(user_id):
     return User(user_id)
-
-def terminate_port_process(port):
-    """Terminate any process using the specified port"""
-    try:
-        for proc in psutil.process_iter():
-            try:
-                proc_info = proc.as_dict(attrs=['pid', 'name', 'connections'])
-                if proc_info['connections']:
-                    for conn in proc_info['connections']:
-                        if conn.laddr.port == port and proc.pid != os.getpid():
-                            print(f"Terminating process {proc.pid} using port {port}", file=sys.stderr)
-                            proc.terminate()
-                            proc.wait(timeout=3)
-            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
-                continue
-    except Exception as e:
-        print(f"Error in terminate_port_process: {str(e)}", file=sys.stderr)
 
 @app.route('/')
 def landing():
@@ -124,7 +107,7 @@ def dashboard():
         subscription=subscription,
         analytics=analytics,
         delivery_status="Next 37-38 leads: Weekly delivery",
-        username="Developer",  # Hardcoded for development
+        username=current_user.name,
         now=now
     )
 
@@ -406,6 +389,23 @@ def settings():
     return render_template('settings.html',
                          user=user,
                          subscription=subscription)
+
+def terminate_port_process(port):
+    """Terminate any process using the specified port"""
+    try:
+        for proc in psutil.process_iter():
+            try:
+                proc_info = proc.as_dict(attrs=['pid', 'name', 'connections'])
+                if proc_info['connections']:
+                    for conn in proc_info['connections']:
+                        if conn.laddr.port == port and proc.pid != os.getpid():
+                            print(f"Terminating process {proc.pid} using port {port}", file=sys.stderr)
+                            proc.terminate()
+                            proc.wait(timeout=3)
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
+                continue
+    except Exception as e:
+        print(f"Error in terminate_port_process: {str(e)}", file=sys.stderr)
 
 if __name__ == '__main__':
     try:
