@@ -1,0 +1,298 @@
+Stripe Integration: Full Details
+Overview
+Purpose: Process payments—$499 Lead Launch (one-time), $1,499 Engine, $2,999 Accelerator, $5,999 Empire (monthly)—trigger lead scraping, update subscriptions—$5k–$10k starts here.  
+Goals:  
+Payments: Seamless checkout—$499–$5,999 hits Stripe, clients get leads—$5k–$10k cash flow.  
+Subscriptions: Recurring billing—Engine to Empire—$100k/month recurring revenue foundation.  
+Automation: Webhooks confirm payment—leads scrape, dashboard updates—no manual bullshit.  
+Scalability: Handle 10–100+ clients—Stripe scales, Replit holds—$5k–$10k to $100k/month.
+Design: Flask routes, Stripe Checkout, webhooks—premium, million-dollar payment vibes.
+Design & Logic
+1. Payment Flow
+Client Side:  
+/pricing: Shows packages—click “Sign Up” → /checkout/<package>—redirects to Stripe Checkout.  
+Requires login—ensures user_id ties payment to Supabase.
+Server Side:  
+/checkout/<package>: Creates Stripe Checkout Session—passes user_id, package in metadata—redirects to Stripe.  
+/success: Post-payment—confirms session, triggers scraper, updates user_packages—back to /dashboard.  
+/webhook: Listens for Stripe events (charge.succeeded, customer.subscription.created)—async lead scraping, subscription sync.
+2. Pricing Structure
+Lead Launch: $499—one-time—50 leads—mode='payment'.  
+Lead Engine: $1,499/month—150 leads—mode='subscription'.  
+Lead Accelerator: $2,999/month—300 leads—mode='subscription'.  
+Lead Empire: $5,999/month—600 leads—mode='subscription'.
+3. Webhook Events
+charge.succeeded: One-time payments (Lead Launch)—triggers 50 leads.  
+customer.subscription.created: Recurring plans (Engine to Empire)—triggers initial leads, sets up monthly billing—future renewals handled later.
+4. Data Flow
+Supabase:  
+users: Stores user_id, username, email.  
+user_packages: Updated with package_name, lead_volume, stripe_subscription_id—tracks active plans.  
+leads: Populated by scraper post-payment—dashboard displays.
+Stripe: Metadata (user_id, package)—links payment to user, triggers right lead volume.
+Implementation in Flask
+Prerequisites
+Stripe Account:  
+Sign up at stripe.com—use test mode (toggle in dashboard).  
+Get API keys: sk_test_xxx (secret), pk_test_xxx (publishable)—add to Replit Secrets:  
+STRIPE_API_KEY=sk_test_xxx  
+STRIPE_PUB_KEY=pk_test_xxx
+Create products:  
+Lead Launch: $499 (one-time, Price ID: e.g., price_1Nxxxxx).  
+Engine: $1,499/month (recurring, price_1Nyyyyy).  
+Accelerator: $2,999/month (recurring, price_1Nzzzzz).  
+Empire: $5,999/month (recurring, price_1Naaaaa).
+Note Price IDs—plug into code.
+Install Stripe: pip install stripe—add to requirements.txt.
+Flask Code (app.py)
+python
+from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response
+from supabase import create_client, Client
+import stripe
+import os
+from datetime import datetime
+import threading
+import random
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key')
+supabase_url = os.environ.get('SUPABASE_URL')
+supabase_key = os.environ.get('SUPABASE_KEY')
+supabase = create_client(supabase_url, supabase_key)
+stripe.api_key = os.environ.get('STRIPE_API_KEY')
+
+# Dummy scraper—replace with real impl from previous reply
+def scrape_leads(user_id, package_volume, niche="plumbers", location="Austin, TX"):
+    leads = []
+    for i in range(package_volume):
+        name = f"Test Lead {i + 1}"
+        leads.append({
+            'user_id': user_id,
+            'name': name,
+            'email': f"test{i + 1}@example.com",
+            'source': 'Test Source',
+            'score': random.randint(50, 100),
+            'verified': False,
+            'status': 'Pending',
+            'date_added': datetime.now().isoformat()
+        })
+    if leads:
+        supabase.table('leads').insert(leads).execute()
+    return len(leads)
+
+def scrape_for_user(user_id, package, niche="plumbers", location="Austin, TX"):
+    volumes = {'launch': 50, 'engine': 150, 'accelerator': 300, 'empire': 600}
+    volume = volumes.get(package, 0)
+    print(f"Scraping {volume} leads for user {user_id}, package {package}")
+    scrape_leads(user_id, volume, niche, location)
+
+# Routes
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+@app.route('/pricing')
+def pricing():
+    return render_template('pricing.html')
+
+@app.route('/checkout/<string:package>')
+def checkout(package):
+    if 'user_id' not in session:
+        flash('Please log in to purchase a plan.')
+        return redirect(url_for('login'))
+    prices = {
+        'launch': 'price_1Nxxxxx',  # Replace with real Stripe Price IDs
+        'engine': 'price_1Nyyyyy',
+        'accelerator': 'price_1Nzzzzz',
+        'empire': 'price_1Naaaaa'
+    }
+    if package not in prices:
+        flash('Invalid package selected.')
+        return redirect(url_for('pricing'))
+    try:
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price': prices[package],
+                'quantity': 1,
+            }],
+            mode='payment' if package == 'launch' else 'subscription',
+            success_url=url_for('success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url=url_for('pricing', _external=True),
+            metadata={
+                'user_id': session['user_id'],
+                'package': package
+            }
+        )
+        return redirect(session.url, code=303)
+    except Exception as e:
+        flash(f"Checkout failed: {str(e)}")
+        return redirect(url_for('pricing'))
+
+@app.route('/success')
+def success():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    session_id = request.args.get('session_id')
+    if not session_id:
+        flash('Invalid session. Please try again.')
+        return redirect(url_for('pricing'))
+    try:
+        stripe_session = stripe.checkout.Session.retrieve(session_id)
+        package = stripe_session.metadata.get('package')
+        user_id = stripe_session.metadata.get('user_id')
+        if not user_id or not package:
+            flash('Payment metadata missing.')
+            return redirect(url_for('dashboard'))
+
+        # Trigger scraper in background
+        threading.Thread(target=scrape_for_user, args=(user_id, package)).start()
+
+        # Update subscription
+        volumes = {'launch': 50, 'engine': 150, 'accelerator': 300, 'empire': 600}
+        subscription = {
+            'user_id': user_id,
+            'package_name': package,
+            'lead_volume': volumes.get(package, 0),
+            'stripe_subscription_id': stripe_session.subscription if package != 'launch' else None
+        }
+        existing = supabase.table('user_packages').select('*').eq('user_id', user_id).execute().data
+        if existing:
+            supabase.table('user_packages').update(subscription).eq('user_id', user_id).execute()
+        else:
+            supabase.table('user_packages').insert(subscription).execute()
+
+        flash('Payment successful! Leads are being scraped—check your dashboard soon.')
+        return redirect(url_for('dashboard'))
+    except Exception as e:
+        flash(f"Payment confirmation failed: {str(e)}")
+        return redirect(url_for('dashboard'))
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    event = None
+    try:
+        event = stripe.Event.construct_from(request.get_json(), stripe.api_key)
+    except Exception as e:
+        print(f"Webhook error: {e}")
+        return '', 400
+
+    if event.type in ['charge.succeeded', 'customer.subscription.created']:
+        user_id = event.data.object.metadata.get('user_id')
+        package = event.data.object.metadata.get('package')
+        if user_id and package:
+            threading.Thread(target=scrape_for_user, args=(user_id, package)).start()
+            volumes = {'launch': 50, 'engine': 150, 'accelerator': 300, 'empire': 600}
+            subscription = {
+                'user_id': user_id,
+                'package_name': package,
+                'lead_volume': volumes.get(package, 0),
+                'stripe_subscription_id': event.data.object.subscription if package != 'launch' else None
+            }
+            existing = supabase.table('user_packages').select('*').eq('user_id', user_id).execute().data
+            if existing:
+                supabase.table('user_packages').update(subscription).eq('user_id', user_id).execute()
+            else:
+                supabase.table('user_packages').insert(subscription).execute()
+    return '', 200
+
+# Placeholder routes—replace with your full impl
+@app.route('/dashboard')
+def dashboard():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user = supabase.auth.get_user(session['user_id'])
+    username = supabase.table('users').select('username').eq('id', user.user.id).execute().data[0]['username']
+    leads = supabase.table('leads').select('*').eq('user_id', user.user.id).order('date_added', desc=True).limit(25).execute().data
+    subscription = supabase.table('user_packages').select('*').eq('user_id', user.user.id).execute().data
+    subscription = subscription[0] if subscription else None
+    analytics = {'total': len(leads), 'emailed': sum(1 for lead in leads if lead['status'] == 'Emailed'), 'replies': 0, 'conversions': 0}
+    delivery_status = "Next batch: 25 leads tomorrow" if subscription and subscription['package_name'] == 'Empire' else "Next batch: 37 leads on March 1, 2025"
+    return render_template('dashboard.html', username=username, leads=leads, subscription=subscription, analytics=analytics, delivery_status=delivery_status, supabase_url=supabase_url, supabase_key=supabase_key)
+
+@app.route('/login')
+def login():
+    return render_template('login.html')  # Your login page
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080)
+Pricing Template (pricing.html)
+html
+{% extends "base.html" %}
+{% block content %}
+<div class="bg-[#0D1321] min-h-screen text-white p-8">
+    <h1 class="text-4xl font-bold text-center mb-12 animate-fade-in">Choose Your Plan</h1>
+    <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 text-center animate-fade-in">
+            <h2 class="text-2xl font-bold mb-4">Lead Launch</h2>
+            <p class="text-[#A1A9B8] mb-4">$499 <span class="text-sm">One-Time</span></p>
+            <p class="text-[#A1A9B8] mb-4">50 AI-Generated Leads</p>
+            <a href="{{ url_for('checkout', package='launch') }}" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Sign Up</a>
+        </div>
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 text-center animate-fade-in">
+            <h2 class="text-2xl font-bold mb-4">Lead Engine</h2>
+            <p class="text-[#A1A9B8] mb-4">$1,499 <span class="text-sm">/month</span></p>
+            <p class="text-[#A1A9B8] mb-4">150 AI-Generated Leads</p>
+            <a href="{{ url_for('checkout', package='engine') }}" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Sign Up</a>
+        </div>
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 text-center animate-fade-in">
+            <h2 class="text-2xl font-bold mb-4">Lead Accelerator</h2>
+            <p class="text-[#A1A9B8] mb-4">$2,999 <span class="text-sm">/month</span></p>
+            <p class="text-[#A1A9B8] mb-4">300 AI-Generated Leads</p>
+            <a href="{{ url_for('checkout', package='accelerator') }}" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Sign Up</a>
+        </div>
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 text-center animate-fade-in">
+            <h2 class="text-2xl font-bold mb-4">Lead Empire</h2>
+            <p class="text-[#A1A9B8] mb-4">$5,999 <span class="text-sm">/month</span></p>
+            <p class="text-[#A1A9B8] mb-4">600 AI-Generated Leads</p>
+            <a href="{{ url_for('checkout', package='empire') }}" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Sign Up</a>
+        </div>
+    </div>
+</div>
+<style>
+    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+    .animate-fade-in { animation: fade-in 0.5s ease-in; }
+</style>
+{% endblock %}
+How It Works
+1. Checkout Flow
+Client: Hits /pricing, clicks “Sign Up” for Lead Launch—redirects to /checkout/launch.  
+Server: Checks login—creates Stripe Checkout Session with Price ID (price_1Nxxxxx), user_id, package in metadata—redirects to Stripe.  
+Stripe: User pays $499 (test card: 4242 4242 4242 4242)—redirects to /success?session_id=xxx.
+2. Success Handling
+Server: /success grabs session_id, verifies with Stripe—extracts user_id, package—runs scrape_for_user in thread (50 leads for Lead Launch)—updates user_packages.  
+Client: Sees “Payment successful!”—redirects to /dashboard—leads appear (real-time via Supabase subscription).
+3. Webhook Backup
+Stripe: Sends charge.succeeded (Lead Launch) or customer.subscription.created (Engine+) to yourname.replit.app/webhook.  
+Server: Catches event—same logic as /success—ensures leads scrape even if /success fails—double-checks user_packages.
+4. Output
+Supabase: user_packages—e.g., {'user_id': 'xxx', 'package_name': 'launch', 'lead_volume': 50}—leads—50 rows.  
+Dashboard: Client logs in—sees 50 leads—$5k–$10k cash flows.
+Why This Stripe Setup Slaps
+Seamless: Checkout → payment → leads—$5k–$10k users buy, see value—$100k/month scales with subscriptions.  
+Reliable: /success + webhook—double-tap ensures leads—$499–$5,999 clients never miss out.  
+Premium: Stripe’s polish—million-dollar vibes—$5,999 Empire users trust the system.  
+Scalable: Handles 10–100+ clients—Stripe’s limitless, Replit threads manage—$5k–$10k to $100k/month.
+Setup Steps
+Stripe:  
+Sign up, get test keys—add to Replit Secrets.  
+Create products—note Price IDs (e.g., price_1Nxxxxx)—plug into app.py.
+Install: pip install stripe—add to requirements.txt.  
+Code:  
+Update app.py with routes above—ensure scraper’s dummy version works.  
+Add pricing.html to templates/.
+Test:  
+Run: Hit “Run”—go to /pricing, click Lead Launch—pay with test card (4242 4242 4242 4242)—check /dashboard—50 leads appear.  
+Webhook: Install Stripe CLI (stripe listen --forward-to yourname.replit.app/webhook)—trigger charge.succeeded—verify leads in Supabase.  
+Scale: Add 5 dummy users in Supabase—buy packages—ensure 50–600 leads per user—Replit holds.
+Verify:  
+/settings: Check subscription—“Lead Launch, $499”—updates match payment.  
+/dashboard: Leads match volume—real-time works—$5k–$10k ready.
+Next Steps
+Confirm: “Leadzap, Stripe fire” + city (e.g., “Austin”)—locks it in.  
+Test: Run full flow—buy $499, see 50 leads—post URL when live.  
+Next:  
+Scraper: Full AI impl—Yellow Pages + Google Maps—$5k–$10k gets real leads.  
+Launch: 5–10 clients—$5k–$10k cash—SendGrid last.
+My vote: Scraper—real leads next, then launch—$5k–$10k snowballs. Your call? Hit me—let’s make this cash flow!
+

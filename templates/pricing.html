@@ -1,138 +1,78 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pricing - Leadzap</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-</head>
-<body>
-    <nav class="navbar">
-        <div class="navbar-container">
-            <a href="{{ url_for('landing') }}" class="navbar-logo">
-                <div class="logo-orb"></div>
-                Leadzap
-            </a>
-            <button class="hamburger" onclick="toggleMenu()">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-            <div class="nav-links">
-                <div class="nav-center">
-                    <a href="{{ url_for('landing') }}">Home</a>
-                    <a href="{{ url_for('about') }}">About</a>
-                    <a href="{{ url_for('services') }}">Services</a>
-                    <a href="{{ url_for('pricing') }}" class="active">Pricing</a>
-                    <a href="{{ url_for('contact') }}">Contact</a>
-                </div>
-                <div class="nav-right">
-                    {% if current_user.is_authenticated %}
-                        <a href="{{ url_for('dashboard') }}">Dashboard</a>
-                        <a href="{{ url_for('logout') }}">Logout</a>
-                    {% else %}
-                        <a href="{{ url_for('login') }}">Login</a>
-                        <a href="{{ url_for('register') }}">Register</a>
-                    {% endif %}
-                </div>
-            </div>
+{% extends "dashboard_base.html" %}
+{% block content %}
+<div class="bg-[#0D1321] min-h-screen text-white p-8">
+    <h1 class="text-4xl font-bold text-center mb-4 animate-fade-in">Choose Your Plan</h1>
+    <p class="text-lg text-[#A1A9B8] italic text-center mb-12">Every lead, every detail—your full pipeline at a glance.</p>
+
+    <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6">
+        <!-- Lead Launch Package -->
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 text-center animate-fade-in">
+            <h2 class="text-2xl font-bold mb-4">Lead Launch</h2>
+            <p class="text-[#A1A9B8] mb-4">$499 <span class="text-sm">One-Time</span></p>
+            <p class="text-[#A1A9B8] mb-4">50 Qualified Leads</p>
+            <ul class="text-[#A1A9B8] text-sm mb-6">
+                <li class="mb-2">AI Targets Your Ideal Prospects</li>
+                <li class="mb-2">Delivered in 7 Days</li>
+                <li class="mb-2">CSV + Email Delivery</li>
+                <li>1 Personalized Email Template</li>
+            </ul>
+            <a href="{{ url_for('checkout', package='launch') }}" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Get Started</a>
         </div>
-    </nav>
 
-    <section class="content-section">
-        <div class="container">
-            <h1>Pricing Plans</h1>
-            <p>Choose Your Lead Generation Power—Start Small or Dominate Big</p>
-
-            <div class="packages">
-                <!-- Lead Launch Package -->
-                <div class="package">
-                    <h3>Lead Launch</h3>
-                    <p class="price">$499</p>
-                    <p class="sub">One-Time</p>
-                    <p class="tagline">Test the waters with AI leads.</p>
-                    <ul>
-                        <li>50 Qualified Leads—Your Niche</li>
-                        <li>AI Targets Your Ideal Prospects</li>
-                        <li>Delivered in 7 Days (CSV + Email)</li>
-                        <li>1 Personalized Email Sent to Leads</li>
-                    </ul>
-                    <button onclick="window.location.href='#signupForm'">
-                        Sign Up
-                    </button>
-                </div>
-
-                <!-- Lead Engine Package -->
-                <div class="package">
-                    <h3>Lead Engine</h3>
-                    <p class="price">$1,499/month</p>
-                    <p class="sub">Monthly</p>
-                    <p class="tagline">Steady leads to grow your biz.</p>
-                    <ul>
-                        <li>150 Leads/Month—Any Niche</li>
-                        <li>Weekly Delivery (CSV + Sheets)</li>
-                        <li>3 Email Templates + Drip Campaign</li>
-                        <li>Basic Stats (Leads Sent, Replies)</li>
-                    </ul>
-                    <button onclick="window.location.href='#signupForm'">
-                        Sign Up
-                    </button>
-                </div>
-
-                <!-- Lead Accelerator Package -->
-                <div class="package popular">
-                    <div class="popular-tag">Most Popular</div>
-                    <h3>Lead Accelerator</h3>
-                    <p class="price">$2,999/month</p>
-                    <p class="sub">Monthly</p>
-                    <p class="tagline">Ramp up with serious lead flow.</p>
-                    <ul>
-                        <li>300 Leads/Month—Custom Targets</li>
-                        <li>Daily Delivery (CSV + Sheets)</li>
-                        <li>5 Email Templates + LinkedIn Script</li>
-                        <li>Detailed Monthly Report</li>
-                    </ul>
-                    <button onclick="window.location.href='#signupForm'">
-                        Sign Up
-                    </button>
-                </div>
-
-                <!-- Lead Empire Package -->
-                <div class="package">
-                    <h3>Lead Empire</h3>
-                    <p class="price">$5,999/month</p>
-                    <p class="sub">Monthly</p>
-                    <p class="tagline">Dominate your market with AI.</p>
-                    <ul>
-                        <li>600 Leads/Month—Precision Targeting</li>
-                        <li>Daily Delivery + Live Dashboard</li>
-                        <li>7 Templates (Email + LinkedIn + SMS)</li>
-                        <li>Weekly Premium Report + VIP Calls</li>
-                    </ul>
-                    <button onclick="window.location.href='#signupForm'">
-                        Sign Up
-                    </button>
-                </div>
-            </div>
-
-            <!-- Signup Form -->
-            <form id="signupForm" class="signup-form">
-                <input type="text" name="name" placeholder="Your Name" required>
-                <input type="email" name="email" placeholder="Email" required>
-                <input type="text" name="niche" placeholder="Your Niche (e.g., plumber, SaaS)" required>
-                <select name="package" required>
-                    <option value="">Select Your Package</option>
-                    <option value="launch">Lead Launch - $499</option>
-                    <option value="engine">Lead Engine - $1,499/mo</option>
-                    <option value="accelerator">Lead Accelerator - $2,999/mo</option>
-                    <option value="empire">Lead Empire - $5,999/mo</option>
-                </select>
-                <button type="submit">Start Your Lead Generation</button>
-            </form>
+        <!-- Lead Engine Package -->
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 text-center animate-fade-in">
+            <h2 class="text-2xl font-bold mb-4">Lead Engine</h2>
+            <p class="text-[#A1A9B8] mb-4">$1,499 <span class="text-sm">/month</span></p>
+            <p class="text-[#A1A9B8] mb-4">150 Monthly Leads</p>
+            <ul class="text-[#A1A9B8] text-sm mb-6">
+                <li class="mb-2">Weekly Lead Delivery</li>
+                <li class="mb-2">CSV + Dashboard Access</li>
+                <li class="mb-2">3 Email Templates</li>
+                <li>Basic Analytics</li>
+            </ul>
+            <a href="{{ url_for('checkout', package='engine') }}" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Subscribe</a>
         </div>
-    </section>
 
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
-</body>
-</html>
+        <!-- Lead Accelerator Package -->
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 text-center animate-fade-in relative">
+            <div class="absolute top-0 right-0 bg-[#7B00FF] text-white px-4 py-1 rounded-tr-lg rounded-bl-lg">Popular</div>
+            <h2 class="text-2xl font-bold mb-4">Lead Accelerator</h2>
+            <p class="text-[#A1A9B8] mb-4">$2,999 <span class="text-sm">/month</span></p>
+            <p class="text-[#A1A9B8] mb-4">300 Monthly Leads</p>
+            <ul class="text-[#A1A9B8] text-sm mb-6">
+                <li class="mb-2">Daily Lead Delivery</li>
+                <li class="mb-2">Premium Dashboard Access</li>
+                <li class="mb-2">5 Email Templates</li>
+                <li>Advanced Analytics + Reports</li>
+            </ul>
+            <a href="{{ url_for('checkout', package='accelerator') }}" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Subscribe</a>
+        </div>
+
+        <!-- Lead Empire Package -->
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 text-center animate-fade-in">
+            <h2 class="text-2xl font-bold mb-4">Lead Empire</h2>
+            <p class="text-[#A1A9B8] mb-4">$5,999 <span class="text-sm">/month</span></p>
+            <p class="text-[#A1A9B8] mb-4">600 Monthly Leads</p>
+            <ul class="text-[#A1A9B8] text-sm mb-6">
+                <li class="mb-2">Real-time Lead Delivery</li>
+                <li class="mb-2">Enterprise Dashboard</li>
+                <li class="mb-2">7 Custom Templates</li>
+                <li>Priority Support + Strategy</li>
+            </ul>
+            <a href="{{ url_for('checkout', package='empire') }}" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Subscribe</a>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes fade-in {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+    animation: fade-in 0.5s ease-out;
+    animation-fill-mode: both;
+}
+</style>
+{% endblock %}
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>

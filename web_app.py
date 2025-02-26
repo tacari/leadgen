@@ -6,9 +6,11 @@ from datetime import datetime, timedelta
 from io import StringIO
 import psutil
 from flask import Flask, render_template, redirect, url_for, flash, request, make_response, session, jsonify
+import stripe
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
+stripe.api_key = os.environ.get('STRIPE_API_KEY')
 
 def terminate_port_process(port):
     """Terminate any process using the specified port"""
@@ -369,21 +371,98 @@ def generate_leads(user_id, package):
             'message': str(e)
         }), 500
 
-# Update success route to trigger lead generation
+@app.route('/checkout/<string:package>')
+def checkout(package):
+    if 'user_id' not in session:
+        flash('Please log in to purchase a plan.')
+        return redirect(url_for('login'))
+
+    prices = {
+        'launch': 'price_1Nxxxxx',  # Replace with real Stripe Price IDs
+        'engine': 'price_1Nyyyyy',
+        'accelerator': 'price_1Nzzzzz',
+        'empire': 'price_1Naaaaa'
+    }
+
+    if package not in prices:
+        flash('Invalid package selected.')
+        return redirect(url_for('pricing'))
+
+    try:
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price': prices[package],
+                'quantity': 1,
+            }],
+            mode='payment' if package == 'launch' else 'subscription',
+            success_url=url_for('success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url=url_for('pricing', _external=True),
+            metadata={
+                'user_id': session['user_id'],
+                'package': package
+            }
+        )
+        return redirect(session.url, code=303)
+    except Exception as e:
+        flash(f"Checkout failed: {str(e)}")
+        return redirect(url_for('pricing'))
+
 @app.route('/success')
 def success():
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
-    user_id = session['user_id']
-    package = session.get('selected_package', 'Lead Launch')
+    session_id = request.args.get('session_id')
+    if not session_id:
+        flash('Invalid session. Please try again.')
+        return redirect(url_for('pricing'))
 
-    # Trigger lead generation in background
-    generate_leads(user_id, package)
+    try:
+        stripe_session = stripe.checkout.Session.retrieve(session_id)
+        package = stripe_session.metadata.get('package')
+        user_id = stripe_session.metadata.get('user_id')
 
-    flash('Your leads are being generated! Check your dashboard soon.')
-    return redirect(url_for('dashboard'))
+        if not user_id or not package:
+            flash('Payment metadata missing.')
+            return redirect(url_for('dashboard'))
 
+        # Trigger scraper in background
+        generate_leads(user_id, package)
+
+        # Update subscription
+        volumes = {'launch': 50, 'engine': 150, 'accelerator': 300, 'empire': 600}
+        subscription = {
+            'user_id': user_id,
+            'package_name': package,
+            'lead_volume': volumes.get(package, 0),
+            'stripe_subscription_id': stripe_session.subscription if package != 'launch' else None
+        }
+
+        # Update subscription in database (replace with your database logic)
+        flash('Payment successful! Leads are being scraped—check your dashboard soon.')
+        return redirect(url_for('dashboard'))
+
+    except Exception as e:
+        flash(f"Payment confirmation failed: {str(e)}")
+        return redirect(url_for('dashboard'))
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    event = None
+    try:
+        event = stripe.Event.construct_from(request.get_json(), stripe.api_key)
+    except Exception as e:
+        print(f"Webhook error: {e}")
+        return '', 400
+
+    if event.type in ['charge.succeeded', 'customer.subscription.created']:
+        user_id = event.data.object.metadata.get('user_id')
+        package = event.data.object.metadata.get('package')
+        if user_id and package:
+            generate_leads(user_id, package)
+
+    return '', 200
 
 if __name__ == '__main__':
     try:
