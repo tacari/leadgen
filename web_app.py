@@ -7,6 +7,8 @@ from io import StringIO
 import psutil
 from flask import Flask, render_template, redirect, url_for, flash, request, make_response, session, jsonify
 import stripe
+import psycopg2
+import threading
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
@@ -145,10 +147,10 @@ def lead_history():
         sources[source]['count'] += 1
         if lead['score'] > 75:
             sources[source]['high_score'] += 1
-    source_insights = {k: {'count': v['count'], 'high_score_percent': round(v['high_score'] / v['count'] * 100, 1)} 
+    source_insights = {k: {'count': v['count'], 'high_score_percent': round(v['high_score'] / v['count'] * 100, 1)}
                       for k, v in sources.items()}
 
-    return render_template('lead_history.html', 
+    return render_template('lead_history.html',
                          leads=leads,
                          stats=stats,
                          source_insights=source_insights)
@@ -263,9 +265,9 @@ def analytics():
         'conversion_rate': round((analytics['conversions'] / analytics['total_leads']) * 100, 1)
     }
 
-    return render_template('analytics.html', 
-                         analytics=analytics, 
-                         leads=leads, 
+    return render_template('analytics.html',
+                         analytics=analytics,
+                         leads=leads,
                          insights=insights,
                          source_insights=source_insights)
 
@@ -308,9 +310,9 @@ def settings():
                 flash('Notification preferences saved!', 'success')
                 return redirect(url_for('settings'))
 
-        return render_template('settings.html', 
+        return render_template('settings.html',
                          username="Developer",  # For navbar
-                         user=user, 
+                         user=user,
                          subscription=subscription)
 
     except Exception as e:
@@ -419,11 +421,42 @@ def success():
         print(f"Retrieved session ID: {session_id}")  # Debug log
         checkout_session = stripe.checkout.Session.retrieve(session_id)
         package = checkout_session.metadata.get('package')
+        user_id = session.get('user_id')  # Get the current user's ID
 
-        # Trigger scraper
-        generate_leads('test_user', package)  # For testing, replace with real user ID later
+        if not user_id or not package:
+            flash('Session data missing.')
+            return redirect(url_for('dashboard'))
 
-        flash('Payment successful! Leads are being scraped—check your dashboard soon.')
+        # Update subscription in database
+        volumes = {'launch': 50, 'engine': 150, 'accelerator': 300, 'empire': 600}
+        try:
+            # Update user_packages table
+            with psycopg2.connect(os.environ['DATABASE_URL']) as conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        INSERT INTO user_packages (user_id, package_name, lead_volume, stripe_subscription_id, next_delivery)
+                        VALUES (%s, %s, %s, %s, NOW())
+                        ON CONFLICT (user_id) 
+                        DO UPDATE SET 
+                            package_name = EXCLUDED.package_name,
+                            lead_volume = EXCLUDED.lead_volume,
+                            stripe_subscription_id = EXCLUDED.stripe_subscription_id,
+                            next_delivery = EXCLUDED.next_delivery
+                    """, (
+                        user_id,
+                        package,
+                        volumes.get(package, 50),
+                        checkout_session.subscription if package != 'launch' else None
+                    ))
+                conn.commit()
+        except Exception as e:
+            print(f"Database error: {str(e)}")
+            # Continue even if database update fails
+
+        # Trigger scraper in background
+        threading.Thread(target=generate_leads, args=(user_id, package)).start()
+
+        flash('Payment successful! Your leads are being generated—check your dashboard soon.')
         return redirect(url_for('dashboard'))
 
     except Exception as e:
@@ -434,17 +467,48 @@ def success():
 @app.route('/webhook', methods=['POST'])
 def webhook():
     event = None
+    payload = request.get_json()
+    sig_header = request.headers.get('Stripe-Signature')
+
     try:
-        event = stripe.Event.construct_from(request.get_json(), stripe.api_key)
+        event = stripe.Event.construct_from(payload, stripe.api_key)
     except Exception as e:
         print(f"Webhook error: {e}")
         return '', 400
 
-    if event.type in ['charge.succeeded', 'customer.subscription.created']:
-        user_id = event.data.object.metadata.get('user_id')
-        package = event.data.object.metadata.get('package')
+    if event.type == 'charge.succeeded':
+        # Handle successful one-time payment
+        session = event.data.object
+        user_id = session.metadata.get('user_id')
+        package = session.metadata.get('package')
+
         if user_id and package:
-            generate_leads(user_id, package)
+            # Trigger lead generation for one-time payment
+            threading.Thread(target=generate_leads, args=(user_id, package)).start()
+
+    elif event.type == 'customer.subscription.created':
+        # Handle new subscription
+        subscription = event.data.object
+        user_id = subscription.metadata.get('user_id')
+        package = subscription.metadata.get('package')
+
+        if user_id and package:
+            # Update subscription details and trigger initial lead generation
+            try:
+                with psycopg2.connect(os.environ['DATABASE_URL']) as conn:
+                    with conn.cursor() as cur:
+                        cur.execute("""
+                            UPDATE user_packages 
+                            SET stripe_subscription_id = %s,
+                                next_delivery = NOW() + INTERVAL '1 day'
+                            WHERE user_id = %s
+                        """, (subscription.id, user_id))
+                    conn.commit()
+            except Exception as e:
+                print(f"Subscription update error: {str(e)}")
+
+            # Start lead generation
+            threading.Thread(target=generate_leads, args=(user_id, package)).start()
 
     return '', 200
 
