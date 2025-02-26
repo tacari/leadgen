@@ -202,7 +202,8 @@ def analytics():
             'emailed': 8,
             'replies': 2,
             'conversions': 1,
-            'avg_score': 82
+            'avg_score': 82,
+            'source': 'LinkedIn'
         },
         {
             'date_added': '2025-02-24',
@@ -210,7 +211,8 @@ def analytics():
             'emailed': 12,
             'replies': 3,
             'conversions': 1,
-            'avg_score': 78
+            'avg_score': 78,
+            'source': 'Yellow Pages'
         }
     ]
 
@@ -231,21 +233,32 @@ def analytics():
 
     # Calculate source insights
     sources = {}
-    source_list = ['LinkedIn', 'Yellow Pages', 'Google Maps']  # Sample sources
-    for source in source_list:
-        sources[source] = {'count': 0}
+    for lead in leads:
+        source = lead['source']
+        if source not in sources:
+            sources[source] = {'count': 0, 'high_score_leads': 0, 'total_score': 0}
+        sources[source]['count'] += lead['leads_added']
+        sources[source]['high_score_leads'] += lead['leads_added'] if lead['avg_score'] > 75 else 0
+        sources[source]['total_score'] += lead['avg_score'] * lead['leads_added']
 
-    sources['LinkedIn']['count'] = 10
-    sources['Yellow Pages']['count'] = 8
-    sources['Google Maps']['count'] = 7
+    source_insights = {}
+    for source, data in sources.items():
+        avg_score = data['total_score'] / data['count'] if data['count'] > 0 else 0
+        high_score_percent = (data['high_score_leads'] / data['count'] * 100) if data['count'] > 0 else 0
+        source_insights[source] = {
+            'count': data['count'],
+            'avg_score': round(avg_score, 1),
+            'high_score_percent': round(high_score_percent, 1)
+        }
 
-    source_insights = {k: v for k, v in sources.items()}
+    # Top source is the one with highest high_score_percent
+    top_source = max(source_insights.items(), key=lambda x: x[1]['high_score_percent'])
+    best_day_lead = max(leads, key=lambda x: x['leads_added'])
 
     insights = {
-        'top_source': 'LinkedIn',
-        'high_score_percentage': 80,
-        'best_day': 'Feb 25 (15 leads, 82 avg score)',
-        'conversion_rate': 8  # 2 conversions out of 25 leads
+        'top_source': f"{top_source[0]} ({top_source[1]['high_score_percent']}% high-score)",
+        'best_day': f"{best_day_lead['date_added']} ({best_day_lead['leads_added']} leads, {best_day_lead['avg_score']} avg score)",
+        'conversion_rate': round((analytics['conversions'] / analytics['total_leads']) * 100, 1)
     }
 
     return render_template('analytics.html', 

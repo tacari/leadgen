@@ -23,12 +23,14 @@
                 <option>Replied</option>
                 <option>Converted</option>
             </select>
+            {% if source_insights %}
             <select id="source-filter" class="bg-[#0D1321] border border-[#7B00FF] rounded-lg px-4 py-2 text-[#A1A9B8] text-sm hover:bg-[#7B00FF] hover:text-white">
                 <option>All</option>
                 {% for source in source_insights.keys() %}
                 <option>{{ source }}</option>
                 {% endfor %}
             </select>
+            {% endif %}
             <button id="reset-filters" class="border border-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#7B00FF] hover:shadow-lg">Clear Filters</button>
         </div>
     </div>
@@ -56,7 +58,7 @@
     <!-- Charts -->
     <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
-            <canvas id="leadsChart" width="600" height="300"></canvas>
+            <canvas id="leadsChart"></canvas>
             <div class="mt-4 flex gap-4 justify-center">
                 <button class="time-toggle bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF]" data-period="day">Day</button>
                 <button class="time-toggle bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF]" data-period="week">Week</button>
@@ -96,11 +98,6 @@
                         {% endfor %}
                     </tbody>
                 </table>
-                <div class="mt-4 flex justify-between">
-                    <button class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] disabled:bg-gray-500" disabled>Prev</button>
-                    <a href="{{ url_for('download_analytics_pdf') }}" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg">Download Analytics (PDF)</a>
-                    <button class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] disabled:bg-gray-500" disabled>Next</button>
-                </div>
             </div>
         </div>
         <!-- Insights -->
@@ -108,11 +105,23 @@
             <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
                 <h2 class="text-xl font-bold text-white mb-4">Performance Insights</h2>
                 <ul class="space-y-2 text-[#A1A9B8] text-sm">
+                    {% if insights %}
                     <li>Top Source: {{ insights.top_source }}</li>
                     <li>Best Day: {{ insights.best_day }}</li>
                     <li>Conversion Rate: {{ insights.conversion_rate }}%</li>
+                    {% endif %}
                 </ul>
             </div>
+            {% if source_insights %}
+            <div class="mt-6 bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+                <h2 class="text-xl font-bold text-white mb-4">Source Details</h2>
+                <ul class="space-y-2">
+                    {% for source, info in source_insights.items() %}
+                    <li class="text-[#A1A9B8] text-sm">{{ source }}: {{ info.count }} leads, {{ info.high_score_percent }}% high-score</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -135,6 +144,8 @@
             }]
         },
         options: {
+            responsive: true,
+            maintainAspectRatio: false,
             scales: { y: { beginAtZero: true } },
             plugins: { legend: { display: false } }
         }
@@ -151,7 +162,18 @@
                 backgroundColor: ['#A1A9B8', '#7B00FF', '#00BFFF', '#00FF7F']
             }]
         },
-        options: { plugins: { legend: { position: 'right', labels: { color: '#FFFFFF' } } } }
+        options: { 
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { 
+                legend: { 
+                    position: 'right', 
+                    labels: { 
+                        color: '#FFFFFF' 
+                    } 
+                } 
+            } 
+        }
     });
 
     // Sorting for Table
