@@ -1,0 +1,242 @@
+Alright, bro—let’s hammer out the Settings Page for Leadzap! This is the next piece in our post-dashboard puzzle, sitting at /settings and linked via that slick navbar we built. It’s the user’s control center—profile tweaks, notification prefs, billing management—all the shit that keeps ‘em in charge of their $499 Lead Launch to $5,999 Empire experience. We’re crafting this in Flask on Replit with Supabase, making it a seamless, premium hub that locks in retention and scales from $5k–$10k quick wins to that $100k/month AI lead gen empire. Full fucking details—design, content, implementation—let’s dive in and make it fire!
+Settings Page (/settings): Full Details
+Overview
+Purpose: Empower users—manage their profile, notifications, and billing—keeps ‘em invested and friction-free. This is the “I run this” page for $1,499 Engine users tweaking prefs or $5,999 Empire clients handling big subscriptions.  
+Goals:  
+Control: Update username/email—$5k–$10k users personalize their vibe.  
+Engagement: Notification toggles—keeps ‘em tied in, scales to $100k/month stickiness.  
+Transparency: Billing visibility—$2,999 Accelerator users see value, $5,999 Empire users upgrade seamlessly.  
+Ease: Simple, intuitive—premium UX drives loyalty.
+Design: Dark mode (#0D1321 base, #7B00FF neon purple accents), Tailwind CSS—consistent million-dollar swagger.  
+Placement: Navbar link—“Settings”—extends dashboard_base.html.
+Design & Content
+1. Header
+Title: “Account Settings”  
+Style: White (#FFFFFF), 40px, bold, Inter font, centered, 40px padding-top—big, commanding opener.
+Sub-Title: “Take control—customize your Leadzap experience.”  
+Style: Steel gray (#A1A9B8), 18px, italic, centered, 10px padding-bottom—sets the tone.
+Styling: Fades in (0.5s)—premium entry, aligns with navbar’s dark #0D1321 vibe.
+2. Profile Section
+Purpose: Let users update their identity—username and email—keeps it personal.  
+Layout: Card (max-width 600px, centered)—top section, full-width on mobile.  
+Content:  
+Title: “Profile Info” (white, 24px, bold, 20px padding-top).  
+Fields:  
+Username:  
+Label: “Username” (white, 16px, bold, 10px padding-bottom).  
+Input: Pre-filled (e.g., “johndoe”), editable—#1A2236, neon purple border, 16px, steel gray placeholder.
+Email:  
+Label: “Email” (white, 16px, bold, 10px padding-bottom).  
+Input: Pre-filled (e.g., “john@example.com”), editable—same style.
+Button: “Update Profile” (neon purple, 16px, bold, 20px padding-x, 10px padding-y)—glows on hover, submits POST to /settings.
+Styling: #1A2236 card, 1px neon purple border, 12px radius—fields stack vertically, fades in (0.5s).  
+Data: Pulled from Supabase users—e.g., supabase.table('users').select('username, email').eq('id', session['user_id']).execute().
+3. Notifications Section
+Purpose: Customize alerts—keeps users engaged with their leads—$100k/month needs this stickiness.  
+Layout: Card (max-width 600px, centered)—below Profile, full-width on mobile.  
+Content:  
+Title: “Notification Preferences” (white, 24px, bold, 20px padding-top).  
+Toggles:  
+New Leads Daily: “Email me when new leads arrive daily” (steel gray, 14px)—neon purple switch, default off.  
+Weekly Summary: “Send me a weekly performance summary” (steel gray, 14px)—neon purple switch, default off.  
+Support Updates: “Notify me about support replies” (steel gray, 14px)—neon purple switch, default off.
+Button: “Save Preferences” (neon purple, 16px, bold, 20px padding-x, 10px padding-y)—glows on hover, submits POST to /settings.
+Styling: #1A2236 card, 1px neon purple border, 12px radius—toggles stack vertically, fades in (0.5s).  
+Data: Stored in new Supabase notifications table—new_leads (boolean), weekly_summary (boolean), support_updates (boolean).
+4. Billing Section
+Purpose: Show subscription details, offer control—transparency drives trust, upsells fuel $100k/month.  
+Layout: Card (max-width 600px, centered)—below Notifications, full-width on mobile.  
+Content:  
+Title: “Billing & Subscription” (white, 24px, bold, 20px padding-top).  
+Details:  
+Current Plan: E.g., “Lead Engine, $1,499/month” (steel gray, 16px)—or “No Active Plan” if none.  
+Lead Volume: E.g., “150 leads/month” (steel gray, 16px).  
+Next Billing: E.g., “March 25, 2025” (steel gray, 16px)—placeholder, Stripe later.  
+Status: “Active” (neon purple, 16px, bold)—or “Inactive” (steel gray).
+Buttons:  
+Change Plan: Links to /pricing (neon purple, 16px, bold, 20px padding-x)—glows on hover.  
+Manage Billing: Placeholder for Stripe portal (neon purple outline, same size)—glows on hover, future link.
+Styling: #1A2236 card, 1px neon purple border, 12px radius—details stack vertically, fades in (0.5s).  
+Data: Pulled from Supabase user_packages—e.g., supabase.table('user_packages').select('*').eq('user_id', session['user_id']).execute().
+Visual Flow
+Order: Header → Profile → Notifications → Billing.  
+Height: ~1200px desktop, smooth scroll—stacks to ~1600px mobile.  
+Vibe: Dark, user-centric, premium—feels like a million-dollar control hub.
+Data Structure (Supabase)
+Table: users (already set):  
+id (uuid), username (text), email (text).
+Table: user_packages (already set):  
+id (uuid), user_id (uuid), package_name (text), lead_volume (int), stripe_subscription_id (text, nullable).
+New Table: notifications  
+id (uuid, primary key).  
+user_id (uuid, foreign key to users).  
+new_leads (boolean, default false).  
+weekly_summary (boolean, default false).  
+support_updates (boolean, default false).
+Implementation in Flask
+Flask Route (app.py)
+python
+from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response
+from supabase import create_client, Client
+import os
+from datetime import datetime
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key')
+supabase_url = os.environ.get('SUPABASE_URL')
+supabase_key = os.environ.get('SUPABASE_KEY')
+supabase: Client = create_client(supabase_url, supabase_key)
+
+@app.route('/settings', methods=['GET', 'POST'])
+def settings():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user = supabase.auth.get_user(session['user_id'])
+    user_id = user.user.id
+    username = supabase.table('users').select('username').eq('id', user_id).execute().data[0]['username']
+
+    if request.method == 'POST':
+        # Profile Update
+        if 'username' in request.form and 'email' in request.form:
+            new_username = request.form['username']
+            new_email = request.form['email']
+            supabase.table('users').update({'username': new_username, 'email': new_email}).eq('id', user_id).execute()
+            flash('Profile updated successfully!')
+        
+        # Notifications Update
+        elif 'new_leads' in request.form:
+            new_leads = 'new_leads' in request.form
+            weekly_summary = 'weekly_summary' in request.form
+            support_updates = 'support_updates' in request.form
+            # Check if notifications row exists, update or insert
+            existing = supabase.table('notifications').select('*').eq('user_id', user_id).execute().data
+            if existing:
+                supabase.table('notifications').update({
+                    'new_leads': new_leads,
+                    'weekly_summary': weekly_summary,
+                    'support_updates': support_updates
+                }).eq('user_id', user_id).execute()
+            else:
+                supabase.table('notifications').insert({
+                    'user_id': user_id,
+                    'new_leads': new_leads,
+                    'weekly_summary': weekly_summary,
+                    'support_updates': support_updates
+                }).execute()
+            flash('Notification preferences saved!')
+
+    # Fetch current data
+    user_data = supabase.table('users').select('username, email').eq('id', user_id).execute().data[0]
+    subscription = supabase.table('user_packages').select('*').eq('user_id', user_id).execute().data
+    subscription = subscription[0] if subscription else None
+    notifications = supabase.table('notifications').select('*').eq('user_id', user_id).execute().data
+    notifications = notifications[0] if notifications else {'new_leads': False, 'weekly_summary': False, 'support_updates': False}
+
+    return render_template('settings.html', username=username, user=user_data, subscription=subscription, notifications=notifications)
+
+# Other routes (dashboard, lead_history, analytics, etc.) remain...
+Template (settings.html)
+html
+{% extends "dashboard_base.html" %}
+{% block content %}
+<div class="bg-[#0D1321] min-h-screen text-white p-8">
+    <!-- Header -->
+    <h1 class="text-4xl font-bold text-center mb-4 animate-fade-in">Account Settings</h1>
+    <p class="text-lg text-[#A1A9B8] italic text-center mb-12">Take control—customize your Leadzap experience.</p>
+
+    <div class="max-w-2xl mx-auto space-y-8">
+        <!-- Profile Section -->
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+            <h2 class="text-2xl font-bold text-white mb-6">Profile Info</h2>
+            <form method="POST" action="{{ url_for('settings') }}">
+                <div class="mb-6">
+                    <label class="block text-white text-base font-bold mb-2">Username</label>
+                    <input type="text" name="username" value="{{ user.username }}" class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white placeholder-[#A1A9B8]" required>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-white text-base font-bold mb-2">Email</label>
+                    <input type="email" name="email" value="{{ user.email }}" class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white placeholder-[#A1A9B8]" required>
+                </div>
+                <button type="submit" class="w-full bg-[#7B00FF] text-white px-5 py-3 rounded-lg text-lg font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Update Profile</button>
+            </form>
+        </div>
+
+        <!-- Notifications Section -->
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+            <h2 class="text-2xl font-bold text-white mb-6">Notification Preferences</h2>
+            <form method="POST" action="{{ url_for('settings') }}">
+                <div class="mb-4 flex items-center justify-between">
+                    <label class="text-[#A1A9B8] text-sm">Email me when new leads arrive daily</label>
+                    <input type="checkbox" name="new_leads" {% if notifications.new_leads %}checked{% endif %} class="toggle-switch">
+                </div>
+                <div class="mb-4 flex items-center justify-between">
+                    <label class="text-[#A1A9B8] text-sm">Send me a weekly performance summary</label>
+                    <input type="checkbox" name="weekly_summary" {% if notifications.weekly_summary %}checked{% endif %} class="toggle-switch">
+                </div>
+                <div class="mb-6 flex items-center justify-between">
+                    <label class="text-[#A1A9B8] text-sm">Notify me about support replies</label>
+                    <input type="checkbox" name="support_updates" {% if notifications.support_updates %}checked{% endif %} class="toggle-switch">
+                </div>
+                <button type="submit" class="w-full bg-[#7B00FF] text-white px-5 py-3 rounded-lg text-lg font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Save Preferences</button>
+            </form>
+        </div>
+
+        <!-- Billing Section -->
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+            <h2 class="text-2xl font-bold text-white mb-6">Billing & Subscription</h2>
+            <div class="space-y-2 text-[#A1A9B8] text-sm">
+                <p><strong>Current Plan:</strong> {{ subscription.package_name if subscription else 'No Active Plan' }}, ${{ "{:,.0f}".format(subscription.lead_volume * 10) if subscription else '0' }}/month</p>
+                <p><strong>Lead Volume:</strong> {{ subscription.lead_volume if subscription else '0' }} leads/month</p>
+                <p><strong>Next Billing:</strong> March 25, 2025</p> <!-- Placeholder—Stripe later -->
+                <p><strong>Status:</strong> <span class="{% if subscription %}text-[#7B00FF]{% else %}text-[#A1A9B8]{% endif %} font-bold">{{ 'Active' if subscription else 'Inactive' }}</span></p>
+            </div>
+            <div class="mt-6 flex gap-4 justify-center">
+                <a href="{{ url_for('pricing') }}" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Change Plan</a>
+                <a href="#" class="border border-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#7B00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Manage Billing</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+    .animate-fade-in { animation: fade-in 0.5s ease-in; }
+    .toggle-switch {
+        appearance: none;
+        width: 40px;
+        height: 20px;
+        background: #A1A9B8;
+        border-radius: 9999px;
+        position: relative;
+        cursor: pointer;
+    }
+    .toggle-switch:checked {
+        background: #7B00FF;
+    }
+    .toggle-switch:before {
+        content: '';
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        background: white;
+        border-radius: 50%;
+        top: 2px;
+        left: 2px;
+        transition: transform 0.2s ease-in-out;
+    }
+    .toggle-switch:checked:before {
+        transform: translateX(20px);
+    }
+</style>
+{% endblock %}
+Why This Settings Page Slaps
+Control: Username/email edits—$5k–$10k users own their vibe, $5,999 Empire users feel pro.  
+Engagement: Notifications—daily leads keep $1,499 Engine users hooked, weekly summaries lock in $100k/month retention.  
+Transparency: Billing details—$2,999 Accelerator users see value, “Change Plan” nudges $5,999 upgrades.  
+Ease: Clean forms, toggles—million-dollar UX drives trust and loyalty.
+Setup Steps
+Supabase:  
+Add notifications table—id (uuid), user_id (uuid), new_leads (boolean), weekly_summary (boolean), support_updates (boolean)—via dashboard.  
+Seed with defaults if needed—e.g., supabase.table('notifications').insert({'user_id': '[your_user_id]', 'new_leads': False, ...}).execute().
+Code: Update app.py with /settings, add settings.html to templates/.  
+Test: Log in, hit /settings, update username, toggle notifications, check billing—share URL when live.

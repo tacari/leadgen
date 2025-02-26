@@ -269,32 +269,51 @@ def analytics():
 
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():
-    # Sample user data for development
-    user = {
-        'username': 'Developer',
-        'email': 'dev@example.com',
-        'notifications': {
-            'new_leads': True,
-            'weekly_summary': True,
-            'support_updates': False
+    try:
+        # Sample data for development - will be replaced with Supabase integration
+        user = {
+            'username': 'Developer',
+            'email': 'dev@example.com',
+            'notifications': {
+                'new_leads': True,
+                'weekly_summary': True,
+                'support_updates': False
+            }
         }
-    }
 
-    subscription = {
-        'package_name': 'Lead Engine',
-        'price': 1499,
-        'next_billing': '2025-03-25',
-        'lead_volume': 150
-    }
+        subscription = {
+            'package_name': 'Lead Engine',
+            'price': 1499,
+            'next_billing': '2025-03-25',
+            'lead_volume': 150
+        }
 
-    if request.method == 'POST':
-        # Handle form submissions (just flash a message for now)
-        flash('Settings updated successfully!', 'success')
-        return redirect(url_for('settings'))
+        if request.method == 'POST':
+            # Handle profile updates
+            if 'username' in request.form and 'email' in request.form:
+                user['username'] = request.form['username']
+                user['email'] = request.form['email']
+                flash('Profile updated successfully!', 'success')
+                return redirect(url_for('settings'))
 
-    return render_template('settings.html', 
+            # Handle notification preferences
+            elif any(key in request.form for key in ['new_leads', 'weekly_summary', 'support_updates']):
+                user['notifications'] = {
+                    'new_leads': 'new_leads' in request.form,
+                    'weekly_summary': 'weekly_summary' in request.form,
+                    'support_updates': 'support_updates' in request.form
+                }
+                flash('Notification preferences saved!', 'success')
+                return redirect(url_for('settings'))
+
+        return render_template('settings.html', 
+                         username="Developer",  # For navbar
                          user=user, 
                          subscription=subscription)
+
+    except Exception as e:
+        flash(f'An error occurred: {str(e)}', 'error')
+        return redirect(url_for('settings'))
 
 if __name__ == '__main__':
     try:
