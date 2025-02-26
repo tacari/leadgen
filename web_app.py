@@ -315,6 +315,23 @@ def settings():
         flash(f'An error occurred: {str(e)}', 'error')
         return redirect(url_for('settings'))
 
+@app.route('/support', methods=['GET', 'POST'])
+def support():
+    try:
+        if request.method == 'POST':
+            subject = request.form['subject']
+            message = request.form['message']
+
+            # Store in session for now (will be replaced with Supabase later)
+            flash('Message sent! We\'ll reply within 24 hours.')
+            return redirect(url_for('support'))
+
+        return render_template('support.html', username="Developer")  # For navbar
+
+    except Exception as e:
+        flash(f'An error occurred: {str(e)}', 'error')
+        return redirect(url_for('support'))
+
 if __name__ == '__main__':
     try:
         # Create required JSON files if they don't exist

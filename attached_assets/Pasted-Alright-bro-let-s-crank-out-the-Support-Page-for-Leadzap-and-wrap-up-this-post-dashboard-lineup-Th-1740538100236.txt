@@ -1,0 +1,226 @@
+Alright, bro—let's crank out the Support Page for Leadzap and wrap up this post-dashboard lineup! This page lives at /support, linked via that slick navbar we built, and it’s the go-to spot for users needing help with their $499 Lead Launch to $5,999 Empire plans. We’re building it in Flask on Replit with Supabase, making it a smooth, premium lifeline that keeps ‘em happy and locked in—crucial for scaling from $5k–$10k quick wins to that $100k/month AI lead gen empire. Full fucking details—design, content, implementation—let’s dive in and make it fire!
+Support Page (/support): Full Details
+Overview
+Purpose: Provide fast, clear help—FAQs for quick fixes, a contact form for deeper issues—cuts churn and keeps users rolling with their leads. This is the “we’ve got your back” page for $1,499 Engine users with basic questions or $5,999 Empire clients needing priority support.  
+Goals:  
+Accessibility: Instant answers via FAQs—$5k–$10k users self-serve, stay productive.  
+Support: Contact form—$2,999 Accelerator users get personalized help, $5,999 Empire users feel VIP.  
+Retention: Quick fixes and clear channels—keeps $100k/month clients loyal, reduces bounce.  
+Trust: Premium, proactive design—reinforces million-dollar vibes.
+Design: Dark mode (#0D1321 base, #7B00FF neon purple accents), Tailwind CSS—consistent swagger.  
+Placement: Navbar link—“Support”—extends dashboard_base.html.
+Design & Content
+1. Header
+Title: “Leadzap Support”  
+Style: White (#FFFFFF), 40px, bold, Inter font, centered, 40px padding-top—big, reassuring opener.
+Sub-Title: “We’re here to help—find answers or reach out anytime.”  
+Style: Steel gray (#A1A9B8), 18px, italic, centered, 10px padding-bottom—sets a supportive tone.
+Styling: Fades in (0.5s)—premium entry, aligns with navbar’s dark #0D1321 vibe.
+2. FAQs Section
+Purpose: Quick answers—covers 80% of common questions—keeps users moving without tickets.  
+Layout: Accordion (desktop/mobile)—max-width 800px, centered, full-width on mobile.  
+Content:  
+Title: “Frequently Asked Questions” (white, 24px, bold, 20px padding-top).  
+Questions:  
+“How do I get my leads?”  
+Answer: “Leads arrive via CSV, email, or dashboard—daily for Accelerator/Empire, weekly for Engine, one-time for Lead Launch.” (steel gray, 14px).
+“What’s lead scoring?”  
+Answer: “Our AI ranks leads 1–100 based on quality—higher scores mean hotter prospects.” (steel gray, 14px).
+“Can I upgrade my plan?”  
+Answer: “Yes—head to Settings > Billing & Subscription and hit ‘Change Plan’ to explore options.” (steel gray, 14px).
+“Why aren’t my leads showing up?”  
+Answer: “Check your delivery status in Dashboard—new batches may still be processing. Contact us if it’s been over 24 hours.” (steel gray, 14px).
+“How do I cancel my subscription?”  
+Answer: “Go to Settings > Billing & Subscription and select ‘Manage Billing’—coming soon with Stripe integration!” (steel gray, 14px).
+Expand/Collapse: Neon purple “+” (20px) toggles to “-” on click—JS-driven, smooth transition (0.3s).
+Styling: #1A2236 accordion items, 1px neon purple borders, 12px radius—titles neon purple (16px, bold), items fade in (0.5s stagger).
+3. Contact Form Section
+Purpose: Direct line to support—handles edge cases, keeps $5,999 Empire users VIP—$100k/month needs this polish.  
+Layout: Card (max-width 600px, centered)—below FAQs, full-width on mobile.  
+Content:  
+Title: “Get in Touch” (white, 24px, bold, 20px padding-top).  
+Fields:  
+Subject:  
+Label: “Subject” (white, 16px, bold, 10px padding-bottom).  
+Input: Text (e.g., “Help with lead delivery”)—#1A2236, neon purple border, 16px, steel gray placeholder, required.
+Message:  
+Label: “Message” (white, 16px, bold, 10px padding-bottom).  
+Textarea: 5 rows (e.g., “My leads haven’t shown up…”)—same style, required.
+Button: “Send Message” (neon purple, 16px, bold, 20px padding-x, 10px padding-y)—glows on hover, submits POST to /support.  
+Feedback: Flash message on submit—“Message sent! We’ll reply within 24 hours.” (neon purple, 14px, centered).
+Styling: #1A2236 card, 1px neon purple border, 12px radius—fields stack vertically, fades in (0.5s).
+4. Contact Info Section
+Purpose: Backup contact—reinforces support reliability—$5k–$10k users feel secure.  
+Layout: Small card (max-width 400px, centered)—below Contact Form, full-width on mobile.  
+Content:  
+Title: “Need More Help?” (white, 20px, bold, 10px padding-top).  
+Details:  
+“Email us: support@leadzap.io” (neon purple link, 16px)—clickable mailto:.  
+“Response time: Within 24 hours” (steel gray, 14px).
+Styling: #1A2236 card, 1px neon purple border, 12px radius—fades in (0.5s).
+Visual Flow
+Order: Header → FAQs → Contact Form → Contact Info.  
+Height: ~1400px desktop, smooth scroll—stacks to ~1800px mobile.  
+Vibe: Dark, supportive, premium—feels like a million-dollar safety net.
+Data Structure (Supabase)
+New Table: support_requests  
+id (uuid, primary key).  
+user_id (uuid, foreign key to users).  
+subject (text).  
+message (text).  
+created_at (timestamp, default now()).  
+status (text, e.g., “Open,” “Resolved”—default “Open”).
+Existing Tables: users (for user_id), notifications (for support_updates toggle).
+Implementation in Flask
+Flask Route (app.py)
+python
+from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response
+from supabase import create_client, Client
+import os
+from datetime import datetime
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key')
+supabase_url = os.environ.get('SUPABASE_URL')
+supabase_key = os.environ.get('SUPABASE_KEY')
+supabase: Client = create_client(supabase_url, supabase_key)
+
+@app.route('/support', methods=['GET', 'POST'])
+def support():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user = supabase.auth.get_user(session['user_id'])
+    username = supabase.table('users').select('username').eq('id', user.user.id).execute().data[0]['username']
+
+    if request.method == 'POST':
+        subject = request.form['subject']
+        message = request.form['message']
+        supabase.table('support_requests').insert({
+            'user_id': user.user.id,
+            'subject': subject,
+            'message': message,
+            'created_at': datetime.utcnow().isoformat(),
+            'status': 'Open'
+        }).execute()
+        flash('Message sent! We’ll reply within 24 hours.')
+        return redirect(url_for('support'))
+
+    return render_template('support.html', username=username)
+
+# Other routes (dashboard, lead_history, analytics, settings, etc.) remain...
+Template (support.html)
+html
+{% extends "dashboard_base.html" %}
+{% block content %}
+<div class="bg-[#0D1321] min-h-screen text-white p-8">
+    <!-- Header -->
+    <h1 class="text-4xl font-bold text-center mb-4 animate-fade-in">Leadzap Support</h1>
+    <p class="text-lg text-[#A1A9B8] italic text-center mb-12">We’re here to help—find answers or reach out anytime.</p>
+
+    <div class="max-w-4xl mx-auto space-y-8">
+        <!-- FAQs Section -->
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+            <h2 class="text-2xl font-bold text-white mb-6">Frequently Asked Questions</h2>
+            <div class="space-y-4">
+                <div class="accordion-item">
+                    <button class="accordion-toggle w-full text-left text-[#7B00FF] text-base font-bold flex justify-between items-center p-3" onclick="toggleAccordion(this)">
+                        How do I get my leads?
+                        <span class="text-xl">+</span>
+                    </button>
+                    <div class="accordion-content hidden text-[#A1A9B8] text-sm p-3">
+                        Leads arrive via CSV, email, or dashboard—daily for Accelerator/Empire, weekly for Engine, one-time for Lead Launch.
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <button class="accordion-toggle w-full text-left text-[#7B00FF] text-base font-bold flex justify-between items-center p-3" onclick="toggleAccordion(this)">
+                        What’s lead scoring?
+                        <span class="text-xl">+</span>
+                    </button>
+                    <div class="accordion-content hidden text-[#A1A9B8] text-sm p-3">
+                        Our AI ranks leads 1–100 based on quality—higher scores mean hotter prospects.
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <button class="accordion-toggle w-full text-left text-[#7B00FF] text-base font-bold flex justify-between items-center p-3" onclick="toggleAccordion(this)">
+                        Can I upgrade my plan?
+                        <span class="text-xl">+</span>
+                    </button>
+                    <div class="accordion-content hidden text-[#A1A9B8] text-sm p-3">
+                        Yes—head to Settings > Billing & Subscription and hit ‘Change Plan’ to explore options.
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <button class="accordion-toggle w-full text-left text-[#7B00FF] text-base font-bold flex justify-between items-center p-3" onclick="toggleAccordion(this)">
+                        Why aren’t my leads showing up?
+                        <span class="text-xl">+</span>
+                    </button>
+                    <div class="accordion-content hidden text-[#A1A9B8] text-sm p-3">
+                        Check your delivery status in Dashboard—new batches may still be processing. Contact us if it’s been over 24 hours.
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <button class="accordion-toggle w-full text-left text-[#7B00FF] text-base font-bold flex justify-between items-center p-3" onclick="toggleAccordion(this)">
+                        How do I cancel my subscription?
+                        <span class="text-xl">+</span>
+                    </button>
+                    <div class="accordion-content hidden text-[#A1A9B8] text-sm p-3">
+                        Go to Settings > Billing & Subscription and select ‘Manage Billing’—coming soon with Stripe integration!
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Form Section -->
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in max-w-xl mx-auto">
+            <h2 class="text-2xl font-bold text-white mb-6">Get in Touch</h2>
+            <form method="POST" action="{{ url_for('support') }}">
+                <div class="mb-6">
+                    <label class="block text-white text-base font-bold mb-2">Subject</label>
+                    <input type="text" name="subject" class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white placeholder-[#A1A9B8]" placeholder="e.g., Help with lead delivery" required>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-white text-base font-bold mb-2">Message</label>
+                    <textarea name="message" rows="5" class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white placeholder-[#A1A9B8]" placeholder="Tell us what’s going on…" required></textarea>
+                </div>
+                <button type="submit" class="w-full bg-[#7B00FF] text-white px-5 py-3 rounded-lg text-lg font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Send Message</button>
+            </form>
+        </div>
+
+        <!-- Contact Info Section -->
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in max-w-md mx-auto text-center">
+            <h2 class="text-xl font-bold text-white mb-4">Need More Help?</h2>
+            <p class="text-[#A1A9B8] text-sm mb-2">Email us: <a href="mailto:support@leadzap.io" class="text-[#7B00FF] hover:underline">support@leadzap.io</a></p>
+            <p class="text-[#A1A9B8] text-sm">Response time: Within 24 hours</p>
+        </div>
+    </div>
+</div>
+
+<!-- Flash Messages (handled by base template) -->
+
+<!-- Accordion Script -->
+<script>
+    function toggleAccordion(button) {
+        const content = button.nextElementSibling;
+        const toggle = button.querySelector('span');
+        content.classList.toggle('hidden');
+        toggle.textContent = content.classList.contains('hidden') ? '+' : '-';
+    }
+</script>
+
+<style>
+    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+    .animate-fade-in { animation: fade-in 0.5s ease-in; }
+    .accordion-content { transition: all 0.3s ease-in-out; }
+</style>
+{% endblock %}
+Why This Support Page Slaps
+Accessibility: FAQs cover the basics—$5k–$10k users fix issues fast, stay productive.  
+Support: Contact form—$2,999 Accelerator users get help, $5,999 Empire users feel VIP—$100k/month retention locked.  
+Trust: Premium design, clear channels—million-dollar vibes build confidence from $499 to $5,999.  
+Ease: Simple, proactive—cuts churn, keeps users rolling.
+Setup Steps
+Supabase:  
+Add support_requests table—id (uuid), user_id (uuid), subject (text), message (text), created_at (timestamp), status (text)—via dashboard.  
+Test with a dummy insert—e.g., supabase.table('support_requests').insert({'user_id': '[your_user_id]', 'subject': 'Test', ...}).execute().
+Code: Update app.py with /support, add support.html to templates/.  
+Test: Log in, hit /support, expand FAQs, submit a form—check Supabase for request, verify flash message—share URL when live.
