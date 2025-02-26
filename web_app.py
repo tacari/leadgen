@@ -374,8 +374,8 @@ def generate_leads(user_id, package):
 @app.route('/checkout/<string:package>')
 def checkout(package):
     if 'user_id' not in session:
-        flash('Please log in to purchase a plan.')
-        return redirect(url_for('login'))
+        flash('Please log in first.')
+        return redirect(url_for('landing'))
 
     prices = {
         'launch': 'price_1QwcjxGsSuGLiAUEuP63WhPh',  # Lead Launch
@@ -399,7 +399,7 @@ def checkout(package):
             success_url=url_for('success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
             cancel_url=url_for('pricing', _external=True),
             metadata={
-                'user_id': session['user_id'],
+                'user_id': session.get('user_id'),
                 'package': package
             }
         )
