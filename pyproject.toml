@@ -25,6 +25,7 @@ dependencies = [
     "psycopg2-binary>=2.9.10",
     "supabase>=2.13.0",
     "stripe>=11.6.0",
+    "twilio>=9.4.6",
 ]
 
 [tool.uv.sources]

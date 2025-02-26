@@ -388,6 +388,9 @@ def checkout(package):
             flash('Invalid package selected.')
             return redirect(url_for('pricing'))
 
+        # Store user's selected package
+        session['selected_package'] = package
+
         # Create Stripe checkout session
         checkout_session = stripe.checkout.Session.create(
             line_items=[{
@@ -398,7 +401,8 @@ def checkout(package):
             success_url=request.host_url.rstrip('/') + url_for('success') + '?session_id={CHECKOUT_SESSION_ID}',
             cancel_url=request.host_url.rstrip('/') + url_for('pricing'),
             metadata={
-                'package': package
+                'package': package,
+                'user_id': session.get('user_id', 'anonymous')  # Include user_id in metadata
             }
         )
 
@@ -420,8 +424,12 @@ def success():
 
         print(f"Retrieved session ID: {session_id}")  # Debug log
         checkout_session = stripe.checkout.Session.retrieve(session_id)
+
+        # Get package and user info
         package = checkout_session.metadata.get('package')
-        user_id = session.get('user_id')  # Get the current user's ID
+        user_id = checkout_session.metadata.get('user_id')
+
+        print(f"Package: {package}, User ID: {user_id}")  # Debug log
 
         if not user_id or not package:
             flash('Session data missing.')
@@ -434,23 +442,28 @@ def success():
             with psycopg2.connect(os.environ['DATABASE_URL']) as conn:
                 with conn.cursor() as cur:
                     cur.execute("""
-                        INSERT INTO user_packages (user_id, package_name, lead_volume, stripe_subscription_id, next_delivery)
-                        VALUES (%s, %s, %s, %s, NOW())
+                        INSERT INTO user_packages 
+                        (user_id, package_name, lead_volume, stripe_subscription_id, status, next_delivery)
+                        VALUES (%s, %s, %s, %s, 'active', NOW())
                         ON CONFLICT (user_id) 
                         DO UPDATE SET 
                             package_name = EXCLUDED.package_name,
                             lead_volume = EXCLUDED.lead_volume,
                             stripe_subscription_id = EXCLUDED.stripe_subscription_id,
-                            next_delivery = EXCLUDED.next_delivery
+                            status = EXCLUDED.status,
+                            next_delivery = EXCLUDED.next_delivery,
+                            updated_at = NOW()
                     """, (
                         user_id,
                         package,
                         volumes.get(package, 50),
-                        checkout_session.subscription if package != 'launch' else None
+                        checkout_session.subscription.id if hasattr(checkout_session, 'subscription') else None
                     ))
                 conn.commit()
+                print(f"Updated subscription in database for user {user_id}")  # Debug log
         except Exception as e:
             print(f"Database error: {str(e)}")
+            flash('Warning: Your payment was successful but subscription update failed. Please contact support.')
             # Continue even if database update fails
 
         # Trigger scraper in background
@@ -476,20 +489,20 @@ def webhook():
         print(f"Webhook error: {e}")
         return '', 400
 
+    # Handle successful one-time payment
     if event.type == 'charge.succeeded':
-        # Handle successful one-time payment
         session = event.data.object
         user_id = session.metadata.get('user_id')
         package = session.metadata.get('package')
 
         if user_id and package:
-            # Update user_packages table
             try:
                 with psycopg2.connect(os.environ['DATABASE_URL']) as conn:
                     with conn.cursor() as cur:
                         # Update subscription status
                         cur.execute("""
-                            INSERT INTO user_packages (user_id, package_name, lead_volume, status, created_at)
+                            INSERT INTO user_packages 
+                            (user_id, package_name, lead_volume, status, created_at)
                             VALUES (%s, %s, %s, 'active', NOW())
                             ON CONFLICT (user_id) 
                             DO UPDATE SET 
@@ -503,12 +516,14 @@ def webhook():
                             50 if package == 'launch' else (150 if package == 'engine' else (300 if package == 'accelerator' else 600))
                         ))
                         conn.commit()
+                        print(f"Updated one-time payment subscription for user {user_id}")  # Debug log
 
-                        # Trigger lead generation
-                        threading.Thread(target=generate_leads, args=(user_id, package)).start()
+                # Trigger lead generation
+                threading.Thread(target=generate_leads, args=(user_id, package)).start()
             except Exception as e:
                 print(f"Database error in webhook: {str(e)}")
 
+    # Handle new subscription
     elif event.type == 'customer.subscription.created':
         subscription = event.data.object
         user_id = subscription.metadata.get('user_id')
@@ -527,9 +542,10 @@ def webhook():
                             WHERE user_id = %s
                         """, (subscription.id, user_id))
                         conn.commit()
+                        print(f"Updated subscription details for user {user_id}")  # Debug log
 
-                        # Start lead generation
-                        threading.Thread(target=generate_leads, args=(user_id, package)).start()
+                # Start lead generation
+                threading.Thread(target=generate_leads, args=(user_id, package)).start()
             except Exception as e:
                 print(f"Subscription update error: {str(e)}")
 
