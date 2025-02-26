@@ -8,18 +8,34 @@ import psutil
 from flask import Flask, render_template, redirect, url_for, flash, request, make_response, session, jsonify
 from fpdf import FPDF
 from collections import defaultdict
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
+
+# Initialize Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+# Simple User class for development
+class User(UserMixin):
+    def __init__(self, id):
+        self.id = id
+        self.name = "Developer"
+        self.email = "dev@example.com"
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User(user_id)
 
 def terminate_port_process(port):
     """Terminate any process using the specified port"""
     try:
         for proc in psutil.process_iter():
             try:
-                # Check each process
                 proc_info = proc.as_dict(attrs=['pid', 'name', 'connections'])
-                if proc_info['connections']:  # Check if process has connections
+                if proc_info['connections']:
                     for conn in proc_info['connections']:
                         if conn.laddr.port == port and proc.pid != os.getpid():
                             print(f"Terminating process {proc.pid} using port {port}", file=sys.stderr)
@@ -50,7 +66,21 @@ def contact():
 def pricing():
     return render_template('pricing.html')
 
+@app.route('/login')
+def login():
+    # For development, auto-login a test user
+    user = User("1")
+    login_user(user)
+    return redirect(url_for('dashboard'))
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('landing'))
+
 @app.route('/dashboard')
+@login_required
 def dashboard():
     # Sample data for development
     now = datetime.now()
@@ -94,6 +124,7 @@ def dashboard():
     )
 
 @app.route('/lead-history')
+@login_required
 def lead_history():
     # Sample historical data for development
     leads = [
@@ -154,6 +185,7 @@ def lead_history():
                          source_insights=source_insights)
 
 @app.route('/download_leads')
+@login_required
 def download_leads():
     # Sample data for CSV export
     leads = [
@@ -195,6 +227,7 @@ def download_leads():
     return response
 
 @app.route('/analytics')
+@login_required
 def analytics():
     # Sample analytics data for development
     leads = [
@@ -289,6 +322,7 @@ def analytics():
                          insights=insights)
 
 @app.route('/download_analytics_pdf')
+@login_required
 def download_analytics_pdf():
     # Sample data for PDF export
     leads = [
@@ -339,6 +373,7 @@ def download_analytics_pdf():
 
 
 @app.route('/settings', methods=['GET', 'POST'])
+@login_required
 def settings():
     # Sample user data for development
     user = {
