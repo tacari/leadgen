@@ -483,32 +483,55 @@ def webhook():
         package = session.metadata.get('package')
 
         if user_id and package:
-            # Trigger lead generation for one-time payment
-            threading.Thread(target=generate_leads, args=(user_id, package)).start()
+            # Update user_packages table
+            try:
+                with psycopg2.connect(os.environ['DATABASE_URL']) as conn:
+                    with conn.cursor() as cur:
+                        # Update subscription status
+                        cur.execute("""
+                            INSERT INTO user_packages (user_id, package_name, lead_volume, status, created_at)
+                            VALUES (%s, %s, %s, 'active', NOW())
+                            ON CONFLICT (user_id) 
+                            DO UPDATE SET 
+                                package_name = EXCLUDED.package_name,
+                                lead_volume = EXCLUDED.lead_volume,
+                                status = EXCLUDED.status,
+                                updated_at = NOW()
+                        """, (
+                            user_id,
+                            package,
+                            50 if package == 'launch' else (150 if package == 'engine' else (300 if package == 'accelerator' else 600))
+                        ))
+                        conn.commit()
+
+                        # Trigger lead generation
+                        threading.Thread(target=generate_leads, args=(user_id, package)).start()
+            except Exception as e:
+                print(f"Database error in webhook: {str(e)}")
 
     elif event.type == 'customer.subscription.created':
-        # Handle new subscription
         subscription = event.data.object
         user_id = subscription.metadata.get('user_id')
         package = subscription.metadata.get('package')
 
         if user_id and package:
-            # Update subscription details and trigger initial lead generation
             try:
                 with psycopg2.connect(os.environ['DATABASE_URL']) as conn:
                     with conn.cursor() as cur:
                         cur.execute("""
                             UPDATE user_packages 
                             SET stripe_subscription_id = %s,
-                                next_delivery = NOW() + INTERVAL '1 day'
+                                status = 'active',
+                                next_delivery = NOW() + INTERVAL '1 day',
+                                updated_at = NOW()
                             WHERE user_id = %s
                         """, (subscription.id, user_id))
-                    conn.commit()
+                        conn.commit()
+
+                        # Start lead generation
+                        threading.Thread(target=generate_leads, args=(user_id, package)).start()
             except Exception as e:
                 print(f"Subscription update error: {str(e)}")
-
-            # Start lead generation
-            threading.Thread(target=generate_leads, args=(user_id, package)).start()
 
     return '', 200
 
