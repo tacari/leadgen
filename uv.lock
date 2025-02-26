@@ -389,12 +389,6 @@ wheels = [
 ]
 
 [[package]]
-name = "fpdf"
-version = "1.7.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/37/c6/608a9e6c172bf9124aa687ec8b9f0e8e5d697d59a5f4fad0e2d5ec2a7556/fpdf-1.7.2.tar.gz", hash = "sha256:125840783289e7d12552b1e86ab692c37322e7a65b96a99e0ea86cca041b6779", size = 39504 }
-
-[[package]]
 name = "frozenlist"
 version = "1.5.0"
 source = { registry = "https://pypi.org/simple" }
@@ -679,7 +673,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/b1/59/93ce612fce25c274efc88ec4d65963ce80fce96b9048e9fc1e430d893a9e/justext-3.0.1.tar.gz", hash = "sha256:b6ed2fb6c5d21618e2e34b2295c4edfc0bcece3bd549ed5c8ef5a8d20f0b3451", size = 828398 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c4/30/2cd44d6cc7541d5a68848250bf2f12c588631f6ff4461421fee34f9b619e/jusText-3.0.1-py2.py3-none-any.whl", hash = "sha256:e0fb882dd7285415709f4b7466aed23d6b98b7b89404c36e8a2e730facfed02b", size = 837839 },
-    { url = "https://files.pythonhosted.org/packages/f4/b2/298d96f6b33fcb5ae7dbcbaea4e054601a575744de0e3edd98ae2a9d78e8/justext-3.0.1-py2.py3-none-any.whl", hash = "sha256:0a5225c5cd7c5a124fec7bfa9a55110a73135e8b58ce784470af67d051ac9fd3", size = 837939 },
 ]
 
 [[package]]
@@ -1329,7 +1322,6 @@ dependencies = [
     { name = "flask-migrate" },
     { name = "flask-sqlalchemy" },
     { name = "flask-wtf" },
-    { name = "fpdf" },
     { name = "jinja2" },
     { name = "oauthlib" },
     { name = "openai" },
@@ -1354,7 +1346,6 @@ requires-dist = [
     { name = "flask-migrate", specifier = ">=4.1.0" },
     { name = "flask-sqlalchemy", specifier = ">=3.1.1" },
     { name = "flask-wtf", specifier = ">=1.2.2" },
-    { name = "fpdf", specifier = ">=1.7.2" },
     { name = "jinja2", specifier = ">=3.1.5" },
     { name = "oauthlib", specifier = ">=3.2.2" },
     { name = "openai", specifier = ">=1.64.0" },

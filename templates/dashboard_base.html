@@ -20,15 +20,15 @@
         <div class="hidden md:flex space-x-10">
             <a href="{{ url_for('dashboard') }}" class="nav-link px-5 py-2 {% if request.endpoint == 'dashboard' %}border-b-2 border-[#7B00FF]{% endif %}">Dashboard</a>
             <a href="{{ url_for('lead_history') }}" class="nav-link px-5 py-2 {% if request.endpoint == 'lead_history' %}border-b-2 border-[#7B00FF]{% endif %}">Lead History</a>
-            <a href="{{ url_for('analytics') }}" class="nav-link px-5 py-2 {% if request.endpoint == 'analytics' %}border-b-2 border-[#7B00FF]{% endif %}">Analytics</a>
-            <a href="{{ url_for('settings') }}" class="nav-link px-5 py-2 {% if request.endpoint == 'settings' %}border-b-2 border-[#7B00FF]{% endif %}">Settings</a>
-            <a href="{{ url_for('contact') }}" class="nav-link px-5 py-2 {% if request.endpoint == 'contact' %}border-b-2 border-[#7B00FF]{% endif %}">Support</a>
+            <a href="#" class="nav-link px-5 py-2">Analytics</a>
+            <a href="#" class="nav-link px-5 py-2">Settings</a>
+            <a href="#" class="nav-link px-5 py-2">Support</a>
         </div>
 
         <!-- Right Side -->
         <div class="hidden md:flex items-center space-x-6">
             <span class="text-[#A1A9B8] italic">Hey {{ username }}</span>
-            <a href="{{ url_for('logout') }}" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Logout</a>
+            <a href="#" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Logout</a>
         </div>
 
         <!-- Mobile Hamburger -->
@@ -46,11 +46,11 @@
         <div class="flex flex-col items-center py-4">
             <a href="{{ url_for('dashboard') }}" class="nav-link py-3 w-full text-center {% if request.endpoint == 'dashboard' %}text-[#7B00FF]{% endif %}">Dashboard</a>
             <a href="{{ url_for('lead_history') }}" class="nav-link py-3 w-full text-center {% if request.endpoint == 'lead_history' %}text-[#7B00FF]{% endif %}">Lead History</a>
-            <a href="{{ url_for('analytics') }}" class="nav-link py-3 w-full text-center {% if request.endpoint == 'analytics' %}text-[#7B00FF]{% endif %}">Analytics</a>
-            <a href="{{ url_for('settings') }}" class="nav-link py-3 w-full text-center {% if request.endpoint == 'settings' %}text-[#7B00FF]{% endif %}">Settings</a>
-            <a href="{{ url_for('contact') }}" class="nav-link py-3 w-full text-center {% if request.endpoint == 'contact' %}text-[#7B00FF]{% endif %}">Support</a>
+            <a href="#" class="nav-link py-3 w-full text-center">Analytics</a>
+            <a href="#" class="nav-link py-3 w-full text-center">Settings</a>
+            <a href="#" class="nav-link py-3 w-full text-center">Support</a>
             <span class="text-[#A1A9B8] italic py-3">Hey {{ username }}</span>
-            <a href="{{ url_for('logout') }}" class="nav-link py-3 w-full text-center bg-[#7B00FF] text-white">Logout</a>
+            <a href="#" class="nav-link py-3 w-full text-center bg-[#7B00FF] text-white">Logout</a>
         </div>
     </div>
 
