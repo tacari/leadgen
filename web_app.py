@@ -378,10 +378,10 @@ def checkout(package):
         return redirect(url_for('login'))
 
     prices = {
-        'launch': 'price_1Nxxxxx',  # Replace with real Stripe Price IDs
-        'engine': 'price_1Nyyyyy',
-        'accelerator': 'price_1Nzzzzz',
-        'empire': 'price_1Naaaaa'
+        'launch': 'price_1QwcjxGsSuGLiAUEuP63WhPh',  # Lead Launch
+        'engine': 'price_1Qwcl0GsSuGLiAUEr9cJ8TtG',  # Lead Engine
+        'accelerator': 'price_1QwclsGsSuGLiAUELcCnSDHQ',  # Lead Accelerator
+        'empire': 'price_1Qwcn5GsSuGLiAUE3qhtbxxy'  # Lead Empire
     }
 
     if package not in prices:
@@ -389,7 +389,7 @@ def checkout(package):
         return redirect(url_for('pricing'))
 
     try:
-        session = stripe.checkout.Session.create(
+        checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
                 'price': prices[package],
@@ -403,7 +403,7 @@ def checkout(package):
                 'package': package
             }
         )
-        return redirect(session.url, code=303)
+        return redirect(checkout_session.url, code=303)
     except Exception as e:
         flash(f"Checkout failed: {str(e)}")
         return redirect(url_for('pricing'))
