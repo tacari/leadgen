@@ -1,0 +1,421 @@
+Alright, bro—let’s cook up the Analytics Page for Leadzap! This is the next beast in our post-dashboard lineup, living at /analytics and accessible via that slick navbar we built. It’s where users dig into their lead performance—stats, charts, trends—all the juicy data that proves their $499 Lead Launch to $5,999 Empire packages are paying off. We’re building this in Flask on Replit with Supabase, making it a premium, data-driven hub that scales from $5k–$10k quick wins to that $100k/month AI lead gen empire. Full fucking details—design, content, implementation—let’s dive in and make it fire!
+Analytics Page (/analytics): Full Details
+Overview
+Purpose: Deep dive into lead performance—expands the dashboard’s basic stats, shows ROI, and nudges upgrades with hard data. This is the “show me the money” page for users tracking their pipeline from $1,499 Engine (150 leads/month) to $5,999 Empire (600/month).  
+Goals:  
+Insight: Reveal trends—leads over time, status breakdown, reply rates—$5k–$10k users see value fast.  
+Proof: Quantify results—$2,999 Accelerator users justify spend, $5,999 Empire users flex scale.  
+Upsell: Highlight limits—e.g., “150 leads/month? Empire gets 600!”—drives $100k/month revenue.  
+Utility: Exportable reports—makes data actionable, keeps ‘em hooked.
+Design: Dark mode (#0D1321 base, #7B00FF neon purple accents), Tailwind CSS, Chart.js for visuals—premium, million-dollar vibes.  
+Placement: Navbar link—“Analytics”—extends dashboard_base.html.
+Design & Content
+1. Header
+Title: “Lead Performance Analytics”  
+Style: White (#FFFFFF), 40px, bold, Inter font, centered, 40px padding-top—big, data-driven opener.
+Sub-Title: “Track your pipeline, measure success, optimize growth.”  
+Style: Steel gray (#A1A9B8), 18px, italic, centered, 10px padding-bottom—sets the tone.
+Styling: Fades in (0.5s)—premium entry, aligns with navbar’s dark #0D1321 vibe.
+2. Overview Stats
+Purpose: Quick snapshot—key metrics at a glance—grounds the page in value.  
+Layout: Grid (4 cols desktop, stacks mobile)—top section, full-width.  
+Content:  
+Total Leads: E.g., “600” (white, 24px, bold)—all leads ever.  
+Emailed: E.g., “400” (white, 24px, bold)—outreach volume.  
+Replies: E.g., “50” (white, 24px, bold)—placeholder, SendGrid later.  
+Conversions: E.g., “20” (white, 24px, bold)—manual input now, integrations later.
+Styling: #1A2236 cards, 1px neon purple borders, 12px radius—steel gray labels (16px), fades in (0.5s stagger).  
+Data: Aggregated from Supabase leads—e.g., len(leads), sum(1 for lead in leads if lead['status'] == 'Emailed').
+3. Filters & Controls
+Purpose: Customize the view—date ranges, status, sources—tailors analytics to their needs.  
+Layout: Sticky below header (desktop), stacks above stats (mobile)—flex row, full-width.  
+Content:  
+Date Range Picker:  
+Dropdown: “Last 7 Days” (default), “Last 30 Days,” “Last 90 Days,” “All Time,” “Custom” (two inputs: start/end dates)—neon purple outline, 14px, hover fills #7B00FF.  
+Updates all charts/tables on change—JS event listener.
+Status Filter:  
+Dropdown: “All” (default), “Pending,” “Emailed,” “Replied,” “Converted”—same style, filters data.
+Source Filter:  
+Dropdown: “All” (default), dynamic list (e.g., “Yellow Pages,” “LinkedIn”) from leads.source—same style.
+Reset Button: “Clear Filters” (neon purple outline, 14px, bold, 20px padding-x)—resets to defaults, glows on hover.
+Styling: #1A2236 background, 1px neon purple border, 12px radius—sticky top 80px (below navbar), fades in (0.5s).
+4. Charts Section
+Purpose: Visualize trends—makes data pop, proves AI’s worth—$100k/month scale needs this flex.  
+Layout: Grid (2 cols desktop, stacks mobile)—below filters, full-width.  
+Content:  
+Bar Chart: Leads Over Time  
+X-axis: Dates (daily/weekly/monthly—toggle via buttons: “Day,” “Week,” “Month”—neon purple, 14px).  
+Y-axis: Lead count—white labels, increments auto-scale (Chart.js).  
+Bars: Neon purple (#7B00FF)—600x300px, hover shows count (tooltip).  
+Data: Group leads by date_added—e.g., “Feb 25: 25 leads.”
+Pie Chart: Status Breakdown  
+Slices: “Pending” (gray), “Emailed” (neon purple), “Replied” (blue), “Converted” (green)—400x400px.  
+Labels: Percentages (e.g., “Emailed: 66%”)—white, 12px, outside pie.  
+Data: Count leads by status—e.g., sum(1 for lead in leads if lead['status'] == 'Emailed').
+Line Chart: Reply Rate Trend  
+X-axis: Last 30 days—white labels.  
+Y-axis: Reply % (placeholder: 0% now)—white labels, 0–100%.  
+Line: Neon purple, 600x300px—future SendGrid data.  
+Data: Hardcoded zeros now—e.g., [0, 0, 0]—real replies later.
+Styling: #1A2236 cards, 1px neon purple borders, 12px radius—charts fade in (0.5s).
+5. Detailed Table
+Purpose: Granular data—daily/weekly/monthly breakdowns—$5,999 Empire users analyze every angle.  
+Layout: Full-width table (desktop), stacks to cards (mobile)—below charts.  
+Content:  
+Columns:  
+Date: E.g., “2025-02-25” (steel gray, 14px)—sortable.  
+Leads Added: E.g., “25” (white, 14px)—new leads that day.  
+Emailed: E.g., “20” (white, 14px)—outreach sent.  
+Replies: E.g., “2” (white, 14px)—placeholder, SendGrid later.  
+Conversions: E.g., “1” (white, 14px)—manual now.  
+Avg Score: E.g., “85.3” (neon purple if >75, steel gray else, 14px)—average of new leads.
+Pagination: 25 rows/page—neon purple “Prev”/“Next” buttons (12px padding-x).  
+Export: “Download Analytics (PDF)” (neon purple, 16px, bold, 20px padding-x, glows on hover)—exports filtered table + charts.
+Styling: #1A2236 table, 1px neon purple border, 12px radius—rows fade in (0.5s stagger).
+6. Insights Box
+Purpose: Highlight key takeaways—shows AI’s edge, builds trust—$100k/month needs this flex.  
+Layout: Right sidebar (desktop, 300px wide), below table (mobile)—below charts.  
+Content:  
+Title: “Performance Insights” (white, 20px, bold).  
+List:  
+“Top Source: LinkedIn (80% high-score)” (steel gray, 14px).  
+“Best Day: Feb 25 (25 leads, 90 avg score)” (steel gray, 14px).  
+“Conversion Rate: 5%” (steel gray, 14px)—placeholder now.
+Styling: #1A2236 card, neon purple border, 12px radius—fades in (0.5s).  
+Data: Calculated from leads—e.g., group by source, max leads by date_added.
+Data Structure (Supabase)
+Table: leads (already set):  
+id (uuid), user_id (uuid), name (text), email (text), source (text), score (int), verified (boolean), status (text), date_added (timestamp), notes (text).
+Future: Add replies (int, nullable), conversions (int, nullable)—for real reply/conversion tracking.
+Implementation in Flask
+Flask Route (app.py)
+python
+from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response
+from supabase import create_client, Client
+from fpdf import FPDF
+import os
+from datetime import datetime, timedelta
+from collections import defaultdict
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key')
+supabase_url = os.environ.get('SUPABASE_URL')
+supabase_key = os.environ.get('SUPABASE_KEY')
+supabase: Client = create_client(supabase_url, supabase_key)
+
+@app.route('/analytics')
+def analytics():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user = supabase.auth.get_user(session['user_id'])
+    username = supabase.table('users').select('username').eq('id', user.user.id).execute().data[0]['username']
+    leads = supabase.table('leads').select('*').eq('user_id', user.user.id).order('date_added', desc=True).execute().data
+
+    # Overview Stats
+    total_leads = len(leads)
+    emailed = sum(1 for lead in leads if lead['status'] == 'Emailed')
+    replies = 0  # Placeholder—SendGrid later
+    conversions = sum(1 for lead in leads if lead['status'] == 'Converted')
+    overview = {'total': total_leads, 'emailed': emailed, 'replies': replies, 'conversions': conversions}
+
+    # Daily Breakdown (last 30 days for simplicity—expand with filters)
+    daily_data = defaultdict(lambda: {'added': 0, 'emailed': 0, 'replies': 0, 'conversions': 0, 'scores': []})
+    for lead in leads:
+        date = lead['date_added'][:10]  # YYYY-MM-DD
+        daily_data[date]['added'] += 1
+        if lead['status'] == 'Emailed':
+            daily_data[date]['emailed'] += 1
+        if lead['status'] == 'Converted':
+            daily_data[date]['conversions'] += 1
+        daily_data[date]['scores'].append(lead['score'])
+    
+    table_data = [
+        {
+            'date': date,
+            'added': data['added'],
+            'emailed': data['emailed'],
+            'replies': data['replies'],
+            'conversions': data['conversions'],
+            'avg_score': round(sum(data['scores']) / len(data['scores']), 1) if data['scores'] else 0
+        }
+        for date, data in daily_data.items()
+    ]
+
+    # Chart Data
+    dates = sorted(daily_data.keys())[-30:]  # Last 30 days
+    leads_over_time = [daily_data[date]['added'] for date in dates]
+    status_breakdown = {
+        'Pending': total_leads - emailed - conversions,
+        'Emailed': emailed - conversions,
+        'Replied': replies,
+        'Converted': conversions
+    }
+    reply_rate = [0] * 30  # Placeholder—SendGrid later
+
+    # Insights
+    sources = defaultdict(lambda: {'count': 0, 'high_score': 0})
+    for lead in leads:
+        source = lead['source']
+        sources[source]['count'] += 1
+        if lead['score'] > 75:
+            sources[source]['high_score'] += 1
+    top_source = max(sources.items(), key=lambda x: x[1]['high_score'] / x[1]['count'] if x[1]['count'] > 0 else 0)
+    top_day = max(daily_data.items(), key=lambda x: x[1]['added'])
+    insights = {
+        'top_source': f"{top_source[0]} ({round(top_source[1]['high_score'] / top_source[1]['count'] * 100, 1)}% high-score)",
+        'best_day': f"{top_day[0]} ({top_day[1]['added']} leads, {round(sum(top_day[1]['scores']) / len(top_day[1]['scores']), 1) if top_day[1]['scores'] else 0} avg score)",
+        'conversion_rate': round(conversions / total_leads * 100, 1) if total_leads > 0 else 0
+    }
+
+    return render_template('analytics.html', username=username, overview=overview, table_data=table_data, dates=dates, leads_over_time=leads_over_time, status_breakdown=status_breakdown, reply_rate=reply_rate, insights=insights)
+
+@app.route('/download_analytics_pdf')
+def download_analytics_pdf():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user = supabase.auth.get_user(session['user_id'])
+    username = supabase.table('users').select('username').eq('id', user.user.id).execute().data[0]['username']
+    leads = supabase.table('leads').select('*').eq('user_id', user.user.id).execute().data
+
+    total = len(leads)
+    emailed = sum(1 for lead in leads if lead['status'] == 'Emailed')
+    replies = 0
+    conversions = sum(1 for lead in leads if lead['status'] == 'Converted')
+    overview = {'total': total, 'emailed': emailed, 'replies': replies, 'conversions': conversions}
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", 'B', 24)
+    pdf.set_text_color(123, 0, 255)
+    pdf.cell(0, 10, "Leadzap Analytics Report", ln=True, align='C')
+    pdf.set_font("Arial", size=12)
+    pdf.set_text_color(161, 169, 184)
+    pdf.cell(0, 10, f"Generated for {username} on {datetime.now().strftime('%Y-%m-%d')}", ln=True, align='C')
+    pdf.ln(10)
+    pdf.cell(0, 10, f"Total Leads: {total}  Emailed: {emailed}  Replies: {replies}  Conversions: {conversions}", ln=True)
+    pdf.ln(10)
+
+    pdf.set_font("Arial", 'B', 12)
+    headers = ["Date", "Leads Added", "Emailed", "Replies", "Conversions", "Avg Score"]
+    col_widths = [40, 30, 30, 30, 30, 30]
+    for header, width in zip(headers, col_widths):
+        pdf.cell(width, 10, header, border=1, align='C')
+    pdf.ln()
+    pdf.set_font("Arial", size=12)
+    for lead in leads[:10]:  # Limit for simplicity—expand with filters
+        date = lead['date_added'][:10]
+        pdf.cell(40, 10, date, border=1)
+        pdf.cell(30, 10, "1", border=1, align='C')  # Simplified—group in real impl
+        pdf.cell(30, 10, "1" if lead['status'] == 'Emailed' else "0", border=1, align='C')
+        pdf.cell(30, 10, "0", border=1, align='C')
+        pdf.cell(30, 10, "1" if lead['status'] == 'Converted' else "0", border=1, align='C')
+        pdf.cell(30, 10, str(lead['score']), border=1, align='C')
+        pdf.ln()
+
+    pdf.ln(10)
+    pdf.cell(0, 10, "Powered by Leadzap AI", ln=True, align='C')
+
+    pdf_output = pdf.output(dest='S').encode('latin-1')
+    response = make_response(pdf_output)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename=analytics_report_{username}_{datetime.now().strftime("%Y%m%d")}.pdf'
+    return response
+
+# Other routes (dashboard, lead_history, etc.) remain...
+Template (analytics.html)
+html
+{% extends "dashboard_base.html" %}
+{% block content %}
+<div class="bg-[#0D1321] min-h-screen text-white p-8">
+    <!-- Header -->
+    <h1 class="text-4xl font-bold text-center mb-4 animate-fade-in">Lead Performance Analytics</h1>
+    <p class="text-lg text-[#A1A9B8] italic text-center mb-12">Track your pipeline, measure success, optimize growth.</p>
+
+    <!-- Filters & Controls -->
+    <div class="sticky top-20 bg-[#0D1321] z-10 py-4">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row gap-4 items-center">
+            <select id="date-range" class="bg-[#0D1321] border border-[#7B00FF] rounded-lg px-4 py-2 text-[#A1A9B8] text-sm hover:bg-[#7B00FF] hover:text-white">
+                <option>Last 7 Days</option>
+                <option selected>Last 30 Days</option>
+                <option>Last 90 Days</option>
+                <option>All Time</option>
+                <option>Custom</option>
+            </select>
+            <select id="status-filter" class="bg-[#0D1321] border border-[#7B00FF] rounded-lg px-4 py-2 text-[#A1A9B8] text-sm hover:bg-[#7B00FF] hover:text-white">
+                <option>All</option>
+                <option>Pending</option>
+                <option>Emailed</option>
+                <option>Replied</option>
+                <option>Converted</option>
+            </select>
+            <select id="source-filter" class="bg-[#0D1321] border border-[#7B00FF] rounded-lg px-4 py-2 text-[#A1A9B8] text-sm hover:bg-[#7B00FF] hover:text-white">
+                <option>All</option>
+                {% for source in source_insights.keys() %}
+                <option>{{ source }}</option>
+                {% endfor %}
+            </select>
+            <button id="reset-filters" class="border border-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#7B00FF] hover:shadow-lg">Clear Filters</button>
+        </div>
+    </div>
+
+    <!-- Overview Stats -->
+    <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 my-8">
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-4 text-center animate-fade-in">
+            <p class="text-white text-2xl font-bold">{{ overview.total }}</p>
+            <p class="text-[#A1A9B8] text-base">Total Leads</p>
+        </div>
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-4 text-center animate-fade-in">
+            <p class="text-white text-2xl font-bold">{{ overview.emailed }}</p>
+            <p class="text-[#A1A9B8] text-base">Emailed</p>
+        </div>
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-4 text-center animate-fade-in">
+            <p class="text-white text-2xl font-bold">{{ overview.replies }}</p>
+            <p class="text-[#A1A9B8] text-base">Replies</p>
+        </div>
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-4 text-center animate-fade-in">
+            <p class="text-white text-2xl font-bold">{{ overview.conversions }}</p>
+            <p class="text-[#A1A9B8] text-base">Conversions</p>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+            <canvas id="leadsChart" width="600" height="300"></canvas>
+            <div class="mt-4 flex gap-4 justify-center">
+                <button class="time-toggle bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF]" data-period="day">Day</button>
+                <button class="time-toggle bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF]" data-period="week">Week</button>
+                <button class="time-toggle bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF]" data-period="month">Month</button>
+            </div>
+        </div>
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+            <canvas id="statusChart" width="400" height="400"></canvas>
+        </div>
+    </div>
+
+    <!-- Detailed Table & Insights -->
+    <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="md:col-span-2">
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 overflow-x-auto">
+                <table class="w-full text-left text-[#A1A9B8] text-sm">
+                    <thead>
+                        <tr class="border-b border-[#7B00FF]">
+                            <th class="p-3 cursor-pointer" onclick="sortTable('date')">Date</th>
+                            <th class="p-3">Leads Added</th>
+                            <th class="p-3">Emailed</th>
+                            <th class="p-3">Replies</th>
+                            <th class="p-3">Conversions</th>
+                            <th class="p-3 cursor-pointer" onclick="sortTable('avg_score')">Avg Score</th>
+                        </tr>
+                    </thead>
+                    <tbody id="analytics-table">
+                        {% for row in table_data %}
+                        <tr class="border-b border-[#7B00FF] animate-fade-in" data-date="{{ row.date }}" data-avg_score="{{ row.avg_score }}">
+                            <td class="p-3">{{ row.date }}</td>
+                            <td class="p-3 text-white">{{ row.added }}</td>
+                            <td class="p-3 text-white">{{ row.emailed }}</td>
+                            <td class="p-3 text-white">{{ row.replies }}</td>
+                            <td class="p-3 text-white">{{ row.conversions }}</td>
+                            <td class="p-3 {% if row.avg_score > 75 %}text-[#7B00FF]{% endif %}">{{ row.avg_score }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="mt-4 flex justify-between">
+                    <button class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] disabled:bg-gray-500" disabled>Prev</button>
+                    <a href="{{ url_for('download_analytics_pdf') }}" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg">Download Analytics (PDF)</a>
+                    <button class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] disabled:bg-gray-500" disabled>Next</button>
+                </div>
+            </div>
+        </div>
+        <!-- Insights -->
+        <div class="md:col-span-1">
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+                <h2 class="text-xl font-bold text-white mb-4">Performance Insights</h2>
+                <ul class="space-y-2 text-[#A1A9B8] text-sm">
+                    <li>Top Source: {{ insights.top_source }}</li>
+                    <li>Best Day: {{ insights.best_day }}</li>
+                    <li>Conversion Rate: {{ insights.conversion_rate }}%</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Leads Over Time Bar Chart
+    const leadsCtx = document.getElementById('leadsChart').getContext('2d');
+    const leadsChart = new Chart(leadsCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ dates | tojson }},
+            datasets: [{
+                label: 'Leads Added',
+                data: {{ leads_over_time | tojson }},
+                backgroundColor: '#7B00FF',
+                borderColor: '#8F00FF',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: { y: { beginAtZero: true } },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    // Status Breakdown Pie Chart
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    const statusChart = new Chart(statusCtx, {
+        type: 'pie',
+        data: {
+            labels: ['Pending', 'Emailed', 'Replied', 'Converted'],
+            datasets: [{
+                data: [{{ status_breakdown.Pending }}, {{ status_breakdown.Emailed }}, {{ status_breakdown.Replied }}, {{ status_breakdown.Converted }}],
+                backgroundColor: ['#A1A9B8', '#7B00FF', '#00BFFF', '#00FF7F']
+            }]
+        },
+        options: { plugins: { legend: { position: 'right', labels: { color: '#FFFFFF' } } } }
+    });
+
+    // Sorting for Table
+    let sortDirection = {};
+    function sortTable(column) {
+        const tbody = document.getElementById('analytics-table');
+        const rows = Array.from(tbody.getElementsByTagName('tr'));
+        sortDirection[column] = !sortDirection[column] || false;
+        rows.sort((a, b) => {
+            let aValue = a.dataset[column];
+            let bValue = b.dataset[column];
+            if (column === 'avg_score') {
+                aValue = parseFloat(aValue);
+                bValue = parseFloat(bValue);
+            } else if (column === 'date') {
+                aValue = new Date(aValue);
+                bValue = new Date(bValue);
+            }
+            return sortDirection[column] ? aValue > bValue ? 1 : -1 : aValue < bValue ? 1 : -1;
+        });
+        rows.forEach(row => tbody.appendChild(row));
+    }
+</script>
+
+<style>
+    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+    .animate-fade-in { animation: fade-in 0.5s ease-in; }
+</style>
+{% endblock %}
+Why This Analytics Page Slaps
+Insight: Charts and tables—$5k–$10k users see trends, $100k/month clients optimize with data.  
+Proof: “400 emailed, 20 converted”—$2,999 Accelerator users see ROI, $5,999 Empire users flex scale.  
+Upsell: Filters show limits—e.g., “30 days = 150 leads? Empire gets 600!”—drives revenue.  
+Utility: PDF export—$1,499 Engine users share reports, $5,999 Empire users strategize offline.  
+Premium: Neon purple charts, dark mode—million-dollar vibes lock in trust.
+Setup Steps
+Install Dependencies:  
+pip install fpdf (for PDF)—add to requirements.txt.  
+Chart.js already in via CDN—no extra setup.
+Supabase: Ensure leads table has data—add rows if testing (e.g., supabase.table('leads').insert({...}).execute()).  
+Code: Update app.py with /analytics and /download_analytics_pdf, add analytics.html to templates/.  
+Test: Log in, hit /analytics, check charts, table, PDF download—share URL when live.
