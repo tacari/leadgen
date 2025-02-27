@@ -256,32 +256,53 @@ def logout():
 
 @app.route('/dashboard')
 def dashboard():
-    if 'user_id' not in session:
-        logger.warning("Attempt to access dashboard without user_id in session")
-        return redirect(url_for('login'))
-
     try:
-        user = supabase.auth.get_user(session['user_id'])
-        user_data = supabase.table('users').select('*').eq('id', user.user.id).single().execute()
+        # Test user data for demonstration
+        test_user = {
+            'id': '12345',
+            'username': 'test_user',
+            'email': 'test@example.com'
+        }
 
-        if not user_data.data:
-            logger.error(f"No user data found for ID: {session['user_id']}")
-            session.pop('user_id', None)
-            return redirect(url_for('login'))
+        # Get sample leads
+        leads = [
+            {
+                'name': "Test Lead 1",
+                'email': 'lead1@example.com',
+                'source': 'LinkedIn',
+                'score': 85,
+                'verified': True,
+                'status': 'New',
+                'date_added': datetime.now().isoformat()
+            },
+            {
+                'name': "Test Lead 2",
+                'email': 'lead2@example.com',
+                'source': 'Yellow Pages',
+                'score': 92,
+                'verified': True,
+                'status': 'Contacted',
+                'date_added': datetime.now().isoformat()
+            }
+        ]
 
-        leads = supabase.table('leads').select('*').eq('user_id', user.user.id).order('date_added', desc=True).limit(25).execute()
-        subscription = supabase.table('user_packages').select('*').eq('user_id', user.user.id).single().execute()
+        # Sample subscription data
+        subscription = {
+            'package_name': 'Lead Engine',
+            'status': 'active',
+            'lead_volume': 150,
+            'next_delivery': (datetime.now() + timedelta(days=1)).isoformat()
+        }
 
         return render_template('dashboard.html',
-                            username=user_data.data['username'],
-                            leads=leads.data,
-                            subscription=subscription.data if subscription.data else None)
+                            username=test_user['username'],
+                            leads=leads,
+                            subscription=subscription)
 
     except Exception as e:
         logger.error(f"Dashboard error: {str(e)}")
-        session.pop('user_id', None)
-        flash('Session expired. Please log in again.')
-        return redirect(url_for('login'))
+        flash('An error occurred while loading the dashboard.')
+        return redirect(url_for('home'))
 
 @app.route('/')
 def home():
