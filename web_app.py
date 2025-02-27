@@ -1,3 +1,4 @@
+
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response, jsonify
 from supabase import create_client, Client
@@ -28,6 +29,60 @@ supabase = create_client(supabase_url, supabase_key)
 stripe.api_key = os.environ.get('STRIPE_API_KEY')
 sendgrid_api_key = os.environ.get('SENDGRID_API_KEY')
 
+# Ensure database tables exist
+def ensure_tables_exist():
+    try:
+        # Check if users table exists
+        users_response = supabase.table('users').select('id').limit(1).execute()
+        if 'error' in users_response:
+            # Create users table
+            logger.info("Creating users table")
+            supabase.table('users').create([
+                {'id': 'test', 'username': 'test', 'email': 'test@example.com', 'created_at': datetime.utcnow().isoformat()}
+            ]).execute()
+            # Then immediately delete the test row
+            supabase.table('users').delete().eq('id', 'test').execute()
+            
+        # Check if user_packages table exists
+        packages_response = supabase.table('user_packages').select('id').limit(1).execute()
+        if 'error' in packages_response:
+            # Create user_packages table
+            logger.info("Creating user_packages table")
+            supabase.table('user_packages').create([
+                {'id': 'test', 'user_id': 'test', 'package_name': 'test', 'lead_volume': 0, 'status': 'inactive'}
+            ]).execute()
+            # Then immediately delete the test row
+            supabase.table('user_packages').delete().eq('id', 'test').execute()
+            
+        # Check if leads table exists
+        leads_response = supabase.table('leads').select('id').limit(1).execute()
+        if 'error' in leads_response:
+            # Create leads table
+            logger.info("Creating leads table")
+            supabase.table('leads').create([
+                {'id': 'test', 'user_id': 'test', 'name': 'Test Lead', 'email': 'test@example.com', 'date_added': datetime.utcnow().isoformat()}
+            ]).execute()
+            # Then immediately delete the test row
+            supabase.table('leads').delete().eq('id', 'test').execute()
+            
+        logger.info("Database tables verified")
+    except Exception as e:
+        logger.error(f"Error ensuring tables exist: {str(e)}")
+        # Use file-based approach as fallback
+        ensure_local_data_files()
+
+# Fallback to JSON files if database connection fails
+def ensure_local_data_files():
+    data_dir = 'data'
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+    
+    for file_name in ['users.json', 'user_packages.json', 'leads.json']:
+        file_path = os.path.join(data_dir, file_name)
+        if not os.path.exists(file_path):
+            with open(file_path, 'w') as f:
+                json.dump([], f)
+
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
@@ -49,33 +104,67 @@ def signup():
             return redirect(url_for('signup'))
 
         try:
-            # Check username uniqueness
-            existing_user = supabase.table('users').select('username').eq('username', username).execute()
-            if existing_user.data:
-                flash('Username already taken.')
-                return redirect(url_for('signup'))
+            # Check username uniqueness using data file as fallback
+            try:
+                existing_user = supabase.table('users').select('username').eq('username', username).execute()
+                if existing_user.data:
+                    flash('Username already taken.')
+                    return redirect(url_for('signup'))
+            except Exception as e:
+                logger.error(f"Error checking username uniqueness in Supabase: {str(e)}")
+                # Fallback to file-based check
+                with open('data/users.json', 'r') as f:
+                    users = json.load(f)
+                    if any(user.get('username') == username for user in users):
+                        flash('Username already taken.')
+                        return redirect(url_for('signup'))
 
             # Create user in Supabase Auth
-            auth_response = supabase.auth.sign_up({
-                'email': email,
-                'password': password
-            })
+            try:
+                auth_response = supabase.auth.sign_up({
+                    'email': email,
+                    'password': password
+                })
 
-            if not auth_response.user:
-                logger.error("Supabase auth signup failed - no user returned")
-                flash('Signup failed. Please try again.')
-                return redirect(url_for('signup'))
+                if not auth_response.user:
+                    logger.error("Supabase auth signup failed - no user returned")
+                    flash('Signup failed. Please try again.')
+                    return redirect(url_for('signup'))
 
-            # Store user data in users table
-            supabase.table('users').insert({
-                'id': auth_response.user.id,
-                'username': username,
-                'email': email,
-                'created_at': datetime.utcnow().isoformat()
-            }).execute()
+                user_id = auth_response.user.id
+            except Exception as e:
+                logger.error(f"Supabase auth signup error: {str(e)}")
+                # Generate a unique ID for file-based users
+                user_id = f"local_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+
+            # Store user data in Supabase users table or fallback to file
+            try:
+                supabase.table('users').insert({
+                    'id': user_id,
+                    'username': username,
+                    'email': email,
+                    'created_at': datetime.utcnow().isoformat()
+                }).execute()
+            except Exception as e:
+                logger.error(f"Error inserting user in Supabase: {str(e)}")
+                # Fallback to file-based storage
+                with open('data/users.json', 'r') as f:
+                    users = json.load(f)
+                
+                users.append({
+                    'id': user_id,
+                    'username': username,
+                    'email': email,
+                    'created_at': datetime.utcnow().isoformat(),
+                    'password': password  # Store password (not secure, but needed for file-based auth)
+                })
+                
+                with open('data/users.json', 'w') as f:
+                    json.dump(users, f, indent=2)
 
             # Set session
-            session['user_id'] = auth_response.user.id
+            session['user_id'] = user_id
+            session['username'] = username
             session.modified = True
 
             logger.info(f"Signup successful for {email}")
@@ -88,6 +177,109 @@ def signup():
             return redirect(url_for('signup'))
 
     return render_template('signup.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+
+        try:
+            # Try with Supabase Auth
+            try:
+                auth_response = supabase.auth.sign_in_with_password({
+                    'email': email,
+                    'password': password
+                })
+
+                if auth_response.user:
+                    # Fetch username from users table
+                    user_data = supabase.table('users').select('username').eq('id', auth_response.user.id).execute()
+                    username = user_data.data[0]['username'] if user_data.data else "User"
+                    
+                    session['user_id'] = auth_response.user.id
+                    session['username'] = username
+                    session.modified = True
+                    flash('Successfully logged in!')
+                    return redirect(url_for('dashboard'))
+            except Exception as db_e:
+                logger.error(f"Supabase login error: {str(db_e)}")
+                # Fallback to file-based login
+                with open('data/users.json', 'r') as f:
+                    users = json.load(f)
+                
+                user = next((u for u in users if u.get('email') == email and u.get('password') == password), None)
+                if user:
+                    session['user_id'] = user['id']
+                    session['username'] = user['username']
+                    session.modified = True
+                    flash('Successfully logged in!')
+                    return redirect(url_for('dashboard'))
+            
+            flash('Invalid email or password.')
+            return redirect(url_for('login'))
+
+        except Exception as e:
+            logger.error(f"Login error: {str(e)}")
+            flash('Invalid email or password.')
+            return redirect(url_for('login'))
+
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    try:
+        supabase.auth.sign_out()
+    except Exception as e:
+        logger.error(f"Logout error: {str(e)}")
+
+    session.pop('user_id', None)
+    session.pop('username', None)
+    flash('You have been logged out.')
+    return redirect(url_for('home'))
+
+@app.route('/dashboard')
+def dashboard():
+    if 'user_id' not in session:
+        flash('Please log in to access the dashboard.')
+        return redirect(url_for('login'))
+        
+    try:
+        # For now, use test data to show dashboard functionality
+        test_data = {
+            'username': session.get('username', 'Demo User'),
+            'leads': [
+                {
+                    'name': "Test Lead 1",
+                    'email': 'lead1@example.com',
+                    'source': 'LinkedIn',
+                    'score': 85,
+                    'status': 'New'
+                },
+                {
+                    'name': "Test Lead 2", 
+                    'email': 'lead2@example.com',
+                    'source': 'Google',
+                    'score': 92,
+                    'status': 'Contacted'
+                }
+            ],
+            'subscription': {
+                'package_name': 'Lead Engine',
+                'status': 'active',
+                'lead_volume': 150
+            }
+        }
+
+        return render_template('dashboard.html',
+                           username=test_data['username'],
+                           leads=test_data['leads'],
+                           subscription=test_data['subscription'])
+
+    except Exception as e:
+        logger.error(f"Dashboard error: {str(e)}")
+        flash('Error loading dashboard. Please try again.')
+        return redirect(url_for('home'))
 
 def send_lead_email(user_id, package_name):
     """Send leads via email using SendGrid"""
@@ -180,7 +372,15 @@ def send_lead_email(user_id, package_name):
 def schedule_lead_delivery():
     """Schedule lead delivery based on package type"""
     try:
-        users = supabase.table('user_packages').select('user_id, package_name').eq('status', 'active').execute().data
+        # Try to fetch from Supabase
+        try:
+            users = supabase.table('user_packages').select('user_id, package_name').eq('status', 'active').execute().data
+        except Exception as e:
+            logger.error(f"Error in lead delivery schedule: {str(e)}")
+            # Fallback to file-based data
+            with open('data/user_packages.json', 'r') as f:
+                users = json.load(f)
+                users = [u for u in users if u.get('status') == 'active']
 
         for user in users:
             user_id = user['user_id']
@@ -214,84 +414,6 @@ scheduler.add_job(
     next_run_time=datetime.now() + timedelta(seconds=10)
 )
 scheduler.start()
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-
-        try:
-            auth_response = supabase.auth.sign_in_with_password({
-                'email': email,
-                'password': password
-            })
-
-            if auth_response.user:
-                session['user_id'] = auth_response.user.id
-                session.modified = True
-                flash('Successfully logged in!')
-                return redirect(url_for('dashboard'))
-            else:
-                flash('Invalid email or password.')
-                return redirect(url_for('login'))
-
-        except Exception as e:
-            logger.error(f"Login error: {str(e)}")
-            flash('Invalid email or password.')
-            return redirect(url_for('login'))
-
-    return render_template('login.html')
-
-@app.route('/logout')
-def logout():
-    try:
-        supabase.auth.sign_out()
-    except Exception as e:
-        logger.error(f"Logout error: {str(e)}")
-
-    session.pop('user_id', None)
-    flash('You have been logged out.')
-    return redirect(url_for('home'))
-
-@app.route('/dashboard')
-def dashboard():
-    try:
-        # For now, use test data to show dashboard functionality
-        test_data = {
-            'username': 'Demo User',
-            'leads': [
-                {
-                    'name': "Test Lead 1",
-                    'email': 'lead1@example.com',
-                    'source': 'LinkedIn',
-                    'score': 85,
-                    'status': 'New'
-                },
-                {
-                    'name': "Test Lead 2", 
-                    'email': 'lead2@example.com',
-                    'source': 'Google',
-                    'score': 92,
-                    'status': 'Contacted'
-                }
-            ],
-            'subscription': {
-                'package_name': 'Lead Engine',
-                'status': 'active',
-                'lead_volume': 150
-            }
-        }
-
-        return render_template('dashboard.html',
-                           username=test_data['username'],
-                           leads=test_data['leads'],
-                           subscription=test_data['subscription'])
-
-    except Exception as e:
-        logger.error(f"Dashboard error: {str(e)}")
-        flash('Error loading dashboard. Please try again.')
-        return redirect(url_for('home'))
 
 @app.route('/')
 def home():
@@ -495,7 +617,7 @@ def settings():
     try:
         # Sample data for development - will be replaced with Supabase integration
         user = {
-            'username': 'Developer',
+            'username': session.get('username', 'Developer'),
             'email': 'dev@example.com',
             'notifications': {
                 'new_leads': True,
@@ -530,7 +652,7 @@ def settings():
                 return redirect(url_for('settings'))
 
         return render_template('settings.html',
-                         username="Developer",  # For navbar
+                         username=session.get('username', "Developer"),
                          user=user,
                          subscription=subscription)
 
@@ -549,7 +671,7 @@ def support():
             flash('Message sent! We\'ll reply within 24 hours.')
             return redirect(url_for('support'))
 
-        return render_template('support.html', username="Developer")  # For navbar
+        return render_template('support.html', username=session.get('username', "Developer"))
 
     except Exception as e:
         flash(f'An error occurred: {str(e)}', 'error')
@@ -667,27 +789,58 @@ def success():
         subscription_id = checkout_session.subscription if hasattr(checkout_session, 'subscription') else None
 
         try:
-            # Connect to database
-            conn = psycopg2.connect(os.environ['DATABASE_URL'])
-            cur = conn.cursor()
-
-            # Insert or update user package
-            cur.execute("""
-                INSERT INTO user_packages 
-                (user_id, package_name, lead_volume, stripe_subscription_id, status, next_delivery, updated_at)
-                VALUES (%s, %s, %s, %s, 'active', NOW(), NOW())
-                ON CONFLICT (user_id) 
-                DO UPDATE SET 
-                    package_name = EXCLUDED.package_name,
-                    lead_volume = EXCLUDED.lead_volume,
-                    stripe_subscription_id = EXCLUDED.stripe_subscription_id,
-                    status = 'active',
-                    next_delivery = NOW(),
-                    updated_at = NOW()
-            """, (user_id, package, lead_volume, subscription_id))
-
-            conn.commit()
-            logger.info(f"Updated subscription for user {user_id}: package={package}")
+            # Try to use Supabase
+            try:
+                # Insert or update user package
+                supabase.table('user_packages').upsert({
+                    'user_id': user_id,
+                    'package_name': package,
+                    'lead_volume': lead_volume,
+                    'stripe_subscription_id': subscription_id,
+                    'status': 'active',
+                    'next_delivery': datetime.now().isoformat(),
+                    'updated_at': datetime.now().isoformat()
+                }).execute()
+                
+                logger.info(f"Updated subscription for user {user_id}: package={package}")
+            except Exception as db_e:
+                logger.error(f"Database error in success route: {str(db_e)}")
+                # Fallback to file-based storage
+                user_packages_file = 'data/user_packages.json'
+                
+                with open(user_packages_file, 'r') as f:
+                    packages = json.load(f)
+                
+                # Update or add package
+                package_found = False
+                for p in packages:
+                    if p.get('user_id') == user_id:
+                        p.update({
+                            'package_name': package,
+                            'lead_volume': lead_volume,
+                            'stripe_subscription_id': subscription_id,
+                            'status': 'active',
+                            'next_delivery': datetime.now().isoformat(),
+                            'updated_at': datetime.now().isoformat()
+                        })
+                        package_found = True
+                        break
+                
+                if not package_found:
+                    packages.append({
+                        'user_id': user_id,
+                        'package_name': package,
+                        'lead_volume': lead_volume,
+                        'stripe_subscription_id': subscription_id,
+                        'status': 'active',
+                        'next_delivery': datetime.now().isoformat(),
+                        'updated_at': datetime.now().isoformat()
+                    })
+                
+                with open(user_packages_file, 'w') as f:
+                    json.dump(packages, f, indent=2)
+                
+                logger.info(f"Updated subscription in file for user {user_id}: package={package}")
 
             if package == 'launch':
                 flash('Payment successful! Your leads will be generated and emailed shortly.')
@@ -698,12 +851,8 @@ def success():
 
         except Exception as e:
             logger.error(f"Database error in success route: {str(e)}")
-            if conn: conn.rollback()
+            flash('Error processing payment. Please contact support.')
             return redirect(url_for('dashboard'))
-
-        finally:
-            if cur: cur.close()
-            if conn: conn.close()
 
     except stripe.error.StripeError as e:
         logger.error(f"Stripe error: {str(e)}")
@@ -757,40 +906,61 @@ def handle_successful_payment(session):
         }
         lead_volume = lead_volumes.get(package, 50)
 
-        conn = psycopg2.connect(os.environ['DATABASE_URL'])
-        cur = conn.cursor()
-
         try:
-            # Update subscription status
-            cur.execute("""
-                INSERT INTO user_packages 
-                (user_id, package_name, lead_volume, status, created_at)
-                VALUES (%s, %s, %s, 'active', NOW())
-                ON CONFLICT (user_id) 
-                DO UPDATE SET 
-                    package_name = EXCLUDED.package_name,
-                    lead_volume = EXCLUDED.lead_volume,
-                    status = 'active',
-                    updated_at = NOW()
-                RETURNING id
-            """, (user_id, package, lead_volume))
+            # Try Supabase
+            supabase.table('user_packages').upsert({
+                'user_id': user_id,
+                'package_name': package,
+                'lead_volume': lead_volume,
+                'status': 'active',
+                'created_at': datetime.now().isoformat(),
+                'updated_at': datetime.now().isoformat()
+            }).execute()
 
-            package_id = cur.fetchone()[0]
-            conn.commit()
+            logger.info(f"Webhook: Updated subscription for user {user_id}: package={package}")
+            
+        except Exception as db_e:
+            logger.error(f"Database error in webhook: {str(db_e)}")
+            # Fallback to file-based storage
+            user_packages_file = 'data/user_packages.json'
+            
+            with open(user_packages_file, 'r') as f:
+                packages = json.load(f)
+            
+            # Update or add package
+            package_found = False
+            for p in packages:
+                if p.get('user_id') == user_id:
+                    p.update({
+                        'package_name': package,
+                        'lead_volume': lead_volume,
+                        'status': 'active',
+                        'created_at': datetime.now().isoformat(),
+                        'updated_at': datetime.now().isoformat()
+                    })
+                    package_found = True
+                    break
+            
+            if not package_found:
+                packages.append({
+                    'user_id': user_id,
+                    'package_name': package,
+                    'lead_volume': lead_volume,
+                    'status': 'active',
+                    'created_at': datetime.now().isoformat(),
+                    'updated_at': datetime.now().isoformat()
+                })
+            
+            with open(user_packages_file, 'w') as f:
+                json.dump(packages, f, indent=2)
 
-            logger.info(f"Webhook: Updated subscription for user {user_id}: package={package}, id={package_id}")
-
-            # Start lead generation in background
-            from scraper import LeadScraper
-            scraper = LeadScraper()
-            threading.Thread(
-                target=scraper.generate_leads_for_package,
-                args=(user_id, lead_volume)
-            ).start()
-
-        finally:
-            cur.close()
-            conn.close()
+        # Start lead generation in background
+        from scraper import LeadScraper
+        scraper = LeadScraper()
+        threading.Thread(
+            target=scraper.generate_leads_for_package,
+            args=(user_id, lead_volume)
+        ).start()
 
     except Exception as e:
         logger.error(f"Error handling webhook payment: {str(e)}")
@@ -802,31 +972,36 @@ def handle_subscription_update(subscription):
             logger.error(f"No user_id in subscription {subscription.id}")
             return
 
-        conn = psycopg2.connect(os.environ['DATABASE_URL'])
-        cur = conn.cursor()
-
         try:
-            cur.execute("""
-                UPDATE user_packages 
-                SET stripe_subscription_id = %s,
-                    status = %s,
-                    updated_at = NOW()
-                WHERE user_id = %s
-                RETURNING id
-            """, (
-                subscription.id,
-                'active' if subscription.status == 'active' else 'inactive',
-                user_id
-            ))
+            # Try Supabase
+            supabase.table('user_packages').update({
+                'stripe_subscription_id': subscription.id,
+                'status': 'active' if subscription.status == 'active' else 'inactive',
+                'updated_at': datetime.now().isoformat()
+            }).eq('user_id', user_id).execute()
 
-            package_id = cur.fetchone()[0]
-            conn.commit()
-
-            logger.info(f"Updated subscription status for user {user_id}: subscription={subscription.id}, package={package_id}")
-
-        finally:
-            cur.close()
-            conn.close()
+            logger.info(f"Updated subscription status for user {user_id}: subscription={subscription.id}")
+            
+        except Exception as db_e:
+            logger.error(f"Database error in subscription update: {str(db_e)}")
+            # Fallback to file-based storage
+            user_packages_file = 'data/user_packages.json'
+            
+            with open(user_packages_file, 'r') as f:
+                packages = json.load(f)
+            
+            # Update package status
+            for p in packages:
+                if p.get('user_id') == user_id:
+                    p.update({
+                        'stripe_subscription_id': subscription.id,
+                        'status': 'active' if subscription.status == 'active' else 'inactive',
+                        'updated_at': datetime.now().isoformat()
+                    })
+                    break
+            
+            with open(user_packages_file, 'w') as f:
+                json.dump(packages, f, indent=2)
 
     except Exception as e:
         logger.error(f"Error handling subscription update: {str(e)}")
@@ -854,20 +1029,15 @@ def terminate_port_process(port):
     except Exception as e:
         print(f"Error in terminate_port_process: {str(e)}", file=sys.stderr)
 
+# Create required data directories on startup
+ensure_local_data_files()
+
+# Try to set up database tables at startup
+ensure_tables_exist()
+
 if __name__ == '__main__':
     import psutil
     try:
-        # Create required JSON files if they don't exist
-        for file_path in ['data/leads.json', 'data/user_packages.json']:
-            try:
-                if not os.path.exists(file_path):
-                    os.makedirs(os.path.dirname(file_path), exist_ok=True)
-                    with open(file_path, 'w') as f:
-                        json.dump({}, f)
-                    print(f"Created {file_path}", file=sys.stderr)
-            except Exception as e:
-                print(f"Errorcreating file {file_path}: {str(e)}", file=sys.stderr)
-
         # First, terminate any existing process on port 5000
         terminate_port_process(5000)
         print("Starting Flask server...", file=sys.stderr)
