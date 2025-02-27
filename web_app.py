@@ -7,9 +7,14 @@ import threading
 from datetime import datetime, timedelta
 import json
 import sys
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key')  # Ensure this is set in Replit Secrets
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key')
 supabase_url = os.environ.get('SUPABASE_URL')
 supabase_key = os.environ.get('SUPABASE_KEY')
 supabase = create_client(supabase_url, supabase_key)
@@ -18,13 +23,13 @@ stripe.api_key = os.environ.get('STRIPE_API_KEY')
 # Test Supabase connection
 try:
     response = supabase.auth.get_session()
-    print("Supabase connection successful!")
+    logger.info("Supabase connection successful!")
 except Exception as e:
-    print(f"Supabase connection error: {str(e)}")
+    logger.error(f"Supabase connection error: {str(e)}")
     if "401" in str(e):
-        print("Auth failed - check SUPABASE_KEY")
+        logger.error("Auth failed - check SUPABASE_KEY")
     elif "404" in str(e):
-        print("API not found - check SUPABASE_URL")
+        logger.error("API not found - check SUPABASE_URL")
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -32,6 +37,8 @@ def signup():
         username = request.form['username']
         email = request.form['email']
         password = request.form['password']
+
+        logger.info(f"Attempting signup for email: {email}")
 
         # Validate inputs
         if len(username) < 4 or len(username) > 20:
@@ -42,35 +49,42 @@ def signup():
             return redirect(url_for('signup'))
 
         try:
+            # Check if username exists
+            existing_user = supabase.table('users').select('username').eq('username', username).execute()
+            if existing_user.data:
+                flash('Username already taken.')
+                return redirect(url_for('signup'))
+
             # Sign up with Supabase Auth
             auth_response = supabase.auth.sign_up({
                 'email': email,
-                'password': password,
-                'options': {
-                    'data': {
-                        'username': username
-                    }
-                }
+                'password': password
             })
 
-            if auth_response.user:
-                # Store additional user data
-                supabase.table('users').insert({
-                    'id': auth_response.user.id,
-                    'username': username,
-                    'email': email,
-                    'created_at': datetime.utcnow().isoformat()
-                }).execute()
+            logger.info(f"Supabase auth signup response: {auth_response}")
 
-                session['user_id'] = auth_response.user.id
-                flash('Signup successful! Welcome to Leadzap.')
-                return redirect(url_for('dashboard'))
-            else:
+            if not auth_response.user:
                 flash('Error creating account. Please try again.')
                 return redirect(url_for('signup'))
 
+            # Store in users table
+            supabase.table('users').insert({
+                'id': auth_response.user.id,
+                'username': username,
+                'email': email,
+                'created_at': datetime.utcnow().isoformat()
+            }).execute()
+
+            # Set session
+            session['user_id'] = auth_response.user.id
+            session.modified = True  # Ensure session is saved
+
+            flash('Signup successful! Welcome to Leadzap.')
+            logger.info(f"Signup successful for {email}, redirecting to dashboard")
+            return redirect(url_for('dashboard'))
+
         except Exception as e:
-            print(f"Signup error: {str(e)}")
+            logger.error(f"Signup error: {str(e)}")
             flash('Error creating account. Please try again.')
             return redirect(url_for('signup'))
 
@@ -90,6 +104,7 @@ def login():
 
             if auth_response.user:
                 session['user_id'] = auth_response.user.id
+                session.modified = True  # Ensure session is saved
                 flash('Successfully logged in!')
                 return redirect(url_for('dashboard'))
             else:
@@ -97,7 +112,7 @@ def login():
                 return redirect(url_for('login'))
 
         except Exception as e:
-            print(f"Login error: {str(e)}")
+            logger.error(f"Login error: {str(e)}")
             flash('Invalid email or password.')
             return redirect(url_for('login'))
 
@@ -108,7 +123,7 @@ def logout():
     try:
         supabase.auth.sign_out()
     except Exception as e:
-        print(f"Logout error: {str(e)}")
+        logger.error(f"Logout error: {str(e)}")
 
     session.pop('user_id', None)
     flash('You have been logged out.')
@@ -117,35 +132,31 @@ def logout():
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session:
+        logger.warning("Attempt to access dashboard without user_id in session")
         return redirect(url_for('login'))
-    user = supabase.auth.get_user(session['user_id'])
-    username = supabase.table('users').select('username').eq('id', user.user.id).execute().data[0]['username']
-    leads = supabase.table('leads').select('*').eq('user_id', user.user.id).order('date_added', desc=True).limit(25).execute().data
-    subscription = supabase.table('user_packages').select('*').eq('user_id', user.user.id).execute().data
-    subscription = subscription[0] if subscription else None
 
-    total_leads = len(leads)
-    emailed = sum(1 for lead in leads if lead['status'] == 'Emailed')
-    high_score = sum(1 for lead in leads if lead['score'] > 75)
-    analytics = {'total': total_leads, 'emailed': emailed, 'high_score': high_score}
+    try:
+        user = supabase.auth.get_user(session['user_id'])
+        user_data = supabase.table('users').select('*').eq('id', user.user.id).single().execute()
 
-    if subscription:
-        package = subscription['package_name']
-        delivery_status = {
-            'launch': "Your 50 leads arrived!",
-            'engine': f"Next 37–38 leads: {(datetime.now() + timedelta(days=(7 - datetime.now().weekday()))).strftime('%Y-%m-%d')}",
-            'accelerator': "Next 10–12 leads: Tomorrow",
-            'empire': "Next 20–25 leads: Tomorrow"
-        }.get(package, "Processing your leads...")
-    else:
-        delivery_status = "No leads scheduled—choose a plan!"
+        if not user_data.data:
+            logger.error(f"No user data found for ID: {session['user_id']}")
+            session.pop('user_id', None)
+            return redirect(url_for('login'))
 
-    return render_template('dashboard.html', 
-                         username=username, 
-                         leads=leads, 
-                         subscription=subscription, 
-                         analytics=analytics, 
-                         delivery_status=delivery_status)
+        leads = supabase.table('leads').select('*').eq('user_id', user.user.id).order('date_added', desc=True).limit(25).execute()
+        subscription = supabase.table('user_packages').select('*').eq('user_id', user.user.id).single().execute()
+
+        return render_template('dashboard.html',
+                            username=user_data.data['username'],
+                            leads=leads.data,
+                            subscription=subscription.data if subscription.data else None)
+
+    except Exception as e:
+        logger.error(f"Dashboard error: {str(e)}")
+        session.pop('user_id', None)
+        flash('Session expired. Please log in again.')
+        return redirect(url_for('login'))
 
 @app.route('/')
 def home():
