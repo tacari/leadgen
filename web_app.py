@@ -25,33 +25,79 @@ supabase_url = os.environ.get('SUPABASE_URL')
 supabase_key = os.environ.get('SUPABASE_KEY')
 supabase = create_client(supabase_url, supabase_key)
 
-# Test Supabase connection and create tables if needed
-try:
-    # Test basic connection
-    response = supabase.auth.get_session()
-    logger.info("Supabase connection successful!")
-
-    # Ensure tables exist in Supabase
-    supabase.table('users').select("*").limit(1).execute()
-    logger.info("Users table accessible")
-
-except Exception as e:
-    logger.error(f"Supabase setup error: {str(e)}")
-    if "42P01" in str(e):  # Table does not exist
-        try:
-            # Create tables through Supabase SQL
-            #Note:  This line is likely incorrect;  Supabase doesn't create tables this way.  It needs a proper schema definition.
-            supabase.table('users').select("*").execute() #This will fail unless the table exists. Needs a create statement.
-            logger.info("Tables created successfully")
-        except Exception as create_error:
-            logger.error(f"Failed to create tables: {str(create_error)}")
-    elif "401" in str(e):
-        logger.error("Auth failed - check SUPABASE_KEY")
-    elif "404" in str(e):
-        logger.error("API not found - check SUPABASE_URL")
-
 stripe.api_key = os.environ.get('STRIPE_API_KEY')
 sendgrid_api_key = os.environ.get('SENDGRID_API_KEY')
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        password = request.form['password']
+
+        logger.info(f"Starting signup process for email: {email}")
+
+        # Validate inputs
+        if len(username) < 4 or len(username) > 20:
+            flash('Username must be 4–20 characters.')
+            return redirect(url_for('signup'))
+        if len(password) < 8:
+            flash('Password must be at least 8 characters.')
+            return redirect(url_for('signup'))
+        if not '@' in email or not '.' in email:
+            flash('Invalid email format.')
+            return redirect(url_for('signup'))
+
+        try:
+            # First check if username exists in our database
+            conn = psycopg2.connect(os.environ['DATABASE_URL'])
+            cur = conn.cursor()
+            cur.execute("SELECT username FROM users WHERE username = %s", (username,))
+            if cur.fetchone():
+                flash('Username already taken.')
+                return redirect(url_for('signup'))
+
+            # Create user in Supabase Auth
+            auth_response = supabase.auth.sign_up({
+                'email': email,
+                'password': password
+            })
+
+            if not auth_response.user:
+                logger.error("Supabase auth signup failed - no user returned")
+                flash('Signup failed. Please try again.')
+                return redirect(url_for('signup'))
+
+            # Store user in our database using the Supabase auth user ID
+            cur.execute(
+                """
+                INSERT INTO users (id, username, email, created_at) 
+                VALUES (%s, %s, %s, %s)
+                RETURNING id
+                """,
+                (auth_response.user.id, username, email, datetime.utcnow())
+            )
+            user_id = cur.fetchone()[0]
+            conn.commit()
+
+            # Set session
+            session['user_id'] = str(user_id)  # Convert UUID to string for session
+            session.modified = True
+
+            logger.info(f"Signup successful for {email}")
+            flash('Signed up successfully! Welcome to Leadzap.')
+            return redirect(url_for('dashboard'))
+
+        except Exception as e:
+            logger.error(f"Signup error: {str(e)}")
+            if conn: conn.rollback()
+            flash('Signup failed. Please try again.')
+            return redirect(url_for('signup'))
+        finally:
+            if cur: cur.close()
+            if conn: conn.close()
+
+    return render_template('signup.html')
 
 def send_lead_email(user_id, package_name):
     """Send leads via email using SendGrid"""
@@ -161,52 +207,6 @@ scheduler.add_job(
     next_run_time=datetime.now() + timedelta(seconds=10)
 )
 scheduler.start()
-
-@app.route('/signup', methods=['GET', 'POST'])
-def signup():
-    if request.method == 'POST':
-        username = request.form['username']
-        email = request.form['email']
-        password = request.form['password']
-
-        logger.info(f"Attempting signup for email: {email}")
-
-        # Validate inputs
-        if len(username) < 4 or len(username) > 20:
-            flash('Username must be 4–20 characters.')
-            return redirect(url_for('signup'))
-        if len(password) < 8:
-            flash('Password must be at least 8 characters.')
-            return redirect(url_for('signup'))
-        if not '@' in email or not '.' in email:
-            flash('Invalid email format.')
-            return redirect(url_for('signup'))
-
-        # Check username uniqueness
-        existing_user = supabase.table('users').select('username').eq('username', username).execute()
-        if existing_user.data:
-            flash('Username already taken.')
-            return redirect(url_for('signup'))
-
-        # Create user in Supabase Auth
-        try:
-            user = supabase.auth.sign_up({'email': email, 'password': password})
-            supabase.table('users').insert({
-                'id': user.user.id,
-                'username': username,
-                'email': email,
-                'created_at': datetime.utcnow().isoformat()
-            }).execute()
-            session['user_id'] = user.user.id
-            session.modified = True
-            flash('Signed up successfully! Welcome to Leadzap.')
-            logger.info(f"Signup successful for {email}, redirecting to dashboard")
-            return redirect(url_for('dashboard'))
-        except Exception as e:
-            logger.error(f"Signup error: {str(e)}")  # Detailed error for debugging
-            flash('Signup failed. Please try again.')
-            return redirect(url_for('signup'))
-    return render_template('signup.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
