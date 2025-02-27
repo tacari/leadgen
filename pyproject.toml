@@ -27,8 +27,6 @@ dependencies = [
     "stripe>=11.6.0",
     "twilio>=9.4.6",
     "flask-apscheduler>=1.13.1",
-    "firebase-admin>=6.6.0",
-    "pyrebase4>=4.8.0",
 ]
 
 [tool.uv.sources]

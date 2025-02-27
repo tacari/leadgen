@@ -1,8 +1,6 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response
-import firebase_admin
-from firebase_admin import credentials, auth, db
-import pyrebase
+from supabase import create_client, Client
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
 import stripe
@@ -23,32 +21,12 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key')
+supabase_url = os.environ.get('SUPABASE_URL')
+supabase_key = os.environ.get('SUPABASE_KEY')
+supabase = create_client(supabase_url, supabase_key)
 
-# Firebase Admin SDK initialization
-cred = credentials.Certificate({
-    "type": "service_account",
-    "project_id": "leadzap",
-    "private_key": os.environ.get('FIREBASE_PRIVATE_KEY', '').replace('\\n', '\n'),
-    "client_email": os.environ.get('FIREBASE_CLIENT_EMAIL'),
-    "client_id": os.environ.get('FIREBASE_CLIENT_ID'),
-})
-firebase_admin.initialize_app(cred, {
-    'databaseURL': os.environ.get('FIREBASE_DATABASE_URL')
-})
-
-# Pyrebase config for client-side Firebase interactions
-firebase_config = {
-    "apiKey": os.environ.get('FIREBASE_API_KEY'),
-    "authDomain": os.environ.get('FIREBASE_AUTH_DOMAIN'),
-    "databaseURL": os.environ.get('FIREBASE_DATABASE_URL'),
-    "projectId": "leadzap",
-    "storageBucket": os.environ.get('FIREBASE_STORAGE_BUCKET'),
-    "messagingSenderId": os.environ.get('FIREBASE_MESSAGING_SENDER_ID'),
-    "appId": os.environ.get('FIREBASE_APP_ID')
-}
-firebase = pyrebase.initialize_app(firebase_config)
-auth_instance = firebase.auth()
-database = firebase.database()
+stripe.api_key = os.environ.get('STRIPE_API_KEY')
+sendgrid_api_key = os.environ.get('SENDGRID_API_KEY')
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -71,32 +49,33 @@ def signup():
             return redirect(url_for('signup'))
 
         try:
-            # Check if username exists
-            users_ref = db.reference('users')
-            existing_users = users_ref.order_by_child('username').equal_to(username).get()
-            if existing_users:
+            # Check username uniqueness
+            existing_user = supabase.table('users').select('username').eq('username', username).execute()
+            if existing_user.data:
                 flash('Username already taken.')
                 return redirect(url_for('signup'))
 
-            # Create user in Firebase Auth
-            user = auth.create_user(
-                email=email,
-                password=password
-            )
+            # Create user in Supabase Auth
+            auth_response = supabase.auth.sign_up({
+                'email': email,
+                'password': password
+            })
 
-            # Store user data in Firebase Realtime Database
-            users_ref.child(user.uid).set({
+            if not auth_response.user:
+                logger.error("Supabase auth signup failed - no user returned")
+                flash('Signup failed. Please try again.')
+                return redirect(url_for('signup'))
+
+            # Store user data in users table
+            supabase.table('users').insert({
+                'id': auth_response.user.id,
                 'username': username,
                 'email': email,
                 'created_at': datetime.utcnow().isoformat()
-            })
-
-            # Get ID token for session
-            user_token = auth_instance.sign_in_with_email_and_password(email, password)
+            }).execute()
 
             # Set session
-            session['user_id'] = user.uid
-            session['id_token'] = user_token['idToken']
+            session['user_id'] = auth_response.user.id
             session.modified = True
 
             logger.info(f"Signup successful for {email}")
@@ -109,38 +88,6 @@ def signup():
             return redirect(url_for('signup'))
 
     return render_template('signup.html')
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-
-        try:
-            # Authenticate with Firebase
-            user = auth_instance.sign_in_with_email_and_password(email, password)
-
-            # Set session
-            session['user_id'] = user['localId']
-            session['id_token'] = user['idToken']
-            session.modified = True
-
-            flash('Successfully logged in!')
-            return redirect(url_for('dashboard'))
-
-        except Exception as e:
-            logger.error(f"Login error: {str(e)}")
-            flash('Invalid email or password.')
-            return redirect(url_for('login'))
-
-    return render_template('login.html')
-
-@app.route('/logout')
-def logout():
-    session.pop('user_id', None)
-    session.pop('id_token', None)
-    flash('You have been logged out.')
-    return redirect(url_for('home'))
 
 def send_lead_email(user_id, package_name):
     """Send leads via email using SendGrid"""
@@ -251,6 +198,45 @@ scheduler.add_job(
 )
 scheduler.start()
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+
+        try:
+            auth_response = supabase.auth.sign_in_with_password({
+                'email': email,
+                'password': password
+            })
+
+            if auth_response.user:
+                session['user_id'] = auth_response.user.id
+                session.modified = True
+                flash('Successfully logged in!')
+                return redirect(url_for('dashboard'))
+            else:
+                flash('Invalid email or password.')
+                return redirect(url_for('login'))
+
+        except Exception as e:
+            logger.error(f"Login error: {str(e)}")
+            flash('Invalid email or password.')
+            return redirect(url_for('login'))
+
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    try:
+        supabase.auth.sign_out()
+    except Exception as e:
+        logger.error(f"Logout error: {str(e)}")
+
+    session.pop('user_id', None)
+    flash('You have been logged out.')
+    return redirect(url_for('home'))
+
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session:
@@ -258,29 +244,21 @@ def dashboard():
         return redirect(url_for('login'))
 
     try:
-        # user = supabase.auth.get_user(session['user_id']) #Commented out because of Firebase integration
-        # user_data = supabase.table('users').select('*').eq('id', user.user.id).single().execute() #Commented out because of Firebase integration
+        user = supabase.auth.get_user(session['user_id'])
+        user_data = supabase.table('users').select('*').eq('id', user.user.id).single().execute()
 
-        #Fetch user data from Firebase
-        users_ref = db.reference('users')
-        user_data = users_ref.child(session['user_id']).get()
-
-        if not user_data:
+        if not user_data.data:
             logger.error(f"No user data found for ID: {session['user_id']}")
             session.pop('user_id', None)
             return redirect(url_for('login'))
 
-        # leads = supabase.table('leads').select('*').eq('user_id', user.user.id).order('date_added', desc=True).limit(25).execute() #Commented out because of Firebase integration
-        # subscription = supabase.table('user_packages').select('*').eq('user_id', user.user.id).single().execute() #Commented out because of Firebase integration
-
-        #Fetch leads and subscription from Firebase (Placeholder - needs implementation)
-        leads = [] #Placeholder
-        subscription = None #Placeholder
+        leads = supabase.table('leads').select('*').eq('user_id', user.user.id).order('date_added', desc=True).limit(25).execute()
+        subscription = supabase.table('user_packages').select('*').eq('user_id', user.user.id).single().execute()
 
         return render_template('dashboard.html',
-                            username=user_data['username'],
-                            leads=leads,
-                            subscription=subscription)
+                            username=user_data.data['username'],
+                            leads=leads.data,
+                            subscription=subscription.data if subscription.data else None)
 
     except Exception as e:
         logger.error(f"Dashboard error: {str(e)}")
