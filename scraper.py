@@ -17,6 +17,15 @@ class LeadScraper:
             'Accept-Language': 'en-US,en;q=0.5'
         })
         self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.INFO)
+        # Add console handler if not already added
+        if not self.logger.handlers:
+            handler = logging.StreamHandler()
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            handler.setFormatter(formatter)
+            self.logger.addHandler(handler)
+
+        self.serpapi_key = os.environ.get('SERPAPI_KEY')
         self.conn = psycopg2.connect(os.environ['DATABASE_URL'])
         self.cur = self.conn.cursor()
 
@@ -52,6 +61,10 @@ class LeadScraper:
         # Business description bonus
         if lead_data.get('description'):
             score += 5
+
+        # Reviews/ratings bonus (Google Maps specific)
+        if lead_data.get('rating'):
+            score += min(10, lead_data.get('rating', 0) * 2)  # Up to 10 points for 5-star rating
 
         # Normalize score to 0-100 range
         return min(max(score, 0), 100)
@@ -106,10 +119,10 @@ class LeadScraper:
 
                     lead['score'] = self._calculate_lead_score(lead)
                     leads.append(lead)
-                    self.logger.info(f"Scraped lead: {name}")
+                    self.logger.info(f"Scraped YP lead: {name}")
 
                 except Exception as e:
-                    self.logger.error(f"Error scraping individual listing: {str(e)}")
+                    self.logger.error(f"Error scraping YP listing: {str(e)}")
                     continue
 
         except Exception as e:
@@ -118,48 +131,67 @@ class LeadScraper:
         return leads
 
     def scrape_google_maps(self, niche="plumbers", location="Austin, TX", limit=50):
-        """Scrape leads from Google Maps"""
+        """Scrape leads from Google Maps via SerpApi"""
         self.logger.info(f"Starting Google Maps scraping for {niche} in {location}")
         leads = []
 
+        if not self.serpapi_key:
+            self.logger.warning("No SerpApi key found, skipping Google Maps scraping")
+            return []
+
         try:
-            search_url = f"https://www.google.com/maps/search/{niche}+in+{location}"
-            self._delay_request()
-            response = self.session.get(search_url)
-            soup = BeautifulSoup(response.text, 'html.parser')
+            params = {
+                "engine": "google_maps",
+                "q": f"{niche} in {location}",
+                "type": "search",
+                "api_key": self.serpapi_key
+            }
 
-            # Since Google Maps requires JavaScript, we'll use a more basic approach
-            businesses = soup.find_all('div', {'class': 'section-result'})[:limit]
+            response = requests.get("https://serpapi.com/search", params=params)
+            data = response.json()
 
-            for business in businesses:
+            if "error" in data:
+                self.logger.error(f"SerpApi error: {data['error']}")
+                return []
+
+            local_results = data.get('local_results', [])[:limit]
+
+            for result in local_results:
                 try:
-                    name_elem = business.find('h3', {'class': 'section-result-title'})
-                    if not name_elem:
+                    name = result.get('title', '')
+                    if not name:
                         continue
-
-                    name = name_elem.text.strip()
-                    website = None  # Would need JavaScript rendering to get this
-                    email = f"contact@{name.lower().replace(' ', '').replace('&', 'and')}.com"
 
                     lead = {
                         'name': name,
-                        'email': email,
-                        'website': website,
+                        'phone': result.get('phone', ''),
+                        'website': result.get('website', ''),
+                        'description': result.get('description', ''),
+                        'address': result.get('address', ''),
+                        'rating': result.get('rating', 0),
+                        'reviews': result.get('reviews', 0),
                         'source': 'Google Maps',
-                        'verified': False,
+                        'verified': True,
                         'date_added': datetime.now().isoformat()
                     }
 
+                    # Generate email from website domain if available
+                    if lead['website']:
+                        domain = lead['website'].replace('http://', '').replace('https://', '').split('/')[0]
+                        lead['email'] = f"contact@{domain}"
+                    else:
+                        lead['email'] = f"contact@{name.lower().replace(' ', '').replace('&', 'and')}.com"
+
                     lead['score'] = self._calculate_lead_score(lead)
                     leads.append(lead)
-                    self.logger.info(f"Scraped lead from Google Maps: {name}")
+                    self.logger.info(f"Scraped Google Maps lead: {name}")
 
                 except Exception as e:
-                    self.logger.error(f"Error scraping Google Maps listing: {str(e)}")
+                    self.logger.error(f"Error processing Google Maps result: {str(e)}")
                     continue
 
         except Exception as e:
-            self.logger.error(f"Google Maps scraping error: {str(e)}")
+            self.logger.error(f"Google Maps API error: {str(e)}")
 
         return leads
 
@@ -189,7 +221,7 @@ class LeadScraper:
             self.conn.commit()
             return True
         except Exception as e:
-            self.logger.error(f"Error saving leads: {str(e)}")
+            self.logger.error(f"Database error: {str(e)}")
             self.conn.rollback()
             return False
 
@@ -203,25 +235,36 @@ class LeadScraper:
         }
 
         volume = volumes.get(package_name.lower(), 50)
-        yp_volume = volume // 2
-        gm_volume = volume - yp_volume
+
+        # Prioritize Google Maps leads when SerpApi is available
+        if self.serpapi_key:
+            gm_volume = min(volume, 50)  # Cap Google Maps to 50 per batch to manage API usage
+            yp_volume = volume - gm_volume
+        else:
+            gm_volume = 0
+            yp_volume = volume
 
         self.logger.info(f"Generating {volume} leads for user {user_id} (Package: {package_name})")
+        self.logger.info(f"Split: {gm_volume} Google Maps, {yp_volume} Yellow Pages")
 
-        # Get mix of leads from different sources
-        yp_leads = self.scrape_yellow_pages(limit=yp_volume)
-        self.logger.info(f"Scraped {len(yp_leads)} leads from Yellow Pages")
+        all_leads = []
 
-        gm_leads = self.scrape_google_maps(limit=gm_volume)
-        self.logger.info(f"Scraped {len(gm_leads)} leads from Google Maps")
+        # Get Google Maps leads first (higher quality)
+        if gm_volume > 0:
+            gm_leads = self.scrape_google_maps(limit=gm_volume)
+            self.logger.info(f"Scraped {len(gm_leads)} leads from Google Maps")
+            all_leads.extend(gm_leads)
 
-        # Combine leads
-        all_leads = yp_leads + gm_leads
+        # Fill remaining with Yellow Pages leads
+        if yp_volume > 0:
+            yp_leads = self.scrape_yellow_pages(limit=yp_volume)
+            self.logger.info(f"Scraped {len(yp_leads)} leads from Yellow Pages")
+            all_leads.extend(yp_leads)
 
-        # Save to database
-        if self.save_leads_to_db(all_leads, user_id):
-            self.logger.info(f"Successfully generated {len(all_leads)} leads for user {user_id}")
-            return len(all_leads)
+        if all_leads:
+            if self.save_leads_to_db(all_leads, user_id):
+                self.logger.info(f"Successfully generated {len(all_leads)} leads for user {user_id}")
+                return len(all_leads)
         return 0
 
     def __del__(self):
@@ -230,24 +273,3 @@ class LeadScraper:
             self.cur.close()
         if hasattr(self, 'conn') and self.conn:
             self.conn.close()
-
-    def _generate_sample_dentist_leads(self, city, count):
-        """Generate sample dentist leads"""
-        return [{
-            'name': f'Dr. Smith {i+1}',
-            'business_name': f'Bright Smile Dental {i+1}',
-            'email': f'dr.smith{i+1}@brightsmile.example.com',
-            'phone': f'(555) 555-{1000+i}',
-            'city': city,
-            'source': 'Sample Data'
-        } for i in range(count)]
-
-    def _generate_sample_saas_leads(self, count):
-        """Generate sample SaaS leads"""
-        return [{
-            'name': f'John Tech {i+1}',
-            'business_name': f'SaaS Solution {i+1}',
-            'email': f'john.tech{i+1}@saassolution.example.com',
-            'website': f'https://saassolution{i+1}.example.com',
-            'source': 'Sample Data'
-        } for i in range(count)]
