@@ -653,42 +653,57 @@ def success():
             flash('Invalid session. Please try again.')
             return redirect(url_for('pricing'))
 
+        # Retrieve the checkout session from Stripe
         checkout_session = stripe.checkout.Session.retrieve(session_id)
         package = checkout_session.metadata.get('package')
         user_id = checkout_session.metadata.get('user_id')
 
         if not user_id or not package:
+            logger.error("Missing user_id or package in session metadata")
             flash('Session data missing.')
             return redirect(url_for('dashboard'))
 
-        # Update subscription in database
+        # Connect to database
+        conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        cur = conn.cursor()
+
         try:
-            with psycopg2.connect(os.environ['DATABASE_URL']) as conn:
-                with conn.cursor() as cur:
-                    cur.execute("""
-                        INSERT INTO user_packages 
-                        (user_id, package_name, lead_volume, stripe_subscription_id, status, next_delivery)
-                        VALUES (%s, %s, %s, %s, 'active', NOW())
-                        ON CONFLICT (user_id) 
-                        DO UPDATE SET 
-                            package_name = EXCLUDED.package_name,
-                            lead_volume = EXCLUDED.lead_volume,
-                            stripe_subscription_id = EXCLUDED.stripe_subscription_id,
-                            status = EXCLUDED.status,
-                            next_delivery = EXCLUDED.next_delivery
-                    """, (
-                        user_id,
-                        package,
-                        50 if package == 'launch' else (150 if package == 'engine' else (300 if package == 'accelerator' else 600)),
-                        checkout_session.subscription.id if hasattr(checkout_session, 'subscription') else None
-                    ))
-                conn.commit()
+            # Calculate lead volume based on package
+            lead_volume = {
+                'launch': 50,
+                'engine': 150,
+                'accelerator': 300,
+                'empire': 600
+            }.get(package, 50)
+
+            # Get subscription ID if it exists
+            subscription_id = None
+            if hasattr(checkout_session, 'subscription'):
+                subscription_id = checkout_session.subscription.id
+
+            # Insert or update user package
+            cur.execute("""
+                INSERT INTO user_packages 
+                (user_id, package_name, lead_volume, stripe_subscription_id, status, next_delivery, updated_at)
+                VALUES (%s, %s, %s, %s, 'active', NOW(), NOW())
+                ON CONFLICT (user_id) 
+                DO UPDATE SET 
+                    package_name = EXCLUDED.package_name,
+                    lead_volume = EXCLUDED.lead_volume,
+                    stripe_subscription_id = EXCLUDED.stripe_subscription_id,
+                    status = 'active',
+                    next_delivery = NOW(),
+                    updated_at = NOW()
+            """, (user_id, package, lead_volume, subscription_id))
+
+            conn.commit()
+            logger.info(f"Successfully updated subscription for user {user_id} with package {package}")
 
             # For Lead Launch package, generate and send leads immediately
             if package == 'launch':
                 from scraper import LeadScraper
                 scraper = LeadScraper()
-                leads_generated = scraper.generate_leads_for_package(user_id, 50)
+                leads_generated = scraper.generate_leads_for_package(user_id, lead_volume)
                 if leads_generated:
                     send_lead_email(user_id, package)
                     flash('Payment successful! Your leads have been generated and emailed to you.')
@@ -700,9 +715,13 @@ def success():
             return redirect(url_for('dashboard'))
 
         except Exception as e:
+            conn.rollback()
             logger.error(f"Database error in success route: {str(e)}")
             flash('Warning: Your payment was successful but subscription update failed. Please contact support.')
             return redirect(url_for('dashboard'))
+        finally:
+            cur.close()
+            conn.close()
 
     except Exception as e:
         logger.error(f"Error in success route: {str(e)}")
@@ -711,77 +730,110 @@ def success():
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    event = None
     payload = request.get_json()
     sig_header = request.headers.get('Stripe-Signature')
+    event = None
 
     try:
-        event = stripe.Event.construct_from(payload, stripe.api_key)
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, os.environ.get('STRIPE_WEBHOOK_SECRET')
+        )
     except Exception as e:
-        print(f"Webhook error: {e}")
+        logger.error(f"Webhook error: {str(e)}")
         return '', 400
 
-    # Handle successful one-time payment
-    if event.type == 'charge.succeeded':
-        session = event.data.object
+    # Handle successful payments
+    if event['type'] == 'checkout.session.completed':
+        session = event['data']['object']
+        handle_successful_payment(session)
+
+    # Handle subscription updates
+    elif event['type'] == 'customer.subscription.updated':
+        subscription = event['data']['object']
+        handle_subscription_update(subscription)
+
+    return '', 200
+
+def handle_successful_payment(session):
+    try:
         user_id = session.metadata.get('user_id')
         package = session.metadata.get('package')
 
-        if user_id and package:
-            try:
-                with psycopg2.connect(os.environ['DATABASE_URL']) as conn:
-                    with conn.cursor() as cur:
-                        # Update subscription status
-                        cur.execute("""
-                            INSERT INTO user_packages 
-                            (user_id, package_name, lead_volume, status, created_at)
-                            VALUES (%s, %s, %s, 'active', NOW())
-                            ON CONFLICT (user_id) 
-                            DO UPDATE SET 
-                                package_name = EXCLUDED.package_name,
-                                lead_volume = EXCLUDED.lead_volume,
-                                status = EXCLUDED.status,
-                                updated_at = NOW()
-                        """, (
-                            user_id,
-                            package,
-                            50 if package == 'launch' else (150 if package == 'engine' else (300 if package == 'accelerator' else 600))
-                        ))
-                    conn.commit()
-                    print(f"Updated one-time payment subscription for user {user_id}")  # Debug log
+        if not user_id or not package:
+            logger.error("Missing user_id or package in session metadata")
+            return
 
-                # Trigger lead generation
-                threading.Thread(target=generate_leads, args=(user_id, package)).start()
-            except Exception as e:
-                print(f"Database error in webhook: {str(e)}")
+        conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        cur = conn.cursor()
 
-    # Handle new subscription
-    elif event.type == 'customer.subscription.created':
-        subscription = event.data.object
+        try:
+            # Calculate lead volume
+            lead_volume = {
+                'launch': 50,
+                'engine': 150,
+                'accelerator': 300,
+                'empire': 600
+            }.get(package, 50)
+
+            # Update subscription status
+            cur.execute("""
+                INSERT INTO user_packages 
+                (user_id, package_name, lead_volume, status, created_at)
+                VALUES (%s, %s, %s, 'active', NOW())
+                ON CONFLICT (user_id) 
+                DO UPDATE SET 
+                    package_name = EXCLUDED.package_name,
+                    lead_volume = EXCLUDED.lead_volume,
+                    status = 'active',
+                    updated_at = NOW()
+            """, (user_id, package, lead_volume))
+            conn.commit()
+
+            # Start lead generation in background
+            from scraper import LeadScraper
+            scraper = LeadScraper()
+            threading.Thread(
+                target=scraper.generate_leads_for_package,
+                args=(user_id, lead_volume)
+            ).start()
+
+        finally:
+            cur.close()
+            conn.close()
+
+    except Exception as e:
+        logger.error(f"Error handling successful payment: {str(e)}")
+
+def handle_subscription_update(subscription):
+    try:
         user_id = subscription.metadata.get('user_id')
-        package = subscription.metadata.get('package')
+        if not user_id:
+            logger.error("No user_id in subscription metadata")
+            return
 
-        if user_id and package:
-            try:
-                with psycopg2.connect(os.environ['DATABASE_URL']) as conn:
-                    with conn.cursor() as cur:
-                        cur.execute("""
-                            UPDATE user_packages 
-                            SET stripe_subscription_id = %s,
-                                status = 'active',
-                                next_delivery = NOW() + INTERVAL '1 day',
-                                updated_at = NOW()
-                            WHERE user_id = %s
-                        """, (subscription.id, user_id))
-                    conn.commit()
-                    print(f"Updated subscription details for user {user_id}")  # Debug log
+        conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        cur = conn.cursor()
 
-                # Start lead generation
-                threading.Thread(target=generate_leads, args=(user_id, package)).start()
-            except Exception as e:
-                print(f"Subscription update error: {str(e)}")
+        try:
+            cur.execute("""
+                UPDATE user_packages 
+                SET stripe_subscription_id = %s,
+                    status = %s,
+                    updated_at = NOW()
+                WHERE user_id = %s
+            """, (
+                subscription.id,
+                'active' if subscription.status == 'active' else 'inactive',
+                user_id
+            ))
+            conn.commit()
 
-    return '', 200
+        finally:
+            cur.close()
+            conn.close()
+
+    except Exception as e:
+        logger.error(f"Error handling subscription update: {str(e)}")
 
 from flask import jsonify
 import csv
@@ -817,7 +869,7 @@ if __name__ == '__main__':
                         json.dump({}, f)
                     print(f"Created {file_path}", file=sys.stderr)
             except Exception as e:
-                print(f"Error creating file {file_path}: {str(e)}", file=sys.stderr)
+                print(f"Errorcreating file {file_path}: {str(e)}", file=sys.stderr)
 
         # First, terminate any existing process on port 5000
         terminate_port_process(5000)
