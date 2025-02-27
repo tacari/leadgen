@@ -17,35 +17,65 @@
         {% endwith %}
 
         <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-8 animate-fade-in">
-            <form method="POST" action="{{ url_for('signup') }}">
+            <form method="POST" action="{{ url_for('signup') }}" class="space-y-6">
                 <!-- Username -->
-                <div class="mb-6">
+                <div>
                     <label class="block text-white text-base font-bold mb-2" for="username">Username</label>
-                    <input type="text" id="username" name="username" class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white text-base placeholder-[#A1A9B8]" placeholder="e.g., johndoe" required minlength="4" maxlength="20">
+                    <input type="text" id="username" name="username" 
+                           class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white placeholder-[#A1A9B8]" 
+                           placeholder="e.g., johndoe" required minlength="4" maxlength="20">
+                    <p class="text-[#A1A9B8] text-xs mt-1">Must be 4–20 characters</p>
                 </div>
                 <!-- Email -->
-                <div class="mb-6">
+                <div>
                     <label class="block text-white text-base font-bold mb-2" for="email">Email</label>
-                    <input type="email" id="email" name="email" class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white text-base placeholder-[#A1A9B8]" placeholder="e.g., john@example.com" required>
+                    <input type="email" id="email" name="email" 
+                           class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white placeholder-[#A1A9B8]" 
+                           placeholder="e.g., john@example.com" required>
                 </div>
                 <!-- Password -->
-                <div class="mb-6">
+                <div>
                     <label class="block text-white text-base font-bold mb-2" for="password">Password</label>
-                    <div class="password-input-wrapper">
-                        <input type="password" id="password" name="password" class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white text-base placeholder-[#A1A9B8]" placeholder="••••••••" required minlength="8">
-                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('password')">
-                            <span class="eye-icon">👁️</span>
+                    <div class="relative">
+                        <input type="password" id="password" name="password" 
+                               class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white placeholder-[#A1A9B8]" 
+                               placeholder="••••••••" required minlength="8">
+                        <button type="button" onclick="togglePassword()" 
+                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#A1A9B8] hover:text-[#7B00FF]">
+                            <span id="eyeIcon">👁️</span>
                         </button>
                     </div>
                     <p class="text-[#A1A9B8] text-xs mt-1">Must be at least 8 characters</p>
                 </div>
                 <!-- Submit -->
-                <button type="submit" class="w-full bg-[#7B00FF] text-white px-6 py-3 rounded-lg text-lg font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Sign Up</button>
+                <button type="submit" 
+                        class="w-full bg-[#7B00FF] text-white px-6 py-3 rounded-lg text-lg font-bold 
+                               hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 
+                               transition-all duration-200">
+                    Sign Up
+                </button>
             </form>
-            <p class="text-[#A1A9B8] text-sm mt-4">Already have an account? <a href="{{ url_for('login') }}" class="text-[#7B00FF] hover:underline">Log in</a></p>
+            <p class="text-[#A1A9B8] text-sm mt-6">
+                Already have an account? 
+                <a href="{{ url_for('login') }}" class="text-[#7B00FF] hover:underline">Log in</a>
+            </p>
         </div>
     </div>
 </div>
+
+<script>
+    function togglePassword() {
+        const passwordInput = document.getElementById('password');
+        const eyeIcon = document.getElementById('eyeIcon');
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            eyeIcon.textContent = '🔓';
+        } else {
+            passwordInput.type = 'password';
+            eyeIcon.textContent = '👁️';
+        }
+    }
+</script>
 
 <style>
     @keyframes fade-in {
@@ -55,34 +85,5 @@
     .animate-fade-in {
         animation: fade-in 0.5s ease-out;
     }
-    .password-input-wrapper {
-        position: relative;
-        display: flex;
-        align-items: center;
-    }
-    .password-toggle {
-        position: absolute;
-        right: 10px;
-        top: 50%;
-        transform: translateY(-50%);
-        background: none;
-        border: none;
-        color: #A1A9B8;
-        cursor: pointer;
-        padding: 5px;
-    }
-    .password-toggle:hover {
-        color: #7B00FF;
-    }
-    .eye-icon {
-        font-size: 20px;
-    }
 </style>
-
-<script>
-    function togglePasswordVisibility(fieldId) {
-        const field = document.getElementById(fieldId);
-        field.type = field.type === "password" ? "text" : "password";
-    }
-</script>
 {% endblock %}

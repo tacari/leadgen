@@ -154,45 +154,34 @@ def signup():
         if len(password) < 8:
             flash('Password must be at least 8 characters.')
             return redirect(url_for('signup'))
+        if not '@' in email or not '.' in email:
+            flash('Invalid email format.')
+            return redirect(url_for('signup'))
 
+        # Check username uniqueness
+        existing_user = supabase.table('users').select('username').eq('username', username).execute()
+        if existing_user.data:
+            flash('Username already taken.')
+            return redirect(url_for('signup'))
+
+        # Create user in Supabase Auth
         try:
-            # Check if username exists
-            existing_user = supabase.table('users').select('username').eq('username', username).execute()
-            if existing_user.data:
-                flash('Username already taken.')
-                return redirect(url_for('signup'))
-
-            # Sign up with Supabase Auth
-            auth_response = supabase.auth.sign_up({
-                'email': email,
-                'password': password
-            })
-
-            if not auth_response.user:
-                flash('Error creating account. Please try again.')
-                return redirect(url_for('signup'))
-
-            # Store in users table
+            user = supabase.auth.sign_up({'email': email, 'password': password})
             supabase.table('users').insert({
-                'id': auth_response.user.id,
+                'id': user.user.id,
                 'username': username,
                 'email': email,
                 'created_at': datetime.utcnow().isoformat()
             }).execute()
-
-            # Set session
-            session['user_id'] = auth_response.user.id
-            session.modified = True  # Ensure session is saved
-
-            flash('Signup successful! Welcome to Leadzap.')
+            session['user_id'] = user.user.id
+            session.modified = True
+            flash('Signed up successfully! Welcome to Leadzap.')
             logger.info(f"Signup successful for {email}, redirecting to dashboard")
             return redirect(url_for('dashboard'))
-
         except Exception as e:
-            logger.error(f"Signup error: {str(e)}")
-            flash('Error creating account. Please try again.')
+            logger.error(f"Signup error: {str(e)}")  # Detailed error for debugging
+            flash('Signup failed. Please try again.')
             return redirect(url_for('signup'))
-
     return render_template('signup.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -209,7 +198,7 @@ def login():
 
             if auth_response.user:
                 session['user_id'] = auth_response.user.id
-                session.modified = True  # Ensure session is saved
+                session.modified = True
                 flash('Successfully logged in!')
                 return redirect(url_for('dashboard'))
             else:
