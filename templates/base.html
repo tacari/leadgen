@@ -3,77 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Leadzap{% endblock %}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>Leadzap - {% block title %}{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Base Theme */
-        :root {
-            --bg-primary: #0D1321;
-            --bg-secondary: #1A2236;
-            --bg-gradient-start: #0D1321;
-            --bg-gradient-end: #1E2A44;
-            --text-primary: #FFFFFF;
-            --text-secondary: #A1A9B8;
-            --accent: #7B00FF;
-            --accent-hover: #8F00FF;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
-        }
-
-        .navbar {
-            background-color: var(--bg-primary);
-            border-bottom: 1px solid var(--accent);
-            padding: 1rem 0;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-    </style>
 </head>
-<body>
-    <nav class="navbar">
-        <div class="container mx-auto px-4">
-            <div class="flex justify-between items-center">
-                <a href="/" class="text-2xl font-bold text-white">Leadzap</a>
-                <div class="hidden md:flex space-x-6">
-                    <a href="/" class="text-white hover:text-[#7B00FF]">Home</a>
-                    <a href="/about" class="text-white hover:text-[#7B00FF]">About</a>
-                    <a href="/services" class="text-white hover:text-[#7B00FF]">Services</a>
-                    <a href="/pricing" class="text-white hover:text-[#7B00FF]">Pricing</a>
-                    <a href="/contact" class="text-white hover:text-[#7B00FF]">Contact</a>
-                    <a href="/dashboard" class="text-white hover:text-[#7B00FF]">Dashboard</a>
-                    <a href="/lead-history" class="text-white hover:text-[#7B00FF]">Lead History</a>
-                </div>
+<body class="bg-[#0D1321] text-white">
+    <!-- Landing Page Navbar -->
+    <nav class="bg-[#0D1321] p-4 fixed w-full top-0 z-10 animate-fade-in">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <!-- Left: Logo -->
+            <div class="flex items-center">
+                <a href="{{ url_for('home') if 'user_id' not in session else url_for('dashboard') }}" class="text-2xl font-bold text-white hover:text-[#7B00FF] transition-colors duration-200">Leadzap</a>
+                <div class="w-5 h-5 bg-[#7B00FF] rounded-full ml-2 animate-pulse"></div>
+            </div>
+            <!-- Right: Desktop Links -->
+            <div class="hidden md:flex space-x-6 items-center">
+                <a href="{{ url_for('home') }}" class="text-white hover:text-[#7B00FF] transition-colors duration-200 {% if request.endpoint == 'home' %}border-b-2 border-[#7B00FF]{% endif %}">Home</a>
+                <a href="{{ url_for('pricing') }}" class="text-white hover:text-[#7B00FF] transition-colors duration-200 {% if request.endpoint == 'pricing' %}border-b-2 border-[#7B00FF]{% endif %}">Pricing</a>
+                {% if 'user_id' not in session %}
+                <a href="{{ url_for('login') }}" class="text-white hover:text-[#7B00FF] transition-colors duration-200 {% if request.endpoint == 'login' %}border-b-2 border-[#7B00FF]{% endif %}">Login</a>
+                <a href="{{ url_for('signup') }}" class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transition-transform duration-200 transform hover:scale-105">Sign Up</a>
+                {% else %}
+                <a href="{{ url_for('dashboard') }}" class="text-white hover:text-[#7B00FF] transition-colors duration-200 {% if request.endpoint == 'dashboard' %}border-b-2 border-[#7B00FF]{% endif %}">Dashboard</a>
+                <a href="{{ url_for('lead_history') }}" class="text-white hover:text-[#7B00FF] transition-colors duration-200 {% if request.endpoint == 'lead_history' %}border-b-2 border-[#7B00FF]{% endif %}">Lead History</a>
+                <a href="{{ url_for('analytics') }}" class="text-white hover:text-[#7B00FF] transition-colors duration-200 {% if request.endpoint == 'analytics' %}border-b-2 border-[#7B00FF]{% endif %}">Analytics</a>
+                <a href="{{ url_for('settings') }}" class="text-white hover:text-[#7B00FF] transition-colors duration-200 {% if request.endpoint == 'settings' %}border-b-2 border-[#7B00FF]{% endif %}">Settings</a>
+                <a href="{{ url_for('support') }}" class="text-white hover:text-[#7B00FF] transition-colors duration-200 {% if request.endpoint == 'support' %}border-b-2 border-[#7B00FF]{% endif %}">Support</a>
+                <a href="{{ url_for('logout') }}" class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transition-transform duration-200 transform hover:scale-105">Logout</a>
+                {% endif %}
+            </div>
+            <!-- Mobile Hamburger -->
+            <div class="md:hidden">
+                <button id="hamburger" class="focus:outline-none">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-[#1A2236] w-full absolute top-16 left-0 border-t border-[#7B00FF] shadow-lg">
+            <div class="flex flex-col items-center py-4 space-y-4">
+                <a href="{{ url_for('home') }}" class="text-white text-lg hover:text-[#7B00FF] hover:bg-[#2A2F42] w-full text-center py-2 transition-colors duration-200 {% if request.endpoint == 'home' %}text-[#7B00FF] font-bold{% endif %}">Home</a>
+                <a href="{{ url_for('pricing') }}" class="text-white text-lg hover:text-[#7B00FF] hover:bg-[#2A2F42] w-full text-center py-2 transition-colors duration-200 {% if request.endpoint == 'pricing' %}text-[#7B00FF] font-bold{% endif %}">Pricing</a>
+                {% if 'user_id' not in session %}
+                <a href="{{ url_for('login') }}" class="text-white text-lg hover:text-[#7B00FF] hover:bg-[#2A2F42] w-full text-center py-2 transition-colors duration-200 {% if request.endpoint == 'login' %}text-[#7B00FF] font-bold{% endif %}">Login</a>
+                <a href="{{ url_for('signup') }}" class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transition-transform duration-200 transform hover:scale-105">Sign Up</a>
+                {% else %}
+                <a href="{{ url_for('dashboard') }}" class="text-white text-lg hover:text-[#7B00FF] hover:bg-[#2A2F42] w-full text-center py-2 transition-colors duration-200 {% if request.endpoint == 'dashboard' %}text-[#7B00FF] font-bold{% endif %}">Dashboard</a>
+                <a href="{{ url_for('lead_history') }}" class="text-white text-lg hover:text-[#7B00FF] hover:bg-[#2A2F42] w-full text-center py-2 transition-colors duration-200 {% if request.endpoint == 'lead_history' %}text-[#7B00FF] font-bold{% endif %}">Lead History</a>
+                <a href="{{ url_for('analytics') }}" class="text-white text-lg hover:text-[#7B00FF] hover:bg-[#2A2F42] w-full text-center py-2 transition-colors duration-200 {% if request.endpoint == 'analytics' %}text-[#7B00FF] font-bold{% endif %}">Analytics</a>
+                <a href="{{ url_for('settings') }}" class="text-white text-lg hover:text-[#7B00FF] hover:bg-[#2A2F42] w-full text-center py-2 transition-colors duration-200 {% if request.endpoint == 'settings' %}text-[#7B00FF] font-bold{% endif %}">Settings</a>
+                <a href="{{ url_for('support') }}" class="text-white text-lg hover:text-[#7B00FF] hover:bg-[#2A2F42] w-full text-center py-2 transition-colors duration-200 {% if request.endpoint == 'support' %}text-[#7B00FF] font-bold{% endif %}">Support</a>
+                <a href="{{ url_for('logout') }}" class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transition-transform duration-200 transform hover:scale-105">Logout</a>
+                {% endif %}
             </div>
         </div>
     </nav>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <div class="mt-20 text-center text-[#7B00FF]">
+        {% for message in messages %}
+        <p>{{ message }}</p>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+    <div class="mt-20">{% block content %}{% endblock %}</div>
 
-    <main>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash-message {{ category }}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        {% block content %}{% endblock %}
-    </main>
-
+    <!-- Mobile Menu Script -->
     <script>
-        function toggleMenu() {
-            document.getElementById('navLinks').classList.toggle('active');
-        }
+        const hamburger = document.getElementById('hamburger');
+        const mobileMenu = document.getElementById('mobile-menu');
+        hamburger.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+            hamburger.innerHTML = mobileMenu.classList.contains('hidden') ?
+                '<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>' :
+                '<svg class="w-6 h-6 text-[#7B00FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+        });
     </script>
 </body>
+<style>
+    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+    .animate-fade-in { animation: fade-in 0.5s ease-in; }
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+    .animate-pulse { animation: pulse 2s infinite; }
+</style>
 </html>
