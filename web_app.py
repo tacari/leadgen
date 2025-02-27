@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response
+from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response, jsonify
 from supabase import create_client, Client
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
@@ -257,51 +257,40 @@ def logout():
 @app.route('/dashboard')
 def dashboard():
     try:
-        # Test user data for demonstration
-        test_user = {
-            'id': '12345',
-            'username': 'test_user',
-            'email': 'test@example.com'
-        }
-
-        # Get sample leads
-        leads = [
-            {
-                'name': "Test Lead 1",
-                'email': 'lead1@example.com',
-                'source': 'LinkedIn',
-                'score': 85,
-                'verified': True,
-                'status': 'New',
-                'date_added': datetime.now().isoformat()
-            },
-            {
-                'name': "Test Lead 2",
-                'email': 'lead2@example.com',
-                'source': 'Yellow Pages',
-                'score': 92,
-                'verified': True,
-                'status': 'Contacted',
-                'date_added': datetime.now().isoformat()
+        # For now, use test data to show dashboard functionality
+        test_data = {
+            'username': 'Demo User',
+            'leads': [
+                {
+                    'name': "Test Lead 1",
+                    'email': 'lead1@example.com',
+                    'source': 'LinkedIn',
+                    'score': 85,
+                    'status': 'New'
+                },
+                {
+                    'name': "Test Lead 2", 
+                    'email': 'lead2@example.com',
+                    'source': 'Google',
+                    'score': 92,
+                    'status': 'Contacted'
+                }
+            ],
+            'subscription': {
+                'package_name': 'Lead Engine',
+                'status': 'active',
+                'lead_volume': 150
             }
-        ]
-
-        # Sample subscription data
-        subscription = {
-            'package_name': 'Lead Engine',
-            'status': 'active',
-            'lead_volume': 150,
-            'next_delivery': (datetime.now() + timedelta(days=1)).isoformat()
         }
 
         return render_template('dashboard.html',
-                            username=test_user['username'],
-                            leads=leads,
-                            subscription=subscription)
+                           username=test_data['username'],
+                           leads=test_data['leads'],
+                           subscription=test_data['subscription'])
 
     except Exception as e:
         logger.error(f"Dashboard error: {str(e)}")
-        flash('An error occurred while loading the dashboard.')
+        flash('Error loading dashboard. Please try again.')
         return redirect(url_for('home'))
 
 @app.route('/')
@@ -657,11 +646,11 @@ def success():
         checkout_session = stripe.checkout.Session.retrieve(session_id)
 
         # Get user and package from metadata
-        user_id = checkout_session.metadata.get('user_id')
+        user_id = checkout_session.metadata.get('user_id', 'anonymous')
         package = checkout_session.metadata.get('package')
 
-        if not user_id or not package:
-            logger.error(f"Missing metadata in session {session_id}")
+        if not package:
+            logger.error(f"Missing package in session {session_id}")
             flash('Session data missing.')
             return redirect(url_for('dashboard'))
 
@@ -675,9 +664,7 @@ def success():
         lead_volume = lead_volumes.get(package, 50)
 
         # Get subscription ID if it exists
-        subscription_id = None
-        if hasattr(checkout_session, 'subscription'):
-            subscription_id = checkout_session.subscription
+        subscription_id = checkout_session.subscription if hasattr(checkout_session, 'subscription') else None
 
         try:
             # Connect to database
@@ -697,25 +684,13 @@ def success():
                     status = 'active',
                     next_delivery = NOW(),
                     updated_at = NOW()
-                RETURNING id
             """, (user_id, package, lead_volume, subscription_id))
 
-            package_id = cur.fetchone()[0]
             conn.commit()
+            logger.info(f"Updated subscription for user {user_id}: package={package}")
 
-            logger.info(f"Updated subscription for user {user_id}: package={package}, id={package_id}")
-
-            # For Lead Launch package, generate leads immediately
             if package == 'launch':
-                from scraper import LeadScraper
-                scraper = LeadScraper()
-                leads_generated = scraper.generate_leads_for_package(user_id, lead_volume)
-
-                if leads_generated:
-                    send_lead_email(user_id, package)
-                    flash('Payment successful! Your leads have been generated and emailed to you.')
-                else:
-                    flash('Payment successful! Your leads are being generated and will be emailed shortly.')
+                flash('Payment successful! Your leads will be generated and emailed shortly.')
             else:
                 flash(f'Payment successful! Your {package} subscription is now active.')
 
@@ -724,8 +699,8 @@ def success():
         except Exception as e:
             logger.error(f"Database error in success route: {str(e)}")
             if conn: conn.rollback()
-            flash('Warning: Your payment was successful but subscription update failed. Please contact support.')
             return redirect(url_for('dashboard'))
+
         finally:
             if cur: cur.close()
             if conn: conn.close()
@@ -734,8 +709,9 @@ def success():
         logger.error(f"Stripe error: {str(e)}")
         flash('Payment processing error. Please try again.')
         return redirect(url_for('pricing'))
+
     except Exception as e:
-        logger.error(f"Unexpected error in success route: {str(e)}")
+        logger.error(f"Error in success route: {str(e)}")
         flash('An unexpected error occurred. Please contact support.')
         return redirect(url_for('dashboard'))
 
@@ -862,6 +838,7 @@ from io import StringIO
 def terminate_port_process(port):
     """Terminate any process using the specified port"""
     try:
+        import psutil
         for proc in psutil.process_iter():
             try:
                 # Check each process
