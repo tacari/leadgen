@@ -168,8 +168,6 @@ def signup():
                 'password': password
             })
 
-            logger.info(f"Supabase auth signup response: {auth_response}")
-
             if not auth_response.user:
                 flash('Error creating account. Please try again.')
                 return redirect(url_for('signup'))
