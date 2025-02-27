@@ -1,19 +1,30 @@
+import os
 from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response
 from supabase import create_client, Client
 import stripe
-import os
 import psycopg2
 import threading
 from datetime import datetime, timedelta
+import json
+import sys
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.urandom(24)
-stripe.api_key = os.environ.get('STRIPE_API_KEY')
-
-# Supabase setup
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key')  # Ensure this is set in Replit Secrets
 supabase_url = os.environ.get('SUPABASE_URL')
 supabase_key = os.environ.get('SUPABASE_KEY')
 supabase = create_client(supabase_url, supabase_key)
+stripe.api_key = os.environ.get('STRIPE_API_KEY')
+
+# Test Supabase connection
+try:
+    response = supabase.auth.get_session()
+    print("Supabase connection successful!")
+except Exception as e:
+    print(f"Supabase connection error: {str(e)}")
+    if "401" in str(e):
+        print("Auth failed - check SUPABASE_KEY")
+    elif "404" in str(e):
+        print("API not found - check SUPABASE_URL")
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -31,33 +42,36 @@ def signup():
             return redirect(url_for('signup'))
 
         try:
-            # Check if username exists
-            existing_user = supabase.table('users').select('username').eq('username', username).execute()
-            if existing_user.data:
-                flash('Username already taken.')
-                return redirect(url_for('signup'))
-
             # Sign up with Supabase Auth
             auth_response = supabase.auth.sign_up({
                 'email': email,
-                'password': password
+                'password': password,
+                'options': {
+                    'data': {
+                        'username': username
+                    }
+                }
             })
 
-            # Store user data in users table
-            supabase.table('users').insert({
-                'id': auth_response.user.id,
-                'username': username,
-                'email': email,
-                'created_at': datetime.utcnow().isoformat()
-            }).execute()
+            if auth_response.user:
+                # Store additional user data
+                supabase.table('users').insert({
+                    'id': auth_response.user.id,
+                    'username': username,
+                    'email': email,
+                    'created_at': datetime.utcnow().isoformat()
+                }).execute()
 
-            # Set session
-            session['user_id'] = auth_response.user.id
-            flash('Signup successful! Welcome to Leadzap.')
-            return redirect(url_for('dashboard'))
+                session['user_id'] = auth_response.user.id
+                flash('Signup successful! Welcome to Leadzap.')
+                return redirect(url_for('dashboard'))
+            else:
+                flash('Error creating account. Please try again.')
+                return redirect(url_for('signup'))
 
         except Exception as e:
-            flash(f'Signup failed: {str(e)}')
+            print(f"Signup error: {str(e)}")
+            flash('Error creating account. Please try again.')
             return redirect(url_for('signup'))
 
     return render_template('signup.html')
@@ -69,17 +83,21 @@ def login():
         password = request.form['password']
 
         try:
-            # Sign in with Supabase Auth
             auth_response = supabase.auth.sign_in_with_password({
                 'email': email,
                 'password': password
             })
 
-            # Set session
-            session['user_id'] = auth_response.user.id
-            return redirect(url_for('dashboard'))
+            if auth_response.user:
+                session['user_id'] = auth_response.user.id
+                flash('Successfully logged in!')
+                return redirect(url_for('dashboard'))
+            else:
+                flash('Invalid email or password.')
+                return redirect(url_for('login'))
 
-        except Exception:
+        except Exception as e:
+            print(f"Login error: {str(e)}")
             flash('Invalid email or password.')
             return redirect(url_for('login'))
 
@@ -87,40 +105,50 @@ def login():
 
 @app.route('/logout')
 def logout():
-    # Sign out from Supabase Auth
-    supabase.auth.sign_out()
+    try:
+        supabase.auth.sign_out()
+    except Exception as e:
+        print(f"Logout error: {str(e)}")
+
     session.pop('user_id', None)
     flash('You have been logged out.')
-    return redirect(url_for('landing'))
+    return redirect(url_for('home'))
 
-# Protected route example
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session:
-        flash('Please log in to access the dashboard.')
         return redirect(url_for('login'))
+    user = supabase.auth.get_user(session['user_id'])
+    username = supabase.table('users').select('username').eq('id', user.user.id).execute().data[0]['username']
+    leads = supabase.table('leads').select('*').eq('user_id', user.user.id).order('date_added', desc=True).limit(25).execute().data
+    subscription = supabase.table('user_packages').select('*').eq('user_id', user.user.id).execute().data
+    subscription = subscription[0] if subscription else None
 
-    try:
-        # Get user data
-        user = supabase.table('users').select('*').eq('id', session['user_id']).single().execute()
+    total_leads = len(leads)
+    emailed = sum(1 for lead in leads if lead['status'] == 'Emailed')
+    high_score = sum(1 for lead in leads if lead['score'] > 75)
+    analytics = {'total': total_leads, 'emailed': emailed, 'high_score': high_score}
 
-        # Get user's leads
-        leads = supabase.table('leads').select('*').eq('user_id', session['user_id']).order('date_added', desc=True).execute()
+    if subscription:
+        package = subscription['package_name']
+        delivery_status = {
+            'launch': "Your 50 leads arrived!",
+            'engine': f"Next 37–38 leads: {(datetime.now() + timedelta(days=(7 - datetime.now().weekday()))).strftime('%Y-%m-%d')}",
+            'accelerator': "Next 10–12 leads: Tomorrow",
+            'empire': "Next 20–25 leads: Tomorrow"
+        }.get(package, "Processing your leads...")
+    else:
+        delivery_status = "No leads scheduled—choose a plan!"
 
-        # Get user's subscription
-        subscription = supabase.table('user_packages').select('*').eq('user_id', session['user_id']).single().execute()
-
-        return render_template('dashboard.html',
-                            username=user.data['username'],
-                            leads=leads.data,
-                            subscription=subscription.data if subscription.data else None)
-
-    except Exception as e:
-        flash(f'Error loading dashboard: {str(e)}')
-        return redirect(url_for('login'))
+    return render_template('dashboard.html', 
+                         username=username, 
+                         leads=leads, 
+                         subscription=subscription, 
+                         analytics=analytics, 
+                         delivery_status=delivery_status)
 
 @app.route('/')
-def landing():
+def home():
     return render_template('landing.html')
 
 @app.route('/services')
@@ -596,13 +624,9 @@ def webhook():
 
     return '', 200
 
-import os
-import sys
-import json
+from flask import jsonify
 import csv
-from datetime import datetime, timedelta
 from io import StringIO
-import psutil
 
 def terminate_port_process(port):
     """Terminate any process using the specified port"""
@@ -623,6 +647,7 @@ def terminate_port_process(port):
         print(f"Error in terminate_port_process: {str(e)}", file=sys.stderr)
 
 if __name__ == '__main__':
+    import psutil
     try:
         # Create required JSON files if they don't exist
         for file_path in ['data/leads.json', 'data/user_packages.json']:
