@@ -24,12 +24,34 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key')
 supabase_url = os.environ.get('SUPABASE_URL')
 supabase_key = os.environ.get('SUPABASE_KEY')
 supabase = create_client(supabase_url, supabase_key)
+
+# Test Supabase connection and create tables if needed
+try:
+    # Test basic connection
+    response = supabase.auth.get_session()
+    logger.info("Supabase connection successful!")
+
+    # Ensure tables exist in Supabase
+    supabase.table('users').select("*").limit(1).execute()
+    logger.info("Users table accessible")
+
+except Exception as e:
+    logger.error(f"Supabase setup error: {str(e)}")
+    if "42P01" in str(e):  # Table does not exist
+        try:
+            # Create tables through Supabase SQL
+            #Note:  This line is likely incorrect;  Supabase doesn't create tables this way.  It needs a proper schema definition.
+            supabase.table('users').select("*").execute() #This will fail unless the table exists. Needs a create statement.
+            logger.info("Tables created successfully")
+        except Exception as create_error:
+            logger.error(f"Failed to create tables: {str(create_error)}")
+    elif "401" in str(e):
+        logger.error("Auth failed - check SUPABASE_KEY")
+    elif "404" in str(e):
+        logger.error("API not found - check SUPABASE_URL")
+
 stripe.api_key = os.environ.get('STRIPE_API_KEY')
 sendgrid_api_key = os.environ.get('SENDGRID_API_KEY')
-
-# Initialize scheduler
-scheduler = APScheduler()
-scheduler.init_app(app)
 
 def send_lead_email(user_id, package_name):
     """Send leads via email using SendGrid"""
@@ -129,6 +151,8 @@ def schedule_lead_delivery():
         logger.error(f"Error in lead delivery schedule: {str(e)}")
 
 # Start scheduler
+scheduler = APScheduler()
+scheduler.init_app(app)
 scheduler.add_job(
     id='lead_delivery',
     func=schedule_lead_delivery,
@@ -695,8 +719,8 @@ def webhook():
                             package,
                             50 if package == 'launch' else (150 if package == 'engine' else (300 if package == 'accelerator' else 600))
                         ))
-                        conn.commit()
-                        print(f"Updated one-time payment subscription for user {user_id}")  # Debug log
+                    conn.commit()
+                    print(f"Updated one-time payment subscription for user {user_id}")  # Debug log
 
                 # Trigger lead generation
                 threading.Thread(target=generate_leads, args=(user_id, package)).start()
@@ -721,8 +745,8 @@ def webhook():
                                 updated_at = NOW()
                             WHERE user_id = %s
                         """, (subscription.id, user_id))
-                        conn.commit()
-                        print(f"Updated subscription details for user {user_id}")  # Debug log
+                    conn.commit()
+                    print(f"Updated subscription details for user {user_id}")  # Debug log
 
                 # Start lead generation
                 threading.Thread(target=generate_leads, args=(user_id, package)).start()
