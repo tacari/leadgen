@@ -1095,15 +1095,12 @@ def terminate_port_process(port):
         import psutil
         for proc in psutil.process_iter():
             try:
-                # Check each process
-                proc_info = proc.as_dict(attrs=['pid', 'name', 'connections'])
-                if proc_info['connections']:  # Check if process has connections
-                    for conn in proc_info['connections']:
-                        if conn.laddr.port == port and proc.pid != os.getpid():
-                            print(f"Terminating process {proc.pid} using port {port}", file=sys.stderr)
-                            proc.terminate()
-                            proc.wait(timeout=3)
-            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
+                for conn in proc.connections(kind='inet'):
+                    if conn.laddr.port == port and proc.pid != os.getpid():
+                        print(f"Terminating process {proc.pid} using port {port}", file=sys.stderr)
+                        proc.terminate()
+                        proc.wait(timeout=3)
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired, AttributeError):
                 continue
     except Exception as e:
         print(f"Error in terminate_port_process: {str(e)}", file=sys.stderr)
@@ -1121,8 +1118,16 @@ if __name__ == '__main__':
         terminate_port_process(5000)
         print("Starting Flask server...", file=sys.stderr)
 
-        # ALWAYS serve the app on port 5000
-        app.run(host='0.0.0.0', port=5000, debug=True)
+        # Try to start on port 5000
+        try:
+            app.run(host='0.0.0.0', port=5000, debug=True)
+        except OSError as e:
+            if 'Address already in use' in str(e):
+                print("Port 5000 still in use, trying alternative port 8080...", file=sys.stderr)
+                # If 5000 is still in use, try an alternative port
+                app.run(host='0.0.0.0', port=8080, debug=True)
+            else:
+                raise
     except Exception as e:
         print(f"Failed to start server: {str(e)}", file=sys.stderr)
         sys.exit(1)
