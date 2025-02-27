@@ -1,6 +1,8 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response
 from supabase import create_client, Client
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
 import stripe
 import psycopg2
 import threading
@@ -8,6 +10,10 @@ from datetime import datetime, timedelta
 import json
 import sys
 import logging
+import csv
+import io
+import base64
+from flask_apscheduler import APScheduler
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -19,17 +25,118 @@ supabase_url = os.environ.get('SUPABASE_URL')
 supabase_key = os.environ.get('SUPABASE_KEY')
 supabase = create_client(supabase_url, supabase_key)
 stripe.api_key = os.environ.get('STRIPE_API_KEY')
+sendgrid_api_key = os.environ.get('SENDGRID_API_KEY')
 
-# Test Supabase connection
-try:
-    response = supabase.auth.get_session()
-    logger.info("Supabase connection successful!")
-except Exception as e:
-    logger.error(f"Supabase connection error: {str(e)}")
-    if "401" in str(e):
-        logger.error("Auth failed - check SUPABASE_KEY")
-    elif "404" in str(e):
-        logger.error("API not found - check SUPABASE_URL")
+# Initialize scheduler
+scheduler = APScheduler()
+scheduler.init_app(app)
+
+def send_lead_email(user_id, package_name):
+    """Send leads via email using SendGrid"""
+    try:
+        # Get user email
+        user = supabase.table('users').select('email').eq('id', user_id).execute().data[0]
+        email = user['email']
+        today = datetime.now().date().isoformat()
+
+        # Get today's leads
+        leads = supabase.table('leads').select('*').eq('user_id', user_id).gte('date_added', today).execute().data
+
+        if not leads:
+            logger.warning(f"No leads to send for user {user_id}")
+            return
+
+        # Create CSV in memory
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(['Name', 'Email', 'Phone', 'Source', 'Score', 'Verified', 'Status', 'Date Added'])
+
+        for lead in leads:
+            writer.writerow([
+                lead['name'],
+                lead['email'],
+                lead.get('phone', 'N/A'),
+                lead['source'],
+                lead['score'],
+                lead['verified'],
+                lead['status'],
+                lead['date_added']
+            ])
+
+        csv_content = output.getvalue()
+        csv_base64 = base64.b64encode(csv_content.encode('utf-8')).decode('utf-8')
+
+        # Create email
+        message = Mail(
+            from_email='leads@leadzap.io',
+            to_emails=email,
+            subject=f'Your {package_name} Leads - {today}',
+            html_content=f'''
+                <h2>Here are your latest {package_name} leads!</h2>
+                <p>Attached is your CSV file containing {len(leads)} fresh leads.</p>
+                <p>Quick Stats:</p>
+                <ul>
+                    <li>High-scoring leads (75+): {sum(1 for lead in leads if lead['score'] > 75)}</li>
+                    <li>Verified contacts: {sum(1 for lead in leads if lead['verified'])}</li>
+                </ul>
+                <p>Access your dashboard for more insights and to manage your leads.</p>
+            '''
+        )
+
+        # Attach CSV
+        attachment = Attachment(
+            FileContent(csv_base64),
+            FileName(f'leads_{today}.csv'),
+            FileType('text/csv'),
+            Disposition('attachment')
+        )
+        message.attachment = attachment
+
+        # Send email
+        sg = SendGridAPIClient(sendgrid_api_key)
+        response = sg.send(message)
+        logger.info(f"Sent lead email to {email} with status code {response.status_code}")
+        return True
+
+    except Exception as e:
+        logger.error(f"Error sending lead email: {str(e)}")
+        return False
+
+def schedule_lead_delivery():
+    """Schedule lead delivery based on package type"""
+    try:
+        users = supabase.table('user_packages').select('user_id, package_name').eq('status', 'active').execute().data
+
+        for user in users:
+            user_id = user['user_id']
+            package = user['package_name']
+
+            # Only deliver on appropriate schedule
+            if package == 'engine' and datetime.now().weekday() == 0:  # Monday
+                from scraper import LeadScraper
+                scraper = LeadScraper()
+                scraper.generate_leads_for_package(user_id, 38)  # Weekly batch
+                send_lead_email(user_id, package)
+
+            elif package in ['accelerator', 'empire']:  # Daily delivery
+                from scraper import LeadScraper
+                scraper = LeadScraper()
+                volume = 12 if package == 'accelerator' else 25
+                scraper.generate_leads_for_package(user_id, volume)
+                send_lead_email(user_id, package)
+
+    except Exception as e:
+        logger.error(f"Error in lead delivery schedule: {str(e)}")
+
+# Start scheduler
+scheduler.add_job(
+    id='lead_delivery',
+    func=schedule_lead_delivery,
+    trigger='interval',
+    hours=24,
+    next_run_time=datetime.now() + timedelta(seconds=10)
+)
+scheduler.start()
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -261,7 +368,7 @@ def download_leads():
         }
     ]
 
-    output = StringIO()
+    output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(['Name', 'Email', 'Source', 'Score', 'Status', 'Date Added'])
 
@@ -498,6 +605,7 @@ def checkout(package):
         flash(f"Checkout failed: {str(e)}")
         return redirect(url_for('pricing'))
 
+# Update the success route to include immediate lead delivery
 @app.route('/success')
 def success():
     try:
@@ -506,23 +614,16 @@ def success():
             flash('Invalid session. Please try again.')
             return redirect(url_for('pricing'))
 
-        print(f"Retrieved session ID: {session_id}")  # Debug log
         checkout_session = stripe.checkout.Session.retrieve(session_id)
-
-        # Get package and user info
         package = checkout_session.metadata.get('package')
         user_id = checkout_session.metadata.get('user_id')
-
-        print(f"Package: {package}, User ID: {user_id}")  # Debug log
 
         if not user_id or not package:
             flash('Session data missing.')
             return redirect(url_for('dashboard'))
 
         # Update subscription in database
-        volumes = {'launch': 50, 'engine': 150, 'accelerator': 300, 'empire': 600}
         try:
-            # Update user_packages table
             with psycopg2.connect(os.environ['DATABASE_URL']) as conn:
                 with conn.cursor() as cur:
                     cur.execute("""
@@ -535,30 +636,38 @@ def success():
                             lead_volume = EXCLUDED.lead_volume,
                             stripe_subscription_id = EXCLUDED.stripe_subscription_id,
                             status = EXCLUDED.status,
-                            next_delivery = EXCLUDED.next_delivery,
-                            updated_at = NOW()
+                            next_delivery = EXCLUDED.next_delivery
                     """, (
                         user_id,
                         package,
-                        volumes.get(package, 50),
+                        50 if package == 'launch' else (150 if package == 'engine' else (300 if package == 'accelerator' else 600)),
                         checkout_session.subscription.id if hasattr(checkout_session, 'subscription') else None
                     ))
                 conn.commit()
-                print(f"Updated subscription in database for user {user_id}")  # Debug log
+
+            # For Lead Launch package, generate and send leads immediately
+            if package == 'launch':
+                from scraper import LeadScraper
+                scraper = LeadScraper()
+                leads_generated = scraper.generate_leads_for_package(user_id, 50)
+                if leads_generated:
+                    send_lead_email(user_id, package)
+                    flash('Payment successful! Your leads have been generated and emailed to you.')
+                else:
+                    flash('Payment successful! Your leads are being generated and will be emailed shortly.')
+            else:
+                flash(f'Payment successful! Your {package} subscription is active.')
+
+            return redirect(url_for('dashboard'))
+
         except Exception as e:
-            print(f"Database error: {str(e)}")
+            logger.error(f"Database error in success route: {str(e)}")
             flash('Warning: Your payment was successful but subscription update failed. Please contact support.')
-            # Continue even if database update fails
-
-        # Trigger scraper in background
-        threading.Thread(target=generate_leads, args=(user_id, package)).start()
-
-        flash('Payment successful! Your leads are being generated—check your dashboard soon.')
-        return redirect(url_for('dashboard'))
+            return redirect(url_for('dashboard'))
 
     except Exception as e:
-        print(f"Success handler error: {str(e)}")  # Debug log
-        flash(f"Payment confirmation failed: {str(e)}")
+        logger.error(f"Error in success route: {str(e)}")
+        flash(f"An error occurred: {str(e)}")
         return redirect(url_for('dashboard'))
 
 @app.route('/webhook', methods=['POST'])
