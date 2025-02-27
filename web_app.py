@@ -49,11 +49,9 @@ def signup():
             return redirect(url_for('signup'))
 
         try:
-            # First check if username exists in our database
-            conn = psycopg2.connect(os.environ['DATABASE_URL'])
-            cur = conn.cursor()
-            cur.execute("SELECT username FROM users WHERE username = %s", (username,))
-            if cur.fetchone():
+            # Check username uniqueness
+            existing_user = supabase.table('users').select('username').eq('username', username).execute()
+            if existing_user.data:
                 flash('Username already taken.')
                 return redirect(url_for('signup'))
 
@@ -68,20 +66,16 @@ def signup():
                 flash('Signup failed. Please try again.')
                 return redirect(url_for('signup'))
 
-            # Store user in our database using the Supabase auth user ID
-            cur.execute(
-                """
-                INSERT INTO users (id, username, email, created_at) 
-                VALUES (%s, %s, %s, %s)
-                RETURNING id
-                """,
-                (auth_response.user.id, username, email, datetime.utcnow())
-            )
-            user_id = cur.fetchone()[0]
-            conn.commit()
+            # Store user data in users table
+            supabase.table('users').insert({
+                'id': auth_response.user.id,
+                'username': username,
+                'email': email,
+                'created_at': datetime.utcnow().isoformat()
+            }).execute()
 
             # Set session
-            session['user_id'] = str(user_id)  # Convert UUID to string for session
+            session['user_id'] = auth_response.user.id
             session.modified = True
 
             logger.info(f"Signup successful for {email}")
@@ -90,12 +84,8 @@ def signup():
 
         except Exception as e:
             logger.error(f"Signup error: {str(e)}")
-            if conn: conn.rollback()
             flash('Signup failed. Please try again.')
             return redirect(url_for('signup'))
-        finally:
-            if cur: cur.close()
-            if conn: conn.close()
 
     return render_template('signup.html')
 
