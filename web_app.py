@@ -1,4 +1,3 @@
-
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response, jsonify
 from supabase import create_client, Client
@@ -800,7 +799,7 @@ def checkout(package):
         prices = {
             'launch': 'price_1QwcjxGsSuGLiAUEuP63WhPh',  # Lead Launch
             'engine': 'price_1Qwcl0GsSuGLiAUEr9cJ8TtG',  # Lead Engine
-            'accelerator': 'price_1QwclsGsSuGLiAUELcCnSDHQ',  # Lead Accelerator
+            'accelerator': 'price_1QwclsGsSuGLiAUELcCnSDHQ', # Lead Accelerator
             'empire': 'price_1Qwcn5GsSuGLiAUE3qhtbxxy'  # Lead Empire
         }
 
@@ -1112,22 +1111,26 @@ ensure_local_data_files()
 ensure_tables_exist()
 
 if __name__ == '__main__':
-    import psutil
     try:
-        # First, terminate any existing process on port 5000
-        terminate_port_process(5000)
-        print("Starting Flask server...", file=sys.stderr)
+        # Configure logging
+        logging.basicConfig(level=logging.INFO)
+        logger = logging.getLogger(__name__)
 
-        # Try to start on port 5000
-        try:
-            app.run(host='0.0.0.0', port=5000, debug=True)
-        except OSError as e:
-            if 'Address already in use' in str(e):
-                print("Port 5000 still in use, trying alternative port 8080...", file=sys.stderr)
-                # If 5000 is still in use, try an alternative port
-                app.run(host='0.0.0.0', port=8080, debug=True)
-            else:
-                raise
+        # Ensure data directories exist
+        data_dir = 'data'
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir)
+
+        for file_name in ['users.json', 'user_packages.json', 'leads.json']:
+            file_path = os.path.join(data_dir, file_name)
+            if not os.path.exists(file_path):
+                with open(file_path, 'w') as f:
+                    json.dump([], f)
+
+        # Start the Flask server
+        logger.info("Starting Flask server...")
+        app.run(host='0.0.0.0', port=5000, debug=True)
+
     except Exception as e:
-        print(f"Failed to start server: {str(e)}", file=sys.stderr)
+        logger.error(f"Failed to start server: {str(e)}")
         sys.exit(1)
