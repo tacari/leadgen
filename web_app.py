@@ -93,68 +93,85 @@ def send_lead_email(user_id, package_name):
     """Send leads via email using SendGrid"""
     try:
         # Get user email
-        user = supabase.table('users').select('email').eq('id', user_id).execute().data[0]
-        email = user['email']
+        user_data = supabase.table('users').select('email').eq('id', user_id).execute()
+        if not user_data.data:
+            logger.error(f"No user found for ID {user_id}")
+            return False
+
+        email = user_data.data[0]['email']
         today = datetime.now().date().isoformat()
 
         # Get today's leads
-        leads = supabase.table('leads').select('*').eq('user_id', user_id).gte('date_added', today).execute().data
+        leads = supabase.table('leads').select('*').eq('user_id', user_id).gte('date_added', today).execute()
 
-        if not leads:
+        if not leads.data:
             logger.warning(f"No leads to send for user {user_id}")
-            return
+            return False
 
         # Create CSV in memory
         output = io.StringIO()
         writer = csv.writer(output)
         writer.writerow(['Name', 'Email', 'Phone', 'Source', 'Score', 'Verified', 'Status', 'Date Added'])
 
-        for lead in leads:
+        for lead in leads.data:
             writer.writerow([
-                lead['name'],
-                lead['email'],
+                lead.get('name', 'N/A'),
+                lead.get('email', 'N/A'),
                 lead.get('phone', 'N/A'),
-                lead['source'],
-                lead['score'],
-                lead['verified'],
-                lead['status'],
-                lead['date_added']
+                lead.get('source', 'N/A'),
+                lead.get('score', 0),
+                lead.get('verified', False),
+                lead.get('status', 'New'),
+                lead.get('date_added', today)
             ])
 
         csv_content = output.getvalue()
         csv_base64 = base64.b64encode(csv_content.encode('utf-8')).decode('utf-8')
 
-        # Create email
+        # Create email with HTML template
         message = Mail(
             from_email='leads@leadzap.io',
             to_emails=email,
             subject=f'Your {package_name} Leads - {today}',
             html_content=f'''
-                <h2>Here are your latest {package_name} leads!</h2>
-                <p>Attached is your CSV file containing {len(leads)} fresh leads.</p>
-                <p>Quick Stats:</p>
-                <ul>
-                    <li>High-scoring leads (75+): {sum(1 for lead in leads if lead['score'] > 75)}</li>
-                    <li>Verified contacts: {sum(1 for lead in leads if lead['verified'])}</li>
-                </ul>
-                <p>Access your dashboard for more insights and to manage your leads.</p>
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #7B00FF;">Here are your latest {package_name} leads!</h2>
+                    <p>We've generated {len(leads.data)} fresh leads for your business.</p>
+
+                    <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                        <h3 style="color: #333;">Quick Stats:</h3>
+                        <ul>
+                            <li>High-scoring leads (75+): {sum(1 for lead in leads.data if lead.get('score', 0) > 75)}</li>
+                            <li>Verified contacts: {sum(1 for lead in leads.data if lead.get('verified', False))}</li>
+                        </ul>
+                    </div>
+
+                    <p>Access your dashboard for more insights and to manage your leads.</p>
+
+                    <div style="margin-top: 30px; padding: 20px; border-top: 1px solid #eee;">
+                        <p style="color: #666; font-size: 12px;">
+                            Your leads are attached in CSV format for easy import into your CRM.
+                        </p>
+                    </div>
+                </div>
             '''
         )
 
         # Attach CSV
         attachment = Attachment(
             FileContent(csv_base64),
-            FileName(f'leads_{today}.csv'),
+            FileName(f'leadzap_leads_{today}.csv'),
             FileType('text/csv'),
             Disposition('attachment')
         )
         message.attachment = attachment
 
         # Send email
-        sg = SendGridAPIClient(sendgrid_api_key)
+        sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
         response = sg.send(message)
+
         logger.info(f"Sent lead email to {email} with status code {response.status_code}")
-        return True
+        return response.status_code == 202
 
     except Exception as e:
         logger.error(f"Error sending lead email: {str(e)}")
