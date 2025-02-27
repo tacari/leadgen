@@ -1,36 +1,123 @@
-import os
-import sys
-import json
-import csv
-from datetime import datetime, timedelta
-from io import StringIO
-import psutil
-from flask import Flask, render_template, redirect, url_for, flash, request, make_response, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response
+from supabase import create_client, Client
 import stripe
+import os
 import psycopg2
 import threading
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
 stripe.api_key = os.environ.get('STRIPE_API_KEY')
 
-def terminate_port_process(port):
-    """Terminate any process using the specified port"""
+# Supabase setup
+supabase_url = os.environ.get('SUPABASE_URL')
+supabase_key = os.environ.get('SUPABASE_KEY')
+supabase = create_client(supabase_url, supabase_key)
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        password = request.form['password']
+
+        # Validate inputs
+        if len(username) < 4 or len(username) > 20:
+            flash('Username must be 4–20 characters.')
+            return redirect(url_for('signup'))
+        if len(password) < 8:
+            flash('Password must be at least 8 characters.')
+            return redirect(url_for('signup'))
+
+        try:
+            # Check if username exists
+            existing_user = supabase.table('users').select('username').eq('username', username).execute()
+            if existing_user.data:
+                flash('Username already taken.')
+                return redirect(url_for('signup'))
+
+            # Sign up with Supabase Auth
+            auth_response = supabase.auth.sign_up({
+                'email': email,
+                'password': password
+            })
+
+            # Store user data in users table
+            supabase.table('users').insert({
+                'id': auth_response.user.id,
+                'username': username,
+                'email': email,
+                'created_at': datetime.utcnow().isoformat()
+            }).execute()
+
+            # Set session
+            session['user_id'] = auth_response.user.id
+            flash('Signup successful! Welcome to Leadzap.')
+            return redirect(url_for('dashboard'))
+
+        except Exception as e:
+            flash(f'Signup failed: {str(e)}')
+            return redirect(url_for('signup'))
+
+    return render_template('signup.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+
+        try:
+            # Sign in with Supabase Auth
+            auth_response = supabase.auth.sign_in_with_password({
+                'email': email,
+                'password': password
+            })
+
+            # Set session
+            session['user_id'] = auth_response.user.id
+            return redirect(url_for('dashboard'))
+
+        except Exception:
+            flash('Invalid email or password.')
+            return redirect(url_for('login'))
+
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    # Sign out from Supabase Auth
+    supabase.auth.sign_out()
+    session.pop('user_id', None)
+    flash('You have been logged out.')
+    return redirect(url_for('landing'))
+
+# Protected route example
+@app.route('/dashboard')
+def dashboard():
+    if 'user_id' not in session:
+        flash('Please log in to access the dashboard.')
+        return redirect(url_for('login'))
+
     try:
-        for proc in psutil.process_iter():
-            try:
-                # Check each process
-                proc_info = proc.as_dict(attrs=['pid', 'name', 'connections'])
-                if proc_info['connections']:  # Check if process has connections
-                    for conn in proc_info['connections']:
-                        if conn.laddr.port == port and proc.pid != os.getpid():
-                            print(f"Terminating process {proc.pid} using port {port}", file=sys.stderr)
-                            proc.terminate()
-                            proc.wait(timeout=3)
-            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
-                continue
+        # Get user data
+        user = supabase.table('users').select('*').eq('id', session['user_id']).single().execute()
+
+        # Get user's leads
+        leads = supabase.table('leads').select('*').eq('user_id', session['user_id']).order('date_added', desc=True).execute()
+
+        # Get user's subscription
+        subscription = supabase.table('user_packages').select('*').eq('user_id', session['user_id']).single().execute()
+
+        return render_template('dashboard.html',
+                            username=user.data['username'],
+                            leads=leads.data,
+                            subscription=subscription.data if subscription.data else None)
+
     except Exception as e:
-        print(f"Error in terminate_port_process: {str(e)}", file=sys.stderr)
+        flash(f'Error loading dashboard: {str(e)}')
+        return redirect(url_for('login'))
 
 @app.route('/')
 def landing():
@@ -52,48 +139,6 @@ def contact():
 def pricing():
     return render_template('pricing.html')
 
-@app.route('/dashboard')
-def dashboard():
-    # Sample data for development
-    now = datetime.now()
-    leads = [
-        {
-            'name': "Joe's Plumbing",
-            'email': 'joe@example.com',
-            'source': 'Yellow Pages',
-            'score': 85,
-            'status': 'Emailed',
-            'date_added': '2025-02-25'
-        },
-        {
-            'name': "Sarah's Dental",
-            'email': 'sarah@example.com',
-            'source': 'LinkedIn',
-            'score': 92,
-            'status': 'Pending',
-            'date_added': '2025-02-24'
-        }
-    ]
-    subscription = {
-        'package_name': 'Lead Engine',
-        'lead_volume': 150,
-    }
-    analytics = {
-        'total': 2,
-        'emailed': 1,
-        'replies': 0,
-        'conversions': 0
-    }
-
-    return render_template(
-        'dashboard.html',
-        leads=leads,
-        subscription=subscription,
-        analytics=analytics,
-        delivery_status="Next 37-38 leads: Weekly delivery",
-        username="Developer",  # Hardcoded for development
-        now=now  # Pass current time for delivery calculations
-    )
 
 @app.route('/lead-history')
 def lead_history():
@@ -550,6 +595,32 @@ def webhook():
                 print(f"Subscription update error: {str(e)}")
 
     return '', 200
+
+import os
+import sys
+import json
+import csv
+from datetime import datetime, timedelta
+from io import StringIO
+import psutil
+
+def terminate_port_process(port):
+    """Terminate any process using the specified port"""
+    try:
+        for proc in psutil.process_iter():
+            try:
+                # Check each process
+                proc_info = proc.as_dict(attrs=['pid', 'name', 'connections'])
+                if proc_info['connections']:  # Check if process has connections
+                    for conn in proc_info['connections']:
+                        if conn.laddr.port == port and proc.pid != os.getpid():
+                            print(f"Terminating process {proc.pid} using port {port}", file=sys.stderr)
+                            proc.terminate()
+                            proc.wait(timeout=3)
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
+                continue
+    except Exception as e:
+        print(f"Error in terminate_port_process: {str(e)}", file=sys.stderr)
 
 if __name__ == '__main__':
     try:

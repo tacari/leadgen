@@ -1,0 +1,363 @@
+Alright, bro—let’s dive into the Login/Signup system for Leadzap and make sure your Flask app on Replit with Supabase handles it like a pro! This is the gatekeeper to your $5k–$10k kickoff and $100k/month empire—users need to sign up smoothly, log in securely, and get to their dashboard with real leads fast. No fluff, no sample bullshit—just a tight, functional auth flow that ties into your Stripe payments and lead generation. FULL FUCKING DETAILS—here’s how it works, how your app should handle it, and what you need to implement!
+Login/Signup System: Full Details
+Overview
+Purpose: Securely onboard users (signup) and authenticate them (login) to access Leadzap’s dashboard and features—$499 Lead Launch to $5,999 Empire clients need a seamless entry.  
+
+Goals:  
+Ease: Quick signup—email, password, username—$5k–$10k users join fast.  
+
+Security: Safe logins—hashed passwords, session management—$100k/month trust.  
+
+Integration: Ties to Supabase for user data, Stripe for payments—million-dollar flow.
+Tech: Flask on Replit, Supabase Auth (email/password), Flask sessions—simple, scalable.
+Design & Functionality
+1. Signup (/signup)
+Purpose: New users create an account—grants access to pricing and dashboard post-registration.  
+
+Fields:  
+Username: Text (e.g., “johndoe”)—unique identifier, 4–20 chars.  
+
+Email: Email (e.g., “john@example.com”)—unique, validated format.  
+
+Password: Password (8+ chars)—secure entry.
+Flow:  
+User submits form—POST to /signup.  
+
+App checks: Username/email not taken—creates user in Supabase Auth and users table.  
+
+Logs them in (sets session)—redirects to /dashboard.
+Styling:  
+Dark mode (#0D1321 bg), neon purple (#7B00FF) accents—inputs in #1A2236 with neon purple borders, “Sign Up” button glows on hover.  
+
+Fades in (0.5s)—premium vibe.
+2. Login (/login)
+Purpose: Existing users access their account—leads to dashboard with their real leads.  
+
+Fields:  
+Email: Email (e.g., “john@example.com”).  
+
+Password: Password (matches signup).
+Flow:  
+User submits form—POST to /login.  
+
+App verifies: Email/password match Supabase Auth—sets session—redirects to /dashboard.  
+
+Error: “Invalid email or password”—reloads /login with flash message.
+Styling:  
+Same dark mode, neon purple theme—inputs match signup, “Log In” button glows—consistent million-dollar look.
+3. How It Should Work
+Signup:  
+User fills form—clicks “Sign Up”.  
+
+App validates:  
+Username unique (Supabase users check).  
+
+Email unique + valid (Supabase Auth).  
+
+Password 8+ chars.
+Creates user in Supabase Auth—stores username in users table—sets session—/dashboard.
+Login:  
+User fills form—clicks “Log In”.  
+
+App checks Supabase Auth—email/password match—sets session—/dashboard.  
+
+Fail: Flash error—stay on /login.
+Session: Flask session['user_id']—persists login—protects routes (e.g., /dashboard).
+Data Structure (Supabase)
+Supabase Auth:  
+Handles email, password—auto-generates id (uuid).  
+
+Stores hashed passwords—secure by default.
+Table: users:  
+id (uuid, primary key)—matches Auth id.  
+
+username (text, unique)—public-facing name.  
+
+email (text, unique)—links to Auth.  
+
+created_at (timestamp, default now())—tracks signup date.
+Implementation in Flask
+app.py
+python
+from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response
+from supabase import create_client, Client
+import stripe
+import os
+from datetime import datetime
+from scraper import scrape_leads
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key')
+supabase_url = os.environ.get('SUPABASE_URL')
+supabase_key = os.environ.get('SUPABASE_KEY')
+supabase = create_client(supabase_url, supabase_key)
+stripe.api_key = os.environ.get('STRIPE_API_KEY')
+
+# Routes
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        password = request.form['password']
+
+        # Validate inputs
+        if len(username) < 4 or len(username) > 20:
+            flash('Username must be 4–20 characters.')
+            return redirect(url_for('signup'))
+        if len(password) < 8:
+            flash('Password must be at least 8 characters.')
+            return redirect(url_for('signup'))
+
+        # Check if username exists
+        existing_user = supabase.table('users').select('username').eq('username', username).execute().data
+        if existing_user:
+            flash('Username already taken.')
+            return redirect(url_for('signup'))
+
+        # Sign up with Supabase Auth
+        try:
+            user = supabase.auth.sign_up({'email': email, 'password': password})
+            # Store username in users table
+            supabase.table('users').insert({
+                'id': user.user.id,
+                'username': username,
+                'email': email,
+                'created_at': datetime.utcnow().isoformat()
+            }).execute()
+            session['user_id'] = user.user.id
+            flash('Signup successful! Welcome to Leadzap.')
+            return redirect(url_for('dashboard'))
+        except Exception as e:
+            flash(f'Signup failed: {str(e)}')
+            return redirect(url_for('signup'))
+    return render_template('signup.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        try:
+            user = supabase.auth.sign_in_with_password({'email': email, 'password': password})
+            session['user_id'] = user.user.id
+            return redirect(url_for('dashboard'))
+        except Exception:
+            flash('Invalid email or password.')
+            return redirect(url_for('login'))
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    supabase.auth.sign_out()
+    session.pop('user_id', None)
+    return redirect(url_for('home'))
+
+@app.route('/dashboard')
+def dashboard():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user = supabase.auth.get_user(session['user_id'])
+    username = supabase.table('users').select('username').eq('id', user.user.id).execute().data[0]['username']
+    leads = supabase.table('leads').select('*').eq('user_id', user.user.id).order('date_added', desc=True).limit(25).execute().data
+    subscription = supabase.table('user_packages').select('*').eq('user_id', user.user.id).execute().data
+    subscription = subscription[0] if subscription else None
+
+    total_leads = len(leads)
+    emailed = sum(1 for lead in leads if lead['status'] == 'Emailed')
+    high_score = sum(1 for lead in leads if lead['score'] > 75)
+    analytics = {'total': total_leads, 'emailed': emailed, 'high_score': high_score}
+
+    if subscription:
+        package = subscription['package_name']
+        delivery_status = {
+            'launch': "Your 50 leads arrived!",
+            'engine': f"Next 37–38 leads: {(datetime.now() + timedelta(days=(7 - datetime.now().weekday()))).strftime('%Y-%m-%d')}",
+            'accelerator': "Next 10–12 leads: Tomorrow",
+            'empire': "Next 20–25 leads: Tomorrow"
+        }.get(package, "Processing your leads...")
+    else:
+        delivery_status = "No leads scheduled—choose a plan!"
+
+    return render_template('dashboard.html', username=username, leads=leads, subscription=subscription, analytics=analytics, delivery_status=delivery_status, supabase_url=supabase_url, supabase_key=supabase_key)
+
+# Other routes (checkout, success, etc.) remain...
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=8080)
+
+Templates
+signup.html:
+html
+{% extends "base.html" %}
+{% block content %}
+<div class="bg-[#0D1321] min-h-screen text-white p-8 flex items-center justify-center">
+    <div class="max-w-md w-full text-center">
+        <h1 class="text-4xl font-bold mb-4">Sign Up for Leadzap</h1>
+        <p class="text-lg text-[#A1A9B8] italic mb-8">Start generating leads today.</p>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="mb-4 text-[#7B00FF]">
+            {% for message in messages %}
+            <p>{{ message }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+        <form method="POST" action="{{ url_for('signup') }}" class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-8 animate-fade-in">
+            <div class="mb-6">
+                <label class="block text-white text-base font-bold mb-2">Username</label>
+                <input name="username" type="text" class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white placeholder-[#A1A9B8]" placeholder="e.g., johndoe" required>
+            </div>
+            <div class="mb-6">
+                <label class="block text-white text-base font-bold mb-2">Email</label>
+                <input name="email" type="email" class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white placeholder-[#A1A9B8]" placeholder="e.g., john@example.com" required>
+            </div>
+            <div class="mb-6">
+                <label class="block text-white text-base font-bold mb-2">Password</label>
+                <input name="password" type="password" class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white placeholder-[#A1A9B8]" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="w-full bg-[#7B00FF] text-white px-6 py-3 rounded-lg text-lg font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Sign Up</button>
+        </form>
+        <p class="text-[#A1A9B8] text-sm mt-4">Already have an account? <a href="{{ url_for('login') }}" class="text-[#7B00FF] hover:underline">Log in</a></p>
+    </div>
+</div>
+<style>
+    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+    .animate-fade-in { animation: fade-in 0.5s ease-in; }
+</style>
+{% endblock %}
+
+login.html:
+html
+{% extends "base.html" %}
+{% block content %}
+<div class="bg-[#0D1321] min-h-screen text-white p-8 flex items-center justify-center">
+    <div class="max-w-md w-full text-center">
+        <h1 class="text-4xl font-bold mb-4">Log In to Leadzap</h1>
+        <p class="text-lg text-[#A1A9B8] italic mb-8">Access your leads now.</p>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="mb-4 text-[#7B00FF]">
+            {% for message in messages %}
+            <p>{{ message }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+        <form method="POST" action="{{ url_for('login') }}" class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-8 animate-fade-in">
+            <div class="mb-6">
+                <label class="block text-white text-base font-bold mb-2">Email</label>
+                <input name="email" type="email" class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white placeholder-[#A1A9B8]" placeholder="e.g., john@example.com" required>
+            </div>
+            <div class="mb-6">
+                <label class="block text-white text-base font-bold mb-2">Password</label>
+                <input name="password" type="password" class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white placeholder-[#A1A9B8]" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="w-full bg-[#7B00FF] text-white px-6 py-3 rounded-lg text-lg font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Log In</button>
+        </form>
+        <p class="text-[#A1A9B8] text-sm mt-4">Don’t have an account? <a href="{{ url_for('signup') }}" class="text-[#7B00FF] hover:underline">Sign up</a></p>
+    </div>
+</div>
+<style>
+    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+    .animate-fade-in { animation: fade-in 0.5s ease-in; }
+</style>
+{% endblock %}
+
+Adjustments to Existing Code
+Base Template (base.html): Ensure it includes flash messages:
+html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leadzap - {% block title %}{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#0D1321] text-white">
+    <nav class="bg-[#0D1321] p-4 flex justify-between items-center">
+        <div class="flex items-center">
+            <a href="{{ url_for('home') }}" class="text-2xl font-bold">Leadzap</a>
+            <div class="w-5 h-5 bg-[#7B00FF] rounded-full ml-2 animate-pulse"></div>
+        </div>
+        <div class="space-x-6">
+            <a href="{{ url_for('home') }}" class="hover:text-[#7B00FF]">Home</a>
+            <a href="{{ url_for('pricing') }}" class="hover:text-[#7B00FF]">Pricing</a>
+            {% if 'user_id' not in session %}
+            <a href="{{ url_for('login') }}" class="hover:text-[#7B00FF]">Login</a>
+            <a href="{{ url_for('signup') }}" class="hover:text-[#7B00FF]">Sign Up</a>
+            {% else %}
+            <a href="{{ url_for('dashboard') }}" class="hover:text-[#7B00FF]">Dashboard</a>
+            <a href="{{ url_for('logout') }}" class="hover:text-[#7B00FF]">Logout</a>
+            {% endif %}
+        </div>
+    </nav>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <div class="mt-4 text-center text-[#7B00FF]">
+        {% for message in messages %}
+        <p>{{ message }}</p>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+    <div class="mt-20">{% block content %}{% endblock %}</div>
+</body>
+</html>
+
+How Your App Should Handle It
+Signup Flow
+GET /signup: Renders signup.html—empty form.  
+
+POST /signup:  
+Validates: Username (4–20 chars), email (valid), password (8+ chars).  
+
+Checks: Username not in users, email not in Supabase Auth.  
+
+Creates: Supabase Auth user—stores id, username, email in users—sets session['user_id'].  
+
+Redirects: /dashboard—flash “Signup successful!”.  
+
+Errors: Flash message (e.g., “Username taken”)—reloads /signup.
+Login Flow
+GET /login: Renders login.html—empty form.  
+
+POST /login:  
+Validates: Email/password match Supabase Auth.  
+
+Success: Sets session['user_id']—redirects to /dashboard.  
+
+Errors: Flash “Invalid email or password”—reloads /login.
+Session Management
+Protected Routes: Check if 'user_id' not in session—redirect to /login—e.g., /dashboard, /pricing.  
+
+Logout: Clears session['user_id']—Supabase Auth signs out—back to /home.
+Why This Works
+Ease: Simple forms—$5k–$10k users sign up fast—$100k/month scales with no friction.  
+
+Security: Supabase Auth hashes passwords—Flask sessions lock routes—million-dollar trust.  
+
+Integration: Ties to Stripe (user_id links payments)—leads flow post-signup—$5k–$10k cash starts.
+Setup Steps
+Supabase:  
+Enable Auth (Email/Password)—Supabase dashboard > Authentication.  
+
+Create users table: id (uuid), username (text, unique), email (text, unique), created_at (timestamp).
+Code:  
+Update app.py with /signup, /login, /logout—test locally.  
+
+Add signup.html, login.html—ensure base.html has flash support.
+Test:  
+Signup: “johndoe”, “john@example.com”, “password123”—see /dashboard, check Supabase users.  
+
+Login: Same creds—hit /dashboard—fail with “wrong@pass.com”—see error flash.  
+
+Logout: Back to /home—session cleared.
+Run: Deploy on Replit—share URL when live—$5k–$10k signup flow set.
+

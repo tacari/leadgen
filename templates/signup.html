@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Login{% endblock %}
+{% block title %}Sign Up{% endblock %}
 {% block content %}
 <div class="bg-[#0D1321] min-h-screen text-white p-8 flex items-center justify-center">
     <div class="max-w-md w-full text-center">
-        <h1 class="text-4xl font-bold mb-4">Log In to Leadzap</h1>
-        <p class="text-lg text-[#A1A9B8] italic mb-8">Access your leads and dashboard—let's zap some growth.</p>
+        <h1 class="text-4xl font-bold mb-4">Sign Up for Leadzap</h1>
+        <p class="text-lg text-[#A1A9B8] italic mb-8">Start generating leads today.</p>
 
         {% with messages = get_flashed_messages() %}
         {% if messages %}
@@ -17,7 +17,12 @@
         {% endwith %}
 
         <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-8 animate-fade-in">
-            <form method="POST" action="{{ url_for('login') }}">
+            <form method="POST" action="{{ url_for('signup') }}">
+                <!-- Username -->
+                <div class="mb-6">
+                    <label class="block text-white text-base font-bold mb-2" for="username">Username</label>
+                    <input type="text" id="username" name="username" class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white text-base placeholder-[#A1A9B8]" placeholder="e.g., johndoe" required minlength="4" maxlength="20">
+                </div>
                 <!-- Email -->
                 <div class="mb-6">
                     <label class="block text-white text-base font-bold mb-2" for="email">Email</label>
@@ -27,16 +32,17 @@
                 <div class="mb-6">
                     <label class="block text-white text-base font-bold mb-2" for="password">Password</label>
                     <div class="password-input-wrapper">
-                        <input type="password" id="password" name="password" class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white text-base placeholder-[#A1A9B8]" placeholder="••••••••" required>
+                        <input type="password" id="password" name="password" class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white text-base placeholder-[#A1A9B8]" placeholder="••••••••" required minlength="8">
                         <button type="button" class="password-toggle" onclick="togglePasswordVisibility('password')">
                             <span class="eye-icon">👁️</span>
                         </button>
                     </div>
+                    <p class="text-[#A1A9B8] text-xs mt-1">Must be at least 8 characters</p>
                 </div>
                 <!-- Submit -->
-                <button type="submit" class="w-full bg-[#7B00FF] text-white px-6 py-3 rounded-lg text-lg font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Log In</button>
+                <button type="submit" class="w-full bg-[#7B00FF] text-white px-6 py-3 rounded-lg text-lg font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Sign Up</button>
             </form>
-            <p class="text-[#A1A9B8] text-sm mt-4">Don't have an account? <a href="{{ url_for('signup') }}" class="text-[#7B00FF] hover:underline">Sign up</a></p>
+            <p class="text-[#A1A9B8] text-sm mt-4">Already have an account? <a href="{{ url_for('login') }}" class="text-[#7B00FF] hover:underline">Log in</a></p>
         </div>
     </div>
 </div>
