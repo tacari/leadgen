@@ -655,31 +655,34 @@ def success():
 
         # Retrieve the checkout session from Stripe
         checkout_session = stripe.checkout.Session.retrieve(session_id)
-        package = checkout_session.metadata.get('package')
+
+        # Get user and package from metadata
         user_id = checkout_session.metadata.get('user_id')
+        package = checkout_session.metadata.get('package')
 
         if not user_id or not package:
-            logger.error("Missing user_id or package in session metadata")
+            logger.error(f"Missing metadata in session {session_id}")
             flash('Session data missing.')
             return redirect(url_for('dashboard'))
 
-        # Connect to database
-        conn = psycopg2.connect(os.environ['DATABASE_URL'])
-        cur = conn.cursor()
+        # Calculate lead volume based on package
+        lead_volumes = {
+            'launch': 50,
+            'engine': 150,
+            'accelerator': 300,
+            'empire': 600
+        }
+        lead_volume = lead_volumes.get(package, 50)
+
+        # Get subscription ID if it exists
+        subscription_id = None
+        if hasattr(checkout_session, 'subscription'):
+            subscription_id = checkout_session.subscription
 
         try:
-            # Calculate lead volume based on package
-            lead_volume = {
-                'launch': 50,
-                'engine': 150,
-                'accelerator': 300,
-                'empire': 600
-            }.get(package, 50)
-
-            # Get subscription ID if it exists
-            subscription_id = None
-            if hasattr(checkout_session, 'subscription'):
-                subscription_id = checkout_session.subscription.id
+            # Connect to database
+            conn = psycopg2.connect(os.environ['DATABASE_URL'])
+            cur = conn.cursor()
 
             # Insert or update user package
             cur.execute("""
@@ -694,62 +697,69 @@ def success():
                     status = 'active',
                     next_delivery = NOW(),
                     updated_at = NOW()
+                RETURNING id
             """, (user_id, package, lead_volume, subscription_id))
 
+            package_id = cur.fetchone()[0]
             conn.commit()
-            logger.info(f"Successfully updated subscription for user {user_id} with package {package}")
 
-            # For Lead Launch package, generate and send leads immediately
+            logger.info(f"Updated subscription for user {user_id}: package={package}, id={package_id}")
+
+            # For Lead Launch package, generate leads immediately
             if package == 'launch':
                 from scraper import LeadScraper
                 scraper = LeadScraper()
                 leads_generated = scraper.generate_leads_for_package(user_id, lead_volume)
+
                 if leads_generated:
                     send_lead_email(user_id, package)
                     flash('Payment successful! Your leads have been generated and emailed to you.')
                 else:
                     flash('Payment successful! Your leads are being generated and will be emailed shortly.')
             else:
-                flash(f'Payment successful! Your {package} subscription is active.')
+                flash(f'Payment successful! Your {package} subscription is now active.')
 
             return redirect(url_for('dashboard'))
 
         except Exception as e:
-            conn.rollback()
             logger.error(f"Database error in success route: {str(e)}")
+            if conn: conn.rollback()
             flash('Warning: Your payment was successful but subscription update failed. Please contact support.')
             return redirect(url_for('dashboard'))
         finally:
-            cur.close()
-            conn.close()
+            if cur: cur.close()
+            if conn: conn.close()
 
+    except stripe.error.StripeError as e:
+        logger.error(f"Stripe error: {str(e)}")
+        flash('Payment processing error. Please try again.')
+        return redirect(url_for('pricing'))
     except Exception as e:
-        logger.error(f"Error in success route: {str(e)}")
-        flash(f"An error occurred: {str(e)}")
+        logger.error(f"Unexpected error in success route: {str(e)}")
+        flash('An unexpected error occurred. Please contact support.')
         return redirect(url_for('dashboard'))
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
     payload = request.get_json()
     sig_header = request.headers.get('Stripe-Signature')
-    event = None
 
     try:
         event = stripe.Webhook.construct_event(
             payload, sig_header, os.environ.get('STRIPE_WEBHOOK_SECRET')
         )
+        logger.info(f"Received webhook event: {event.type}")
     except Exception as e:
-        logger.error(f"Webhook error: {str(e)}")
+        logger.error(f"Webhook validation error: {str(e)}")
         return '', 400
 
-    # Handle successful payments
-    if event['type'] == 'checkout.session.completed':
-        session = event['data']['object']
+    if event.type == 'checkout.session.completed':
+        session = event.data.object
+        logger.info(f"Processing completed checkout session: {session.id}")
         handle_successful_payment(session)
-
-    # Handle subscription updates
-    elif event['type'] == 'customer.subscription.updated':
-        subscription = event['data']['object']
+    elif event.type == 'customer.subscription.updated':
+        subscription = event.data.object
+        logger.info(f"Processing subscription update: {subscription.id}")
         handle_subscription_update(subscription)
 
     return '', 200
@@ -760,21 +770,21 @@ def handle_successful_payment(session):
         package = session.metadata.get('package')
 
         if not user_id or not package:
-            logger.error("Missing user_id or package in session metadata")
+            logger.error(f"Missing metadata in webhook session {session.id}")
             return
+
+        lead_volumes = {
+            'launch': 50,
+            'engine': 150,
+            'accelerator': 300,
+            'empire': 600
+        }
+        lead_volume = lead_volumes.get(package, 50)
 
         conn = psycopg2.connect(os.environ['DATABASE_URL'])
         cur = conn.cursor()
 
         try:
-            # Calculate lead volume
-            lead_volume = {
-                'launch': 50,
-                'engine': 150,
-                'accelerator': 300,
-                'empire': 600
-            }.get(package, 50)
-
             # Update subscription status
             cur.execute("""
                 INSERT INTO user_packages 
@@ -786,8 +796,13 @@ def handle_successful_payment(session):
                     lead_volume = EXCLUDED.lead_volume,
                     status = 'active',
                     updated_at = NOW()
+                RETURNING id
             """, (user_id, package, lead_volume))
+
+            package_id = cur.fetchone()[0]
             conn.commit()
+
+            logger.info(f"Webhook: Updated subscription for user {user_id}: package={package}, id={package_id}")
 
             # Start lead generation in background
             from scraper import LeadScraper
@@ -802,13 +817,13 @@ def handle_successful_payment(session):
             conn.close()
 
     except Exception as e:
-        logger.error(f"Error handling successful payment: {str(e)}")
+        logger.error(f"Error handling webhook payment: {str(e)}")
 
 def handle_subscription_update(subscription):
     try:
         user_id = subscription.metadata.get('user_id')
         if not user_id:
-            logger.error("No user_id in subscription metadata")
+            logger.error(f"No user_id in subscription {subscription.id}")
             return
 
         conn = psycopg2.connect(os.environ['DATABASE_URL'])
@@ -821,12 +836,17 @@ def handle_subscription_update(subscription):
                     status = %s,
                     updated_at = NOW()
                 WHERE user_id = %s
+                RETURNING id
             """, (
                 subscription.id,
                 'active' if subscription.status == 'active' else 'inactive',
                 user_id
             ))
+
+            package_id = cur.fetchone()[0]
             conn.commit()
+
+            logger.info(f"Updated subscription status for user {user_id}: subscription={subscription.id}, package={package_id}")
 
         finally:
             cur.close()
