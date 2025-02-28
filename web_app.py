@@ -747,7 +747,6 @@ def dashboard():
         return redirect(url_for('login'))
 
     try:
-        from datetime import datetime, timedelta
         user_id = session.get('user_id')
         username = session.get('username', 'Demo User')
 
@@ -1049,7 +1048,7 @@ def settings():
                 return redirect(url_for('settings'))
 
         return render_template('settings.html',
-                         username=session.get('username', "Developer"),
+                         username=session.get('username', "User"),
                          user=user,
                          subscription=subscription)
 
@@ -1647,8 +1646,7 @@ if __name__ == '__main__':
         lead_scheduler = LeadScheduler()
         lead_scheduler.create_lead_pool_table()
 
-        # Schedule lead delivery job
-        scheduler.add_job(
+        # Schedule lead delivery job        scheduler.add_job(
             id='lead_delivery',
             func=lead_scheduler.process_lead_deliveries,
             trigger='interval',
