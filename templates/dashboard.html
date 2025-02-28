@@ -14,13 +14,13 @@
             {% if subscription.package_name.lower() == 'launch' %}
                 <p class="text-[#A1A9B8] text-center">One-time delivery of 50 leads</p>
             {% elif subscription.package_name.lower() == 'engine' %}
-                <p class="text-[#A1A9B8] text-center">Next weekly delivery: {{ ((datetime.now() + timedelta(days=7)).strftime('%A, %b %d')) }}</p>
+                <p class="text-[#A1A9B8] text-center">Next weekly delivery: {{ ((now + timedelta(days=7)).strftime('%A, %b %d')) }}</p>
                 <p class="text-[#A1A9B8] text-center text-sm">~38 leads per week</p>
             {% elif subscription.package_name.lower() == 'accelerator' %}
-                <p class="text-[#A1A9B8] text-center">Next daily delivery: {{ ((datetime.now() + timedelta(days=1)).strftime('%A, %b %d')) }}</p>
+                <p class="text-[#A1A9B8] text-center">Next daily delivery: {{ ((now + timedelta(days=1)).strftime('%A, %b %d')) }}</p>
                 <p class="text-[#A1A9B8] text-center text-sm">~10 leads per day</p>
             {% elif subscription.package_name.lower() == 'empire' %}
-                <p class="text-[#A1A9B8] text-center">Next daily delivery: {{ ((datetime.now() + timedelta(days=1)).strftime('%A, %b %d')) }}</p>
+                <p class="text-[#A1A9B8] text-center">Next daily delivery: {{ ((now + timedelta(days=1)).strftime('%A, %b %d')) }}</p>
                 <p class="text-[#A1A9B8] text-center text-sm">~20 leads per day</p>
             {% else %}
                 <p class="text-[#A1A9B8] text-center">No active subscription</p>

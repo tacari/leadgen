@@ -747,6 +747,7 @@ def dashboard():
         return redirect(url_for('login'))
 
     try:
+        from datetime import datetime, timedelta
         user_id = session.get('user_id')
         username = session.get('username', 'Demo User')
 
@@ -882,7 +883,8 @@ def dashboard():
                            username=username,
                            leads=leads,
                            subscription=subscription,
-                           analytics=analytics)
+                           analytics=analytics,
+                           now=datetime.now())
 
     except Exception as e:
         logger.error(f"Dashboard error: {str(e)}")
