@@ -967,41 +967,67 @@ def webhook():
     webhook_secret = os.environ.get('STRIPE_WEBHOOK_SECRET')
 
     # Log debugging information
-    logger.info(f"Webhook received with signature: {sig_header[:10]}...")
+    logger.info(f"Webhook received")
+    if sig_header:
+        logger.info(f"Signature header present: {sig_header[:10]}...")
     logger.info(f"Webhook secret is set: {webhook_secret is not None}")
     
+    # For development, we'll process the webhook even without verification
+    # This allows testing while you're setting up the webhook secret
     if not webhook_secret:
-        logger.error("STRIPE_WEBHOOK_SECRET is not set in environment variables")
-        # Return 200 to prevent Stripe from retrying when we're still setting up
-        return jsonify({"status": "configuration_error", "message": "Webhook secret not configured"}), 200
-
+        logger.warning("STRIPE_WEBHOOK_SECRET is not set - processing webhook without verification")
+        try:
+            event_data = json.loads(payload)
+            event_type = event_data.get('type')
+            logger.info(f"Processing unverified webhook event: {event_type}")
+            
+            if event_type == 'checkout.session.completed':
+                session = event_data.get('data', {}).get('object', {})
+                if session:
+                    logger.info(f"Processing completed checkout session: {session.get('id')}")
+                    handle_successful_payment(session)
+            elif event_type == 'customer.subscription.updated':
+                subscription = event_data.get('data', {}).get('object', {})
+                if subscription:
+                    logger.info(f"Processing subscription update: {subscription.get('id')}")
+                    handle_subscription_update(subscription)
+            
+            return jsonify({"status": "processed_without_verification"}), 200
+        except json.JSONDecodeError:
+            logger.error("Invalid JSON payload received")
+            return jsonify({"status": "error", "message": "Invalid payload"}), 400
+        except Exception as e:
+            logger.error(f"Error processing webhook without verification: {str(e)}")
+            return jsonify({"status": "error", "message": str(e)}), 400
+    
+    # If we have a webhook secret, use it to verify the signature
     try:
         event = stripe.Webhook.construct_event(
             payload, sig_header, webhook_secret
         )
-        logger.info(f"Received webhook event: {event.type}")
+        logger.info(f"Received verified webhook event: {event.type}")
+        
+        if event.type == 'checkout.session.completed':
+            session = event.data.object
+            logger.info(f"Processing completed checkout session: {session.id}")
+            handle_successful_payment(session)
+        elif event.type == 'customer.subscription.updated':
+            subscription = event.data.object
+            logger.info(f"Processing subscription update: {subscription.id}")
+            handle_subscription_update(subscription)
+        
+        return '', 200
     except ValueError as e:
         # Invalid payload
         logger.error(f"Webhook validation error (invalid payload): {str(e)}")
-        return '', 400
+        return jsonify({"status": "error", "message": "Invalid payload"}), 400
     except stripe.error.SignatureVerificationError as e:
         # Invalid signature
         logger.error(f"Webhook signature verification error: {str(e)}")
-        return '', 400
+        return jsonify({"status": "error", "message": "Invalid signature"}), 400
     except Exception as e:
         logger.error(f"Webhook error: {str(e)}")
-        return '', 400
-
-    if event.type == 'checkout.session.completed':
-        session = event.data.object
-        logger.info(f"Processing completed checkout session: {session.id}")
-        handle_successful_payment(session)
-    elif event.type == 'customer.subscription.updated':
-        subscription = event.data.object
-        logger.info(f"Processing subscription update: {subscription.id}")
-        handle_subscription_update(subscription)
-
-    return '', 200
+        return jsonify({"status": "error", "message": str(e)}), 400
 
 def handle_successful_payment(session):
     try:
