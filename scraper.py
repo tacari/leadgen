@@ -17,12 +17,103 @@ from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileT
 import base64
 import io
 import csv
+from twilio.rest import Client
+from twilio.base.exceptions import TwilioRestException
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 fake = Faker()
+
+class LeadScraper:
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
+    
+    def verify_email(self, email):
+        """Verify if an email address is valid"""
+        try:
+            validation = validate_email(email, check_deliverability=True)
+            return True
+        except EmailNotValidError:
+            return False
+
+    def verify_phone(self, phone_number):
+        """Verify if a phone number is valid using Twilio Lookup API"""
+        if not phone_number or not twilio_client:
+            return False
+            
+        # Clean the phone number - remove any non-digit characters
+        clean_number = re.sub(r'\D', '', phone_number)
+        
+        # Make sure it's a reasonable length
+        if len(clean_number) < 10:
+            return False
+            
+        try:
+            # For US numbers, ensure they have country code
+            if len(clean_number) == 10:
+                clean_number = f"+1{clean_number}"
+            elif not clean_number.startswith('+'):
+                clean_number = f"+{clean_number}"
+                
+            # Use Twilio Lookup to verify the number
+            lookup = twilio_client.lookups.v2.phone_numbers(clean_number).fetch(fields="line_type_intelligence")
+            
+            # Check if the phone is a mobile or landline, not voip or invalid
+            line_type = lookup.line_type_intelligence.get('type', '')
+            valid_types = ['landline', 'mobile']
+            
+            self.logger.info(f"Phone {phone_number} verified as {line_type}")
+            return line_type in valid_types
+            
+        except TwilioRestException as e:
+            self.logger.error(f"Twilio error verifying phone {phone_number}: {str(e)}")
+            return False
+        except Exception as e:
+            self.logger.error(f"Error verifying phone {phone_number}: {str(e)}")
+            return False
+
+    def verify_linkedin(self, linkedin_url):
+        """Verify if a LinkedIn profile URL exists and is valid"""
+        if not linkedin_url:
+            return False
+            
+        # Check if it's a valid LinkedIn URL format
+        linkedin_pattern = r'(https?:\/\/)?(www\.)?linkedin\.com\/in\/[\w\-\.]+\/?'
+        if not re.match(linkedin_pattern, linkedin_url):
+            return False
+            
+        try:
+            # Make a request to check if the profile exists
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+            response = requests.get(linkedin_url, headers=headers, timeout=10, allow_redirects=True)
+            
+            # Check if the page exists and doesn't redirect to a "profile not found" page
+            valid = response.status_code == 200 and "profile not found" not in response.text.lower()
+            
+            self.logger.info(f"LinkedIn URL {linkedin_url} verified: {valid}")
+            return valid
+            
+        except Exception as e:
+            self.logger.error(f"Error verifying LinkedIn URL {linkedin_url}: {str(e)}")
+            return False
+            
+    def generate_leads_for_package(self, user_id, lead_volume):
+        """Generate leads for a specific user package"""
+        # This method would normally contain your lead generation logic
+        pass
+
+# Initialize Twilio client
+try:
+    twilio_account_sid = os.environ.get('TWILIO_ACCOUNT_SID')
+    twilio_auth_token = os.environ.get('TWILIO_AUTH_TOKEN')
+    twilio_client = Client(twilio_account_sid, twilio_auth_token) if twilio_account_sid and twilio_auth_token else None
+except Exception as e:
+    logger.error(f"Error initializing Twilio client: {str(e)}")
+    twilio_client = None
 
 class LeadScraper:
     def __init__(self):

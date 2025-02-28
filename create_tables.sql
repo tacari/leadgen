@@ -27,9 +27,12 @@ CREATE TABLE IF NOT EXISTS leads (
     name TEXT NOT NULL,
     email TEXT NOT NULL,
     phone TEXT,
+    linkedin_url TEXT,
     source TEXT,
     score INTEGER DEFAULT 0,
     verified BOOLEAN DEFAULT FALSE,
+    phone_verified BOOLEAN DEFAULT FALSE,
+    linkedin_verified BOOLEAN DEFAULT FALSE,
     status TEXT DEFAULT 'New',
     date_added TIMESTAMPTZ DEFAULT NOW()
 );

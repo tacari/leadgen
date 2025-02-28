@@ -215,9 +215,13 @@ def score_lead(lead_data):
             score += points
             break
 
-    # Add points for verified email
+    # Add points for verified contact methods
     if lead_data.get('verified', False):
         score += 10
+    if lead_data.get('phone_verified', False):
+        score += 12
+    if lead_data.get('linkedin_verified', False):
+        score += 15
 
     # Email domain analysis
     if lead_data.get('email'):
@@ -290,16 +294,19 @@ def send_lead_email(user_id, package_name):
         # Create CSV in memory
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(['Name', 'Email', 'Phone', 'Source', 'Score', 'Verified', 'Status', 'Date Added'])
+        writer.writerow(['Name', 'Email', 'Phone', 'LinkedIn URL', 'Source', 'Score', 'Email Verified', 'Phone Verified', 'LinkedIn Verified', 'Status', 'Date Added'])
 
         for lead in leads.data:
             writer.writerow([
                 lead.get('name', 'N/A'),
                 lead.get('email', 'N/A'),
                 lead.get('phone', 'N/A'),
+                lead.get('linkedin_url', 'N/A'),
                 lead.get('source', 'N/A'),
                 lead.get('score', 0),
                 lead.get('verified', False),
+                lead.get('phone_verified', False),
+                lead.get('linkedin_verified', False),
                 lead.get('status', 'New'),
                 lead.get('date_added', today)
             ])
@@ -321,7 +328,10 @@ def send_lead_email(user_id, package_name):
                         <h3 style="color: #333;">Quick Stats:</h3>
                         <ul>
                             <li>High-scoring leads (75+): {sum(1 for lead in leads.data if lead.get('score', 0) > 75)}</li>
-                            <li>Verified contacts: {sum(1 for lead in leads.data if lead.get('verified', False))}</li>
+                            <li>Email verified: {sum(1 for lead in leads.data if lead.get('verified', False))}</li>
+                            <li>Phone verified: {sum(1 for lead in leads.data if lead.get('phone_verified', False))}</li>
+                            <li>LinkedIn verified: {sum(1 for lead in leads.data if lead.get('linkedin_verified', False))}</li>
+                            <li>Fully verified leads: {sum(1 for lead in leads.data if lead.get('verified', False) and lead.get('phone_verified', False) and lead.get('linkedin_verified', False))}</li>
                         </ul>
                     </div>
 
@@ -830,6 +840,12 @@ def dashboard():
                 if filter_type == 'verified' and not lead.get('verified', False):
                     continue
                 elif filter_type == 'unverified' and lead.get('verified', False):
+                    continue
+                elif filter_type == 'phone_verified' and not lead.get('phone_verified', False):
+                    continue
+                elif filter_type == 'linkedin_verified' and not lead.get('linkedin_verified', False):
+                    continue
+                elif filter_type == 'fully_verified' and not (lead.get('verified', False) and lead.get('phone_verified', False) and lead.get('linkedin_verified', False)):
                     continue
                 elif filter_type == 'high_score' and lead.get('score', 0) <= 75:
                     continue

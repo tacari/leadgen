@@ -81,9 +81,20 @@
                                 {% endif %}
                             </td>
                             <td class="p-3">
-                                <span class="px-2 py-1 rounded {% if lead.verified %}bg-green-900 text-white{% else %}bg-red-900 text-white{% endif %}">
-                                    {{ 'Yes' if lead.verified else 'No' }}
-                                </span>
+                                <div class="flex flex-col gap-1">
+                                    <div class="flex items-center">
+                                        <span class="w-3 h-3 mr-2 rounded-full {{ 'bg-green-500' if lead.verified else 'bg-gray-300' }}"></span>
+                                        <span>Email: {{ "Yes" if lead.verified else "No" }}</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span class="w-3 h-3 mr-2 rounded-full {{ 'bg-green-500' if lead.phone_verified else 'bg-gray-300' }}"></span>
+                                        <span>Phone: {{ "Yes" if lead.phone_verified else "No" }}</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span class="w-3 h-3 mr-2 rounded-full {{ 'bg-green-500' if lead.linkedin_verified else 'bg-gray-300' }}"></span>
+                                        <span>LinkedIn: {{ "Yes" if lead.linkedin_verified else "No" }}</span>
+                                    </div>
+                                </div>
                             </td>
                             <td class="p-3 {% if lead.score > 75 %}text-[#9F5FFF] font-medium{% else %}text-[#A1A9B8]{% endif %}" title="AI-powered lead score"> {{ lead.score }}</td>
                             <td class="p-3">
@@ -133,12 +144,20 @@
                     {% if lead.website %}
                     <p class="text-[#A1A9B8] text-sm mb-1">Website: <a href="{{ lead.website }}" target="_blank" class="text-[#7B00FF] hover:underline">Visit</a></p>
                     {% endif %}
-                    <p class="text-[#A1A9B8] text-sm mb-1">
-                        Email Verified: 
-                        <span class="px-2 py-1 rounded text-xs {% if lead.verified %}bg-green-900 text-white{% else %}bg-red-900 text-white{% endif %}">
-                            {{ 'Yes' if lead.verified else 'No' }}
-                        </span>
-                    </p>
+                    <div class="flex flex-col gap-1">
+                        <div class="flex items-center">
+                            <span class="w-3 h-3 mr-2 rounded-full {{ 'bg-green-500' if lead.verified else 'bg-gray-300' }}"></span>
+                            <span>Email: {{ "Yes" if lead.verified else "No" }}</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="w-3 h-3 mr-2 rounded-full {{ 'bg-green-500' if lead.phone_verified else 'bg-gray-300' }}"></span>
+                            <span>Phone: {{ "Yes" if lead.phone_verified else "No" }}</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="w-3 h-3 mr-2 rounded-full {{ 'bg-green-500' if lead.linkedin_verified else 'bg-gray-300' }}"></span>
+                            <span>LinkedIn: {{ "Yes" if lead.linkedin_verified else "No" }}</span>
+                        </div>
+                    </div>
                     <div class="flex justify-between text-sm">
                         <span>Status: 
                             <span class="px-2 py-1 rounded-full text-xs
