@@ -27,6 +27,7 @@ dependencies = [
     "stripe>=11.6.0",
     "twilio>=9.4.6",
     "flask-apscheduler>=1.13.1",
+    "faker>=36.1.1",
 ]
 
 [tool.uv.sources]
