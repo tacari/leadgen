@@ -9,6 +9,8 @@ import os
 import psycopg2
 import json
 from faker import Faker
+import threading
+from urllib.parse import urlparse
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -34,6 +36,7 @@ class LeadScraper:
             self.logger.addHandler(handler)
 
         self.serpapi_key = os.environ.get('SERPAPI_KEY')
+        self.google_places_key = os.environ.get('GOOGLE_PLACES_API_KEY')
         self.conn = psycopg2.connect(os.environ['DATABASE_URL'])
         self.cur = self.conn.cursor()
         self.sources = ['LinkedIn', 'Google Maps', 'Yellow Pages', 'Facebook', 'Instagram']
@@ -310,37 +313,41 @@ class LeadScraper:
         """Generate leads based on package type"""
         volumes = {
             'launch': 50,
-            'engine': 150,
+            'engine': 150, 
             'accelerator': 300,
             'empire': 600
         }
+        
+        # Get user niche preferences (defaults to plumbers if not set)
+        try:
+            # Try to get user's niche preference from database
+            self.cur.execute("SELECT niche, location FROM users WHERE id = %s", (user_id,))
+            user_data = self.cur.fetchone()
+            
+            if user_data and user_data[0]:
+                niche = user_data[0]
+                location = user_data[1] if user_data[1] else "Austin, TX"
+            else:
+                # Default values
+                niche = "plumbers"
+                location = "Austin, TX"
+        except Exception as e:
+            self.logger.error(f"Error fetching user niche preference: {str(e)}")
+            niche = "plumbers"
+            location = "Austin, TX"
 
         volume = volumes.get(package_name.lower(), 50)
-
-        # Prioritize Google Maps leads when SerpApi is available
-        if self.serpapi_key:
-            gm_volume = min(volume, 50)  # Cap Google Maps to 50 per batch to manage API usage
-            yp_volume = volume - gm_volume
-        else:
-            gm_volume = 0
-            yp_volume = volume
-
         self.logger.info(f"Generating {volume} leads for user {user_id} (Package: {package_name})")
-        self.logger.info(f"Split: {gm_volume} Google Maps, {yp_volume} Yellow Pages")
-
-        all_leads = []
-
-        # Get Google Maps leads first (higher quality)
-        if gm_volume > 0:
-            gm_leads = self.scrape_google_maps(limit=gm_volume)
-            self.logger.info(f"Scraped {len(gm_leads)} leads from Google Maps")
-            all_leads.extend(gm_leads)
-
-        # Fill remaining with Yellow Pages leads
-        if yp_volume > 0:
-            yp_leads = self.scrape_yellow_pages(limit=yp_volume)
-            self.logger.info(f"Scraped {len(yp_leads)} leads from Yellow Pages")
-            all_leads.extend(yp_leads)
+        
+        # Different sources based on package type
+        if package_name.lower() == 'launch':
+            # Lead Launch ($499): Yellow Pages only
+            all_leads = self.scrape_yellow_pages(niche=niche, location=location, limit=volume)
+            self.logger.info(f"Scraped {len(all_leads)} leads from Yellow Pages for Launch package")
+        else:
+            # All other packages: multi-source scraping
+            all_leads = self.multi_source_scrape(niche=niche, location=location, limit=volume)
+            self.logger.info(f"Multi-source scraping complete: {len(all_leads)} leads for {package_name} package")
 
         if all_leads:
             if self.save_leads_to_db(all_leads, user_id):
@@ -393,6 +400,203 @@ class LeadScraper:
             except Exception as file_e:
                 logger.error(f"Error saving to file: {str(file_e)}")
                 return False
+
+    def scrape_linkedin(self, niche="SaaS", location="Austin, TX", limit=50):
+        """Scrape leads from LinkedIn via SerpAPI"""
+        self.logger.info(f"Starting LinkedIn scraping for {niche} in {location}")
+        leads = []
+
+        if not self.serpapi_key:
+            self.logger.warning("No SerpAPI key found, skipping LinkedIn scraping")
+            return []
+
+        try:
+            params = {
+                "engine": "google",
+                "q": f"{niche} companies in {location} site:linkedin.com/company",
+                "api_key": self.serpapi_key,
+                "num": limit
+            }
+
+            response = requests.get("https://serpapi.com/search", params=params)
+            data = response.json()
+
+            if "error" in data:
+                self.logger.error(f"SerpAPI error for LinkedIn: {data['error']}")
+                return []
+
+            organic_results = data.get('organic_results', [])[:limit]
+
+            for result in organic_results:
+                try:
+                    title = result.get('title', '')
+                    if not title or 'LinkedIn' not in title:
+                        continue
+                        
+                    # Clean up the title to get just the company name
+                    company_name = title.split('|')[0].strip()
+                    if 'LinkedIn' in company_name:
+                        company_name = company_name.replace('LinkedIn', '').strip()
+                    
+                    link = result.get('link', '')
+                    description = result.get('snippet', '')
+                    
+                    # Extract domain for email generation
+                    website = self.extract_website_from_linkedin(link)
+                    email = None
+                    
+                    if website:
+                        # Try to find email on website
+                        email = self.extract_email_from_website(website)
+                    
+                    # Generate email if not found
+                    if not email and website:
+                        domain = urlparse(website).netloc
+                        email = f"contact@{domain}"
+                    elif not email:
+                        sanitized_name = company_name.lower().replace(' ', '').replace('.', '').replace(',', '')
+                        email = f"contact@{sanitized_name}.com"
+                    
+                    lead = {
+                        'name': company_name,
+                        'email': email,
+                        'website': website,
+                        'description': description,
+                        'source': 'LinkedIn',
+                        'verified': False,
+                        'date_added': datetime.now().isoformat()
+                    }
+                    
+                    # Add score
+                    lead['score'] = self._calculate_lead_score(lead)
+                    leads.append(lead)
+                    self.logger.info(f"Scraped LinkedIn lead: {company_name}")
+                    
+                except Exception as e:
+                    self.logger.error(f"Error processing LinkedIn result: {str(e)}")
+                    continue
+
+        except Exception as e:
+            self.logger.error(f"LinkedIn API error: {str(e)}")
+
+        return leads
+        
+    def extract_website_from_linkedin(self, linkedin_url):
+        """Extract company website from LinkedIn page"""
+        try:
+            # This is a simplified version - in reality, LinkedIn blocks scraping
+            # For production, you'd need a LinkedIn API or a sophisticated proxy setup
+            response = self.session.get(linkedin_url, timeout=10)
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # Look for website in "About" section
+            website_section = soup.find('a', string=re.compile(r'Website|Visit website', re.I))
+            if website_section and website_section.has_attr('href'):
+                return website_section['href']
+                
+            # Alternative: just return a placeholder based on company name
+            company_name = soup.find('h1', {'class': 'org-top-card-summary__title'})
+            if company_name:
+                name_text = company_name.text.strip().lower().replace(' ', '')
+                return f"https://{name_text}.com"
+                
+            return None
+        except Exception as e:
+            self.logger.error(f"Error extracting website from LinkedIn: {str(e)}")
+            return None
+            
+    def extract_email_from_website(self, website_url):
+        """Extract email from company website"""
+        try:
+            response = self.session.get(website_url, timeout=10)
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # Look for mailto links
+            email_links = soup.find_all('a', href=re.compile(r'mailto:'))
+            if email_links:
+                for link in email_links:
+                    href = link['href']
+                    email = href.replace('mailto:', '').split('?')[0]
+                    if '@' in email and '.' in email:
+                        return email
+            
+            # Alternative: search for email patterns in text
+            email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+            email_matches = re.findall(email_pattern, response.text)
+            if email_matches:
+                # Filter out common false positives
+                filtered_emails = [email for email in email_matches 
+                                 if not any(s in email for s in ['example.com', 'yourdomain'])]
+                if filtered_emails:
+                    return filtered_emails[0]
+                    
+            return None
+        except Exception as e:
+            self.logger.error(f"Error extracting email from website: {str(e)}")
+            return None
+            
+    def combine_and_deduplicate_leads(self, leads_lists):
+        """Combine leads from multiple sources and remove duplicates"""
+        combined_leads = []
+        seen_keys = set()
+        
+        for leads in leads_lists:
+            for lead in leads:
+                # Create a key based on name and source
+                key = (lead.get('name', '').lower(), lead.get('source', ''))
+                
+                if key not in seen_keys:
+                    seen_keys.add(key)
+                    combined_leads.append(lead)
+        
+        return combined_leads
+        
+    def multi_source_scrape(self, niche="plumbers", location="Austin, TX", limit=50):
+        """Scrape leads from multiple sources and combine them"""
+        self.logger.info(f"Starting multi-source scraping for {niche} in {location}")
+        
+        # Create threads for parallel scraping
+        yp_leads = []
+        gm_leads = []
+        linkedin_leads = []
+        
+        def scrape_yp():
+            nonlocal yp_leads
+            yp_leads = self.scrape_yellow_pages(niche, location, limit)
+            
+        def scrape_gm():
+            nonlocal gm_leads
+            gm_leads = self.scrape_google_maps(niche, location, limit)
+            
+        def scrape_linkedin():
+            nonlocal linkedin_leads
+            linkedin_leads = self.scrape_linkedin(niche, location, limit)
+        
+        # Create and start threads
+        threads = [
+            threading.Thread(target=scrape_yp),
+            threading.Thread(target=scrape_gm),
+            threading.Thread(target=scrape_linkedin)
+        ]
+        
+        for thread in threads:
+            thread.start()
+            
+        # Wait for all threads to complete
+        for thread in threads:
+            thread.join()
+            
+        # Combine and deduplicate leads
+        all_leads = self.combine_and_deduplicate_leads([yp_leads, gm_leads, linkedin_leads])
+        
+        # Trim to the requested limit
+        if len(all_leads) > limit:
+            # Sort by score before trimming
+            all_leads.sort(key=lambda x: x.get('score', 0), reverse=True)
+            all_leads = all_leads[:limit]
+            
+        self.logger.info(f"Multi-source scraping complete. Generated {len(all_leads)} unique leads.")
+        return all_leads
 
     def __del__(self):
         """Clean up database connections"""

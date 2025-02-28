@@ -1,0 +1,80 @@
+
+{% extends "dashboard_base.html" %}
+{% block title %}Generate Custom Leads{% endblock %}
+{% block content %}
+<div class="bg-[#0D1321] min-h-screen text-white p-8">
+    <!-- Header -->
+    <header class="text-center py-10 relative animate-fade-in">
+        <h1 class="text-4xl font-bold">Generate Custom Leads</h1>
+        <p class="text-[#A1A9B8] mt-2">Specify your target niche and location to generate leads</p>
+    </header>
+
+    <!-- Form -->
+    <section class="mb-12">
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 max-w-[600px] mx-auto animate-fade-in">
+            <form method="POST" action="{{ url_for('generate_custom_leads') }}">
+                <div class="mb-6">
+                    <label for="niche" class="block text-white mb-2">Target Niche</label>
+                    <input type="text" id="niche" name="niche" class="w-full bg-[#0D1321] border border-[#7B00FF] rounded-lg p-3 text-white" 
+                           placeholder="e.g., plumbers, dentists, SaaS startups" required>
+                    <p class="text-[#A1A9B8] text-sm mt-1">Specify the industry or business type you're targeting</p>
+                </div>
+                
+                <div class="mb-6">
+                    <label for="location" class="block text-white mb-2">Location</label>
+                    <input type="text" id="location" name="location" class="w-full bg-[#0D1321] border border-[#7B00FF] rounded-lg p-3 text-white" 
+                           placeholder="e.g., Austin, TX or New York City" required>
+                    <p class="text-[#A1A9B8] text-sm mt-1">Enter a city, state, or region</p>
+                </div>
+
+                <div class="mb-6">
+                    <h3 class="text-white font-bold mb-2">Multi-Source Lead Scraping</h3>
+                    <p class="text-[#A1A9B8] text-sm">Our AI scraper will gather leads from multiple sources:</p>
+                    <ul class="text-[#A1A9B8] text-sm list-disc list-inside mt-2">
+                        <li>Yellow Pages (business listings and contact information)</li>
+                        <li>Google Maps (location-based businesses with reviews)</li>
+                        <li>LinkedIn (professional profiles and company pages)</li>
+                    </ul>
+                    <p class="text-[#A1A9B8] text-sm mt-2">The system will combine leads from all sources, remove duplicates, and score each lead based on quality factors.</p>
+                </div>
+                
+                <div class="text-center">
+                    <button type="submit" class="bg-[#7B00FF] text-white px-6 py-3 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">
+                        Generate Leads
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- Benefits -->
+    <section class="mb-12">
+        <h2 class="text-3xl font-bold text-center mb-6">Why Multi-Source Leads?</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in" style="animation-delay: 0.1s">
+                <h3 class="text-xl font-bold mb-3">Diverse Lead Pool</h3>
+                <p class="text-[#A1A9B8]">By gathering leads from multiple sources, you get a wider variety of potential clients, increasing your chances of finding the perfect fit.</p>
+            </div>
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in" style="animation-delay: 0.2s">
+                <h3 class="text-xl font-bold mb-3">Higher Quality</h3>
+                <p class="text-[#A1A9B8]">Cross-reference data from different platforms to verify lead information and improve accuracy, resulting in more qualified prospects.</p>
+            </div>
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in" style="animation-delay: 0.3s">
+                <h3 class="text-xl font-bold mb-3">Better Conversions</h3>
+                <p class="text-[#A1A9B8]">Studies show multi-source leads convert at up to 2x the rate of single-source leads, helping you close more deals faster.</p>
+            </div>
+        </div>
+    </section>
+</div>
+
+<style>
+    @keyframes fade-in {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+        animation: fade-in 0.5s ease-out;
+        animation-fill-mode: both;
+    }
+</style>
+{% endblock %}

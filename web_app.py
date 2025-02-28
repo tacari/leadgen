@@ -815,6 +815,13 @@ def dashboard():
                 continue
             elif filter_type == 'last_week' and (datetime.now() - lead_date).days > 7:
                 continue
+            # Source-based filters
+            elif filter_type == 'linkedin' and lead.get('source', '').lower() != 'linkedin':
+                continue
+            elif filter_type == 'google_maps' and lead.get('source', '').lower() != 'google maps':
+                continue
+            elif filter_type == 'yellow_pages' and lead.get('source', '').lower() != 'yellow pages':
+                continue
             
             leads.append(lead)
         
@@ -1063,6 +1070,74 @@ def support():
     except Exception as e:
         flash(f'An error occurred: {str(e)}', 'error')
         return redirect(url_for('support'))
+
+@app.route('/generate-custom-leads', methods=['GET', 'POST'])
+def generate_custom_leads():
+    if 'user_id' not in session:
+        flash('Please log in to generate leads.')
+        return redirect(url_for('login'))
+        
+    try:
+        user_id = session.get('user_id')
+        
+        # Get user's subscription to determine lead volume
+        user_subscription = None
+        try:
+            package_result = supabase.table('user_packages').select('*').eq('user_id', user_id).eq('status', 'active').execute()
+            if package_result.data:
+                user_subscription = package_result.data[0]
+        except Exception as e:
+            logger.error(f"Error fetching subscription from Supabase: {str(e)}")
+            
+        # Fallback to file for subscription
+        if not user_subscription:
+            try:
+                with open('data/user_packages.json', 'r') as f:
+                    packages = json.load(f)
+                    if isinstance(packages, list):
+                        user_subscription = next((p for p in packages if p.get('user_id') == user_id and p.get('status') == 'active'), None)
+            except Exception as file_e:
+                logger.error(f"Error reading subscription data from file: {str(file_e)}")
+        
+        # Use default values if no subscription found
+        package_name = user_subscription.get('package_name', 'Lead Launch') if user_subscription else 'Lead Launch'
+        
+        if request.method == 'POST':
+            niche = request.form.get('niche')
+            location = request.form.get('location')
+            
+            if not niche or not location:
+                flash('Please provide both niche and location.')
+                return redirect(url_for('generate_custom_leads'))
+                
+            # Save user preferences
+            try:
+                supabase.table('users').update({
+                    'niche': niche,
+                    'location': location
+                }).eq('id', user_id).execute()
+            except Exception as update_e:
+                logger.error(f"Error updating user preferences: {str(update_e)}")
+            
+            # Generate leads
+            from scraper import LeadScraper
+            scraper = LeadScraper()
+            
+            # Run in a background thread to not block the UI
+            def generate_leads_task():
+                scraper.generate_leads_for_package(user_id, package_name)
+                
+            threading.Thread(target=generate_leads_task).start()
+            
+            flash(f'Lead generation started for "{niche}" in "{location}". Check your dashboard in a few minutes.')
+            return redirect(url_for('dashboard'))
+            
+        return render_template('generate_leads.html', username=session.get('username', "Developer"))
+        
+    except Exception as e:
+        logger.error(f"Error in generate_custom_leads: {str(e)}")
+        flash(f'An error occurred: {str(e)}', 'error')
+        return redirect(url_for('dashboard'))
 
 # Add the necessary route to trigger lead generation after payment
 @app.route('/generate_leads/<user_id>/<package>')
