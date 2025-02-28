@@ -29,6 +29,95 @@ supabase = create_client(supabase_url, supabase_key)
 stripe.api_key = os.environ.get('STRIPE_API_KEY')
 sendgrid_api_key = os.environ.get('SENDGRID_API_KEY')
 
+def ensure_tables_exist():
+    """Ensure all required tables exist"""
+    try:
+        # Create tables through SQL to ensure proper order and constraints
+        conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        cur = conn.cursor()
+
+        # Create users table first
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id VARCHAR(255) PRIMARY KEY,
+                username VARCHAR(255) UNIQUE NOT NULL,
+                email VARCHAR(255) UNIQUE NOT NULL,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+
+        # Create user_packages table with foreign key to users
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS user_packages (
+                id SERIAL PRIMARY KEY,
+                user_id VARCHAR(255) REFERENCES users(id),
+                package_name VARCHAR(255) NOT NULL,
+                lead_volume INTEGER NOT NULL,
+                stripe_subscription_id VARCHAR(255),
+                status VARCHAR(50) NOT NULL,
+                next_delivery TIMESTAMP WITH TIME ZONE,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+
+        # Create leads table with foreign key to users
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS leads (
+                id SERIAL PRIMARY KEY,
+                user_id VARCHAR(255) REFERENCES users(id),
+                name VARCHAR(255) NOT NULL,
+                email VARCHAR(255) NOT NULL,
+                source VARCHAR(255),
+                score INTEGER,
+                verified BOOLEAN DEFAULT FALSE,
+                status VARCHAR(50) DEFAULT 'new',
+                date_added TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+
+        conn.commit()
+        logger.info("Database tables created successfully")
+
+    except Exception as e:
+        logger.error(f"Error creating tables: {str(e)}")
+        if conn:
+            conn.rollback()
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+# Rest of your imports and configuration...
+
+def ensure_local_data_files():
+    """Ensure local data files exist"""
+    data_dir = 'data'
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+        logger.info(f"Created data directory: {data_dir}")
+
+    for file_name in ['users.json', 'user_packages.json', 'leads.json']:
+        file_path = os.path.join(data_dir, file_name)
+        if not os.path.exists(file_path):
+            with open(file_path, 'w') as f:
+                json.dump([], f)
+            logger.info(f"Created empty JSON file: {file_path}")
+
+# Initialize local files
+ensure_local_data_files()
+
+# Initialize scheduler
+scheduler = APScheduler()
+scheduler.init_app(app)
+scheduler.add_job(
+    id='lead_delivery',
+    func='web_app:schedule_lead_delivery',
+    trigger='interval',
+    hours=24,
+    next_run_time=datetime.now() + timedelta(seconds=10)
+)
+scheduler.start()
+
 def terminate_port_process(port):
     """Terminate any process using the specified port"""
     try:
@@ -45,322 +134,6 @@ def terminate_port_process(port):
     except Exception as e:
         logger.error(f"Error terminating process on port {port}: {str(e)}")
     return False
-
-def ensure_local_data_files():
-    """Ensure local data files exist"""
-    data_dir = 'data'
-    if not os.path.exists(data_dir):
-        os.makedirs(data_dir)
-        logger.info(f"Created data directory: {data_dir}")
-
-    for file_name in ['users.json', 'user_packages.json', 'leads.json']:
-        file_path = os.path.join(data_dir, file_name)
-        if not os.path.exists(file_path):
-            with open(file_path, 'w') as f:
-                json.dump([], f)
-            logger.info(f"Created empty JSON file: {file_path}")
-
-# Ensure local files exist
-ensure_local_data_files()
-
-# Initialize scheduler
-scheduler = APScheduler()
-scheduler.init_app(app)
-scheduler.start()
-
-def ensure_tables_exist():
-    """Ensure all required tables exist"""
-    try:
-        # Try to create users table if it doesn't exist
-        supabase.table('users').select('id').limit(1).execute()
-        logger.info("Users table exists")
-    except Exception as e:
-        logger.error(f"Error checking users table: {str(e)}")
-        try:
-            # Execute SQL to create users table
-            supabase.postgrest.call('create_users_table', {})
-            logger.info("Created users table")
-        except Exception as create_e:
-            logger.error(f"Failed to create users table: {str(create_e)}")
-
-    # Ensure data directory exists
-    data_dir = 'data'
-    if not os.path.exists(data_dir):
-        os.makedirs(data_dir)
-        logger.info(f"Created data directory: {data_dir}")
-
-    # Initialize empty JSON files if they don't exist
-    for file_name in ['users.json', 'user_packages.json', 'leads.json']:
-        file_path = os.path.join(data_dir, file_name)
-        if not os.path.exists(file_path):
-            with open(file_path, 'w') as f:
-                json.dump([], f)
-            logger.info(f"Created empty JSON file: {file_path}")
-
-@app.route('/signup', methods=['GET', 'POST'])
-def signup():
-    if request.method == 'POST':
-        username = request.form['username']
-        email = request.form['email']
-        password = request.form['password']
-
-        logger.info(f"Starting signup process for email: {email}")
-
-        # Validate inputs
-        if len(username) < 4 or len(username) > 20:
-            flash('Username must be 4–20 characters.')
-            return redirect(url_for('signup'))
-        if len(password) < 8:
-            flash('Password must be at least 8 characters.')
-            return redirect(url_for('signup'))
-        if not '@' in email or not '.' in email:
-            flash('Invalid email format.')
-            return redirect(url_for('signup'))
-
-        try:
-            # Check username uniqueness
-            try:
-                # Make sure the users table exists first
-                try:
-                    supabase.table('users').select('id').limit(1).execute()
-                except Exception as e:
-                    logger.info("Creating users table")
-                    # Create users table if it doesn't exist
-                    supabase.table('users').create([
-                        {'id': 'test', 'username': 'test', 'email': 'test@example.com', 'created_at': datetime.utcnow().isoformat()}
-                    ]).execute()
-                    # Delete test row
-                    supabase.table('users').delete().eq('id', 'test').execute()
-
-                # Now check if username exists
-                existing_user = supabase.table('users').select('username').eq('username', username).execute()
-                if existing_user.data:
-                    flash('Username already taken.')
-                    return redirect(url_for('signup'))
-            except Exception as e:
-                logger.error(f"Error checking username uniqueness in Supabase: {str(e)}")
-                # Fallback to file-based check
-                try:
-                    with open('data/users.json', 'r') as f:
-                        users = json.load(f)
-                        if any(user.get('username') == username for user in users):
-                            flash('Username already taken.')
-                            return redirect(url_for('signup'))
-                except Exception as file_e:
-                    logger.error(f"Error checking file-based users: {str(file_e)}")
-                    # If file doesn't exist, create it
-                    if not os.path.exists('data'):
-                        os.makedirs('data')
-                    if not os.path.exists('data/users.json'):
-                        with open('data/users.json', 'w') as f:
-                            json.dump([], f)
-
-            # Attempt Supabase Auth
-            user_id = None
-            try:
-                auth_response = supabase.auth.sign_up({
-                    'email': email,
-                    'password': password
-                })
-
-                if hasattr(auth_response, 'user') and auth_response.user:
-                    user_id = auth_response.user.id
-                    logger.info(f"Supabase Auth signup successful for {email} with ID {user_id}")
-                else:
-                    logger.error(f"Supabase Auth signup failed - no user returned: {auth_response}")
-                    # Fall back to file-based auth
-                    user_id = f"local_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-            except Exception as auth_e:
-                logger.error(f"Supabase auth signup error: {str(auth_e)}")
-                # Generate a unique ID for file-based users
-                user_id = f"local_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
-            # Store user data with fallbacks
-            db_success = False
-            try:
-                if user_id:
-                    supabase.table('users').insert({
-                        'id': user_id,
-                        'username': username,
-                        'email': email,
-                        'created_at': datetime.utcnow().isoformat()
-                    }).execute()
-                    db_success = True
-                    logger.info(f"User data stored in Supabase for {email}")
-            except Exception as db_e:
-                logger.error(f"Error inserting user in Supabase: {str(db_e)}")
-
-            # Fallback to file-based storage if Supabase failed
-            if not db_success:
-                try:
-                    with open('data/users.json', 'r') as f:
-                        users = json.load(f)
-
-                    users.append({
-                        'id': user_id,
-                        'username': username,
-                        'email': email,
-                        'created_at': datetime.utcnow().isoformat(),
-                        'password': password  # Store password for file-based auth
-                    })
-
-                    with open('data/users.json', 'w') as f:
-                        json.dump(users, f, indent=2)
-
-                    logger.info(f"User data stored in file for {email}")
-                except Exception as file_e:
-                    logger.error(f"Error storing user in file: {str(file_e)}")
-                    flash('Error creating account. Please try again.')
-                    return redirect(url_for('signup'))
-
-            # Set session
-            session['user_id'] = user_id
-            session['username'] = username
-            session.modified = True
-
-            logger.info(f"Signup successful for {email}")
-            flash('Signed up successfully! Welcome to Leadzap.')
-            return redirect(url_for('dashboard'))
-
-        except Exception as e:
-            logger.error(f"Signup error: {str(e)}")
-            flash('Signup failed. Please try again.')
-            return redirect(url_for('signup'))
-
-    return render_template('signup.html')
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-
-        logger.info(f"Login attempt for email: {email}")
-
-        try:
-            # First try with Supabase Auth
-            supabase_login_success = False
-            try:
-                auth_response = supabase.auth.sign_in_with_password({
-                    'email': email,
-                    'password': password
-                })
-
-                if hasattr(auth_response, 'user') and auth_response.user:
-                    # Fetch username from users table
-                    try:
-                        user_data = supabase.table('users').select('username').eq('id', auth_response.user.id).execute()
-                        username = user_data.data[0]['username'] if user_data.data else "User"
-
-                        session['user_id'] = auth_response.user.id
-                        session['username'] = username
-                        session.modified = True
-                        flash('Successfully logged in!')
-                        logger.info(f"Supabase login successful for {email}")
-                        supabase_login_success = True
-                        return redirect(url_for('dashboard'))
-                    except Exception as fetch_e:
-                        logger.error(f"Error fetching username after login: {str(fetch_e)}")
-                        # If we can't get the username, but auth succeeded, still log them in
-                        session['user_id'] = auth_response.user.id
-                        session['username'] = email.split('@')[0]  # Use part of email as username
-                        session.modified = True
-                        flash('Successfully logged in!')
-                        logger.info(f"Supabase login successful for {email}, using email-based username")
-                        supabase_login_success = True
-                        return redirect(url_for('dashboard'))
-            except Exception as auth_e:
-                logger.error(f"Supabase login error: {str(auth_e)}")
-
-            # If Supabase login failed, try file-based login
-            if not supabase_login_success:
-                try:
-                    with open('data/users.json', 'r') as f:
-                        users = json.load(f)
-
-                    user = next((u for u in users if u.get('email') == email and u.get('password') == password), None)
-                    if user:
-                        session['user_id'] = user.get('id', f"local_{datetime.now().strftime('%Y%m%d%H%M%S')}")
-                        session['username'] = user.get('username', email.split('@')[0])
-                        session.modified = True
-                        flash('Successfully logged in!')
-                        logger.info(f"File-based login successful for {email}")
-                        return redirect(url_for('dashboard'))
-                except Exception as file_e:
-                    logger.error(f"File-based login error: {str(file_e)}")
-
-            # If we reach here, both login methods failed
-            flash('Invalid email or password.')
-            logger.warning(f"Failed login attempt for {email}")
-            return redirect(url_for('login'))
-
-        except Exception as e:
-            logger.error(f"Unexpected login error: {str(e)}")
-            flash('An error occurred during login. Please try again.')
-            return redirect(url_for('login'))
-
-    return render_template('login.html')
-
-@app.route('/logout')
-def logout():
-    try:
-        supabase.auth.sign_out()
-    except Exception as e:
-        logger.error(f"Logout error: {str(e)}")
-
-    session.pop('user_id', None)
-    session.pop('username', None)
-    flash('You have been logged out.')
-    return redirect(url_for('home'))
-
-@app.route('/dashboard')
-def dashboard():
-    if 'user_id' not in session:
-        flash('Please log in to access the dashboard.')
-        return redirect(url_for('login'))
-
-    try:
-        # For now, use test data to show dashboard functionality
-        test_data = {
-            'username': session.get('username', 'Demo User'),
-            'leads': [
-                {
-                    'name': "Test Lead 1",
-                    'email': 'lead1@example.com',
-                    'source': 'LinkedIn',
-                    'score': 85,
-                    'status': 'New'
-                },
-                {
-                    'name': "Test Lead 2", 
-                    'email': 'lead2@example.com',
-                    'source': 'Google',
-                    'score': 92,
-                    'status': 'Contacted'
-                }
-            ],
-            'subscription': {
-                'package_name': 'Lead Engine',
-                'status': 'active',
-                'lead_volume': 150
-            },
-            'analytics': {
-                'total_leads': 2,
-                'high_quality_leads': 2,
-                'conversion_rate': '10%'
-            }
-        }
-
-        return render_template('dashboard.html',
-                           username=test_data['username'],
-                           leads=test_data['leads'],
-                           subscription=test_data['subscription'],
-                           analytics=test_data['analytics'])
-
-    except Exception as e:
-        logger.error(f"Dashboard error: {str(e)}")
-        flash('Error loading dashboard. Please try again.')
-        return redirect(url_for('home'))
 
 def send_lead_email(user_id, package_name):
     """Send leads via email using SendGrid"""
@@ -680,6 +453,258 @@ def analytics():
                          leads=leads,
                          insights=insights,
                          source_insights=source_insights)
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        password = request.form['password']
+
+        logger.info(f"Starting signup process for email: {email}")
+
+        # Validate inputs
+        if len(username) < 4 or len(username) > 20:
+            flash('Username must be 4–20 characters.')
+            return redirect(url_for('signup'))
+        if len(password) < 8:
+            flash('Password must be at least 8 characters.')
+            return redirect(url_for('signup'))
+        if not '@' in email or not '.' in email:
+            flash('Invalid email format.')
+            return redirect(url_for('signup'))
+
+        try:
+            # Check username uniqueness
+            try:
+                existing_user = supabase.table('users').select('username').eq('username', username).execute()
+                if existing_user.data:
+                    flash('Username already taken.')
+                    return redirect(url_for('signup'))
+            except Exception as e:
+                logger.error(f"Error checking username uniqueness in Supabase: {str(e)}")
+                # Fallback to file-based check
+                try:
+                    with open('data/users.json', 'r') as f:
+                        users = json.load(f)
+                        if any(user.get('username') == username for user in users):
+                            flash('Username already taken.')
+                            return redirect(url_for('signup'))
+                except Exception as file_e:
+                    logger.error(f"Error checking file-based users: {str(file_e)}")
+                    # If file doesn't exist, create it
+                    if not os.path.exists('data'):
+                        os.makedirs('data')
+                    if not os.path.exists('data/users.json'):
+                        with open('data/users.json', 'w') as f:
+                            json.dump([], f)
+
+            # Attempt Supabase Auth
+            user_id = None
+            try:
+                auth_response = supabase.auth.sign_up({
+                    'email': email,
+                    'password': password
+                })
+
+                if hasattr(auth_response, 'user') and auth_response.user:
+                    user_id = auth_response.user.id
+                    logger.info(f"Supabase Auth signup successful for {email} with ID {user_id}")
+                else:
+                    logger.error(f"Supabase Auth signup failed - no user returned: {auth_response}")
+                    # Fall back to file-based auth
+                    user_id = f"local_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            except Exception as auth_e:
+                logger.error(f"Supabase auth signup error: {str(auth_e)}")
+                # Generate a unique ID for file-based users
+                user_id = f"local_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+
+            # Store user data with fallbacks
+            db_success = False
+            try:
+                if user_id:
+                    supabase.table('users').insert({
+                        'id': user_id,
+                        'username': username,
+                        'email': email,
+                        'created_at': datetime.utcnow().isoformat()
+                    }).execute()
+                    db_success = True
+                    logger.info(f"User data stored in Supabase for {email}")
+            except Exception as db_e:
+                logger.error(f"Error inserting user in Supabase: {str(db_e)}")
+
+            # Fallback to file-based storage if Supabase failed
+            if not db_success:
+                try:
+                    with open('data/users.json', 'r') as f:
+                        users = json.load(f)
+
+                    users.append({
+                        'id': user_id,
+                        'username': username,
+                        'email': email,
+                        'created_at': datetime.utcnow().isoformat(),
+                        'password': password  # Store password for file-based auth
+                    })
+
+                    with open('data/users.json', 'w') as f:
+                        json.dump(users, f, indent=2)
+
+                    logger.info(f"User data stored in file for {email}")
+                except Exception as file_e:
+                    logger.error(f"Error storing user in file: {str(file_e)}")
+                    flash('Error creating account. Please try again.')
+                    return redirect(url_for('signup'))
+
+            # Set session
+            session['user_id'] = user_id
+            session['username'] = username
+            session.modified = True
+
+            logger.info(f"Signup successful for {email}")
+            flash('Signed up successfully! Welcome to Leadzap.')
+            return redirect(url_for('dashboard'))
+
+        except Exception as e:
+            logger.error(f"Signup error: {str(e)}")
+            flash('Signup failed. Please try again.')
+            return redirect(url_for('signup'))
+
+    return render_template('signup.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+
+        logger.info(f"Login attempt for email: {email}")
+
+        try:
+            # First try with Supabase Auth
+            supabase_login_success = False
+            try:
+                auth_response = supabase.auth.sign_in_with_password({
+                    'email': email,
+                    'password': password
+                })
+
+                if hasattr(auth_response, 'user') and auth_response.user:
+                    # Fetch username from users table
+                    try:
+                        user_data = supabase.table('users').select('username').eq('id', auth_response.user.id).execute()
+                        username = user_data.data[0]['username'] if user_data.data else "User"
+
+                        session['user_id'] = auth_response.user.id
+                        session['username'] = username
+                        session.modified = True
+                        flash('Successfully logged in!')
+                        logger.info(f"Supabase login successful for {email}")
+                        supabase_login_success = True
+                        return redirect(url_for('dashboard'))
+                    except Exception as fetch_e:
+                        logger.error(f"Error fetching username after login: {str(fetch_e)}")
+                        # If we can't get the username, but auth succeeded, still log them in
+                        session['user_id'] = auth_response.user.id
+                        session['username'] = email.split('@')[0]  # Use part of email as username
+                        session.modified = True
+                        flash('Successfully logged in!')
+                        logger.info(f"Supabase login successful for {email}, using email-based username")
+                        supabase_login_success = True
+                        return redirect(url_for('dashboard'))
+            except Exception as auth_e:
+                logger.error(f"Supabase login error: {str(auth_e)}")
+
+            # If Supabase login failed, try file-based login
+            if not supabase_login_success:
+                try:
+                    with open('data/users.json', 'r') as f:
+                        users = json.load(f)
+
+                    user = next((u for u in users if u.get('email') == email and u.get('password') == password), None)
+                    if user:
+                        session['user_id'] = user.get('id', f"local_{datetime.now().strftime('%Y%m%d%H%M%S')}")
+                        session['username'] = user.get('username', email.split('@')[0])
+                        session.modified = True
+                        flash('Successfully logged in!')
+                        logger.info(f"File-based login successful for {email}")
+                        return redirect(url_for('dashboard'))
+                except Exception as file_e:
+                    logger.error(f"File-based login error: {str(file_e)}")
+
+            # If we reach here, both login methods failed
+            flash('Invalid email or password.')
+            logger.warning(f"Failed login attempt for {email}")
+            return redirect(url_for('login'))
+
+        except Exception as e:
+            logger.error(f"Unexpected login error: {str(e)}")
+            flash('An error occurred during login. Please try again.')
+            return redirect(url_for('login'))
+
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    try:
+        supabase.auth.sign_out()
+    except Exception as e:
+        logger.error(f"Logout error: {str(e)}")
+
+    session.pop('user_id', None)
+    session.pop('username', None)
+    flash('You have been logged out.')
+    return redirect(url_for('home'))
+
+@app.route('/dashboard')
+def dashboard():
+    if 'user_id' not in session:
+        flash('Please log in to access the dashboard.')
+        return redirect(url_for('login'))
+
+    try:
+        # For now, use test data to show dashboard functionality
+        test_data = {
+            'username': session.get('username', 'Demo User'),
+            'leads': [
+                {
+                    'name': "Test Lead 1",
+                    'email': 'lead1@example.com',
+                    'source': 'LinkedIn',
+                    'score': 85,
+                    'status': 'New'
+                },
+                {
+                    'name': "Test Lead 2", 
+                    'email': 'lead2@example.com',
+                    'source': 'Google',
+                    'score': 92,
+                    'status': 'Contacted'
+                }
+            ],
+            'subscription': {
+                'package_name': 'Lead Engine',
+                'status': 'active',
+                'lead_volume': 150
+            },
+            'analytics': {
+                'total_leads': 2,
+                'high_quality_leads': 2,
+                'conversion_rate': '10%'
+            }
+        }
+
+        return render_template('dashboard.html',
+                           username=test_data['username'],
+                           leads=test_data['leads'],
+                           subscription=test_data['subscription'],
+                           analytics=test_data['analytics'])
+
+    except Exception as e:
+        logger.error(f"Dashboard error: {str(e)}")
+        flash('Error loading dashboard. Please try again.')
+        return redirect(url_for('home'))
 
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():
