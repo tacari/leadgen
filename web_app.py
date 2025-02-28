@@ -126,6 +126,22 @@ def ensure_local_data_files():
             with open(file_path, 'w') as f:
                 json.dump([], f)
             logger.info(f"Created empty JSON file: {file_path}")
+        else:
+            # Validate the JSON format and fix if needed
+            try:
+                with open(file_path, 'r') as f:
+                    content = f.read().strip()
+                    if not content:  # Empty file
+                        with open(file_path, 'w') as f:
+                            json.dump([], f)
+                            logger.info(f"Fixed empty file: {file_path}")
+                    else:
+                        json.loads(content)  # Try to parse JSON
+            except json.JSONDecodeError:
+                # Invalid JSON, reset it
+                logger.error(f"Invalid JSON in {file_path}, resetting to empty array")
+                with open(file_path, 'w') as f:
+                    json.dump([], f)
 
 # Initialize local files and database tables
 ensure_local_data_files()
@@ -763,6 +779,7 @@ def dashboard():
                 logger.info(f"Found {len(real_leads)} leads for user {user_id}")
         except Exception as e:
             logger.error(f"Error fetching leads from Supabase: {str(e)}")
+            # Don't break the flow, continue with empty leads list
 
         # Fallback to sample data if no real leads
         if not real_leads:
@@ -796,38 +813,43 @@ def dashboard():
                 }
             ]
 
-        # Apply filters
+        # Apply filters - safely handle potential invalid data
         leads = []
         for lead in real_leads:
-            # Convert date_added to datetime if it's a string
-            if isinstance(lead.get('date_added'), str):
-                try:
-                    lead_date = datetime.fromisoformat(lead['date_added'].replace('Z', '+00:00'))
-                except:
+            try:
+                # Convert date_added to datetime if it's a string
+                if isinstance(lead.get('date_added'), str):
+                    try:
+                        lead_date = datetime.fromisoformat(lead['date_added'].replace('Z', '+00:00'))
+                    except:
+                        lead_date = datetime.now()
+                else:
                     lead_date = datetime.now()
-            else:
-                lead_date = datetime.now()
 
-            # Apply the selected filter
-            if filter_type == 'verified' and not lead.get('verified', False):
-                continue
-            elif filter_type == 'unverified' and lead.get('verified', False):
-                continue
-            elif filter_type == 'high_score' and lead.get('score', 0) <= 75:
-                continue
-            elif filter_type == 'last_week' and (datetime.now() - lead_date).days > 7:
-                continue
-            # Source-based filters
-            elif filter_type == 'linkedin' and lead.get('source', '').lower() != 'linkedin':
-                continue
-            elif filter_type == 'google_maps' and lead.get('source', '').lower() != 'google maps':
-                continue
-            elif filter_type == 'yellow_pages' and lead.get('source', '').lower() != 'yellow pages':
+                # Apply the selected filter
+                if filter_type == 'verified' and not lead.get('verified', False):
+                    continue
+                elif filter_type == 'unverified' and lead.get('verified', False):
+                    continue
+                elif filter_type == 'high_score' and lead.get('score', 0) <= 75:
+                    continue
+                elif filter_type == 'last_week' and (datetime.now() - lead_date).days > 7:
+                    continue
+                # Source-based filters
+                elif filter_type == 'linkedin' and lead.get('source', '').lower() != 'linkedin':
+                    continue
+                elif filter_type == 'google_maps' and lead.get('source', '').lower() != 'google maps':
+                    continue
+                elif filter_type == 'yellow_pages' and lead.get('source', '').lower() != 'yellow pages':
+                    continue
+
+                leads.append(lead)
+            except Exception as lead_e:
+                logger.error(f"Error processing lead: {str(lead_e)}")
+                # Skip problematic leads but continue processing others
                 continue
 
-            leads.append(lead)
-
-        # Get user's real subscription data
+        # Get user's subscription data with safe fallbacks
         subscription = None
         try:
             # Try to fetch from Supabase
@@ -842,26 +864,41 @@ def dashboard():
                 logger.info(f"Found subscription for user {user_id}: {subscription}")
         except Exception as e:
             logger.error(f"Error fetching subscription from Supabase: {str(e)}")
+            # Continue with file backup
 
         # Fallback to file for subscription
         if not subscription:
             try:
                 with open('data/user_packages.json', 'r') as f:
                     packages = json.load(f)
-                    if isinstance(packages, list):
+                    
+                    if not packages:
+                        logger.warning(f"Empty packages in user_packages.json")
+                    elif isinstance(packages, list):
                         package_data = next((p for p in packages if p.get('user_id') == user_id and p.get('status') == 'active'), None)
+                        if package_data:
+                            subscription = {
+                                'package_name': package_data.get('package_name', 'Lead Engine'),
+                                'status': 'active',
+                                'lead_volume': package_data.get('lead_volume', 150)
+                            }
+                            logger.info(f"Found subscription in file (list) for user {user_id}: {subscription}")
                     else:
-                        package_data = next((packages[pid] for pid in packages if packages[pid].get('user_id') == user_id and packages[pid].get('status') == 'active'), None)
-
-                    if package_data:
-                        subscription = {
-                            'package_name': package_data.get('package_name', 'Lead Engine'),
-                            'status': 'active',
-                            'lead_volume': package_data.get('lead_volume', 150)
-                        }
-                        logger.info(f"Found subscription in file for user {user_id}: {subscription}")
+                        # Handle dict format
+                        matching_packages = [packages[pid] for pid in packages 
+                                           if packages[pid].get('user_id') == user_id 
+                                           and packages[pid].get('status') == 'active']
+                        if matching_packages:
+                            package_data = matching_packages[0]
+                            subscription = {
+                                'package_name': package_data.get('package_name', 'Lead Engine'),
+                                'status': 'active',
+                                'lead_volume': package_data.get('lead_volume', 150)
+                            }
+                            logger.info(f"Found subscription in file (dict) for user {user_id}: {subscription}")
             except Exception as file_e:
                 logger.error(f"Error reading subscription data from file: {str(file_e)}")
+                # Continue with default fallback
 
         # If we still don't have subscription data, use defaults
         if not subscription:
@@ -871,19 +908,33 @@ def dashboard():
                 'lead_volume': 0
             }
 
-        # Simple analytics
-        analytics = {
-            'total_leads': len(leads),
-            'high_quality_leads': sum(1 for lead in leads if lead.get('score', 0) > 75),
-            'conversion_rate': '10%'  # Placeholder
-        }
+        # Simple analytics - safe calculations with fallbacks
+        try:
+            analytics = {
+                'total_leads': len(leads),
+                'high_quality_leads': sum(1 for lead in leads if lead.get('score', 0) > 75),
+                'conversion_rate': '10%'  # Placeholder
+            }
+        except Exception as analytics_e:
+            logger.error(f"Error calculating analytics: {str(analytics_e)}")
+            analytics = {
+                'total_leads': 0,
+                'high_quality_leads': 0,
+                'conversion_rate': '0%'
+            }
 
-        return render_template('dashboard.html',
-                           username=username,
-                           leads=leads,
-                           subscription=subscription,
-                           analytics=analytics,
-                           now=datetime.now())
+        # Use a try/except for the template rendering as well
+        try:
+            return render_template('dashboard.html',
+                               username=username,
+                               leads=leads,
+                               subscription=subscription,
+                               analytics=analytics,
+                               now=datetime.now())
+        except Exception as render_e:
+            logger.error(f"Template rendering error: {str(render_e)}")
+            flash('Error displaying dashboard. Please contact support.')
+            return redirect(url_for('home'))
 
     except Exception as e:
         logger.error(f"Dashboard error: {str(e)}")
@@ -1307,7 +1358,7 @@ def success():
         checkout_session = stripe.checkout.Session.retrieve(session_id)
 
         # Get user and package from metadata
-        user_id = checkout_session.metadata.get('user_id', 'anonymous')
+        user_id = checkout_session.metadata.get('user_id', session.get('user_id', 'anonymous'))
         package = checkout_session.metadata.get('package')
 
         if not package:
@@ -1327,55 +1378,59 @@ def success():
         # Get subscription ID if it exists
         subscription_id = checkout_session.subscription if hasattr(checkout_session, 'subscription') else None
 
+        package_created = False
+        
+        # Try to use Supabase first
         try:
-            # Try to use Supabase
+            # Generate a unique ID for the user_package
+            package_id = f"pkg_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+
+            # Insert or update user package with explicit ID
+            supabase.table('user_packages').upsert({
+                'id': package_id,
+                'user_id': user_id,
+                'package_name': package,
+                'lead_volume': lead_volume,
+                'stripe_subscription_id': subscription_id,
+                'status': 'active',
+                'next_delivery': datetime.now().isoformat(),
+                'updated_at': datetime.now().isoformat()
+            }).execute()
+
+            logger.info(f"Updated subscription for user {user_id}: package={package}")
+            package_created = True
+        except Exception as db_e:
+            logger.error(f"Database error in success route: {str(db_e)}")
+            # Continue to file-based storage
+
+        # Fallback to file-based storage if Supabase failed
+        if not package_created:
             try:
-                # Generate a unique ID for the user_package
-                package_id = f"pkg_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
-                # Insert or update user package with explicit ID
-                supabase.table('user_packages').upsert({
-                    'id': package_id,
-                    'user_id': user_id,
-                    'package_name': package,
-                    'lead_volume': lead_volume,
-                    'stripe_subscription_id': subscription_id,
-                    'status': 'active',
-                    'next_delivery': datetime.now().isoformat(),
-                    'updated_at': datetime.now().isoformat()
-                }).execute()
-
-                logger.info(f"Updated subscription for user {user_id}: package={package}")
-            except Exception as db_e:
-                logger.error(f"Database error in success route: {str(db_e)}")
-                # Fallback to file-based storage
                 user_packages_file = 'data/user_packages.json'
-
-                try:
-                    with open(user_packages_file, 'r') as f:
+                
+                # Make sure the file exists
+                if not os.path.exists('data'):
+                    os.makedirs('data')
+                if not os.path.exists(user_packages_file):
+                    with open(user_packages_file, 'w') as f:
+                        json.dump([], f)
+                
+                # Read existing packages
+                with open(user_packages_file, 'r') as f:
+                    try:
                         packages = json.load(f)
-
-                    if not isinstance(packages, list):
+                    except json.JSONDecodeError:
                         packages = []
+                
+                # Ensure packages is a list
+                if not isinstance(packages, list):
+                    packages = []
 
-                    # Update or add package
-                    package_found = False
-                    for p in packages:
-                        if p.get('user_id') == user_id:
-                            p.update({
-                                'package_name': package,
-                                'lead_volume': lead_volume,
-                                'stripe_subscription_id': subscription_id,
-                                'status': 'active',
-                                'next_delivery': datetime.now().isoformat(),
-                                'updated_at': datetime.now().isoformat()
-                            })
-                            package_found = True
-                            break
-
-                    if not package_found:
-                        packages.append({
-                            'user_id': user_id,
+                # Update or add package
+                package_found = False
+                for p in packages:
+                    if p.get('user_id') == user_id:
+                        p.update({
                             'package_name': package,
                             'lead_volume': lead_volume,
                             'stripe_subscription_id': subscription_id,
@@ -1383,25 +1438,37 @@ def success():
                             'next_delivery': datetime.now().isoformat(),
                             'updated_at': datetime.now().isoformat()
                         })
+                        package_found = True
+                        break
 
-                    with open(user_packages_file, 'w') as f:
-                        json.dump(packages, f, indent=2)
+                if not package_found:
+                    packages.append({
+                        'user_id': user_id,
+                        'package_name': package,
+                        'lead_volume': lead_volume,
+                        'stripe_subscription_id': subscription_id,
+                        'status': 'active',
+                        'next_delivery': datetime.now().isoformat(),
+                        'updated_at': datetime.now().isoformat()
+                    })
 
-                    logger.info(f"Updated subscription in file for user {user_id}: package={package}")
-                except Exception as file_e:
-                    logger.error(f"File-based storage error: {str(file_e)}")
+                # Write updated packages back to file
+                with open(user_packages_file, 'w') as f:
+                    json.dump(packages, f, indent=2)
 
-            if package == 'launch':
-                flash('Payment successful! Your leads will be generated and emailed shortly.')
-            else:
-                flash(f'Payment successful! Your {package} subscription is now active.')
+                logger.info(f"Updated subscription in file for user {user_id}: package={package}")
+                package_created = True
+            except Exception as file_e:
+                logger.error(f"File-based storage error: {str(file_e)}")
+                # Continue to flash message even if storage failed
 
-            return redirect(url_for('dashboard'))
+        # Prepare appropriate flash message
+        if package == 'launch':
+            flash('Payment successful! Your leads will be generated and emailed shortly.')
+        else:
+            flash(f'Payment successful! Your {package} subscription is now active.')
 
-        except Exception as e:
-            logger.error(f"Database error in success route: {str(e)}")
-            flash('Error processing payment. Please contact support.')
-            return redirect(url_for('dashboard'))
+        return redirect(url_for('dashboard'))
 
     except stripe.error.StripeError as e:
         logger.error(f"Stripe error: {str(e)}")
