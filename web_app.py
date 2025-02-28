@@ -1,19 +1,11 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response, jsonify
-from supabase import create_client, Client
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
-import stripe
-import psycopg2
-import threading
-from datetime import datetime, timedelta
-import json
 import sys
 import logging
-import csv
-import io
-import base64
-from flask_apscheduler import APScheduler
+import json
+import psutil
+from datetime import datetime, timedelta
+from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response, jsonify
+from supabase import create_client, Client
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -25,80 +17,51 @@ supabase_url = os.environ.get('SUPABASE_URL')
 supabase_key = os.environ.get('SUPABASE_KEY')
 supabase = create_client(supabase_url, supabase_key)
 
-stripe.api_key = os.environ.get('STRIPE_API_KEY')
-sendgrid_api_key = os.environ.get('SENDGRID_API_KEY')
-
-# Ensure database tables exist
-def ensure_tables_exist():
+def terminate_port_process(port):
+    """Terminate any process using the specified port"""
     try:
-        # Try to create users table
-        try:
-            logger.info("Checking/creating users table")
-            # Try to insert a test record - this will fail if table doesn't exist
-            test_id = f"test_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-            supabase.table('users').insert({
-                'id': test_id, 
-                'username': 'test', 
-                'email': 'test@example.com', 
-                'created_at': datetime.utcnow().isoformat()
-            }).execute()
-            # Delete the test record
-            supabase.table('users').delete().eq('id', test_id).execute()
-            logger.info("Users table exists")
-        except Exception as e:
-            logger.error(f"Error with users table: {str(e)}")
-            # Table might not exist - we'll try SQL directly in a future version
-
-        # Try to create user_packages table
-        try:
-            logger.info("Checking/creating user_packages table")
-            test_id = f"test_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-            supabase.table('user_packages').insert({
-                'id': test_id, 
-                'user_id': test_id, 
-                'package_name': 'test', 
-                'lead_volume': 0, 
-                'status': 'inactive'
-            }).execute()
-            supabase.table('user_packages').delete().eq('id', test_id).execute()
-            logger.info("User packages table exists")
-        except Exception as e:
-            logger.error(f"Error with user_packages table: {str(e)}")
-
-        # Try to create leads table
-        try:
-            logger.info("Checking/creating leads table")
-            test_id = f"test_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-            supabase.table('leads').insert({
-                'id': test_id, 
-                'user_id': test_id, 
-                'name': 'Test Lead', 
-                'email': 'test@example.com', 
-                'date_added': datetime.utcnow().isoformat()
-            }).execute()
-            supabase.table('leads').delete().eq('id', test_id).execute()
-            logger.info("Leads table exists")
-        except Exception as e:
-            logger.error(f"Error with leads table: {str(e)}")
-
-        logger.info("Database tables check completed")
+        for proc in psutil.process_iter(['pid', 'name', 'connections']):
+            try:
+                for conn in proc.connections():
+                    if conn.laddr.port == port:
+                        proc.terminate()
+                        proc.wait(timeout=5)
+                        logger.info(f"Terminated process {proc.pid} using port {port}")
+                        return True
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
+                continue
     except Exception as e:
-        logger.error(f"Error ensuring tables exist: {str(e)}")
+        logger.error(f"Error terminating process on port {port}: {str(e)}")
+    return False
 
-    # Always ensure local data files exist as fallback
-    ensure_local_data_files()
+def ensure_tables_exist():
+    """Ensure all required tables exist"""
+    try:
+        # Try to create users table if it doesn't exist
+        supabase.table('users').select('id').limit(1).execute()
+        logger.info("Users table exists")
+    except Exception as e:
+        logger.error(f"Error checking users table: {str(e)}")
+        try:
+            # Execute SQL to create users table
+            supabase.postgrest.call('create_users_table', {})
+            logger.info("Created users table")
+        except Exception as create_e:
+            logger.error(f"Failed to create users table: {str(create_e)}")
 
-# Fallback to JSON files if database connection fails
-def ensure_local_data_files():
+    # Ensure data directory exists
     data_dir = 'data'
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
+        logger.info(f"Created data directory: {data_dir}")
 
+    # Initialize empty JSON files if they don't exist
     for file_name in ['users.json', 'user_packages.json', 'leads.json']:
         file_path = os.path.join(data_dir, file_name)
         if not os.path.exists(file_path):
             with open(file_path, 'w') as f:
                 json.dump([], f)
+            logger.info(f"Created empty JSON file: {file_path}")
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -1167,9 +1130,9 @@ def terminate_port_process(port):
         print(f"Error in terminate_port_process: {str(e)}", file=sys.stderr)
 
 # Create required data directories on startup
-ensure_local_data_files()
+ensure_local_data_files = lambda: None #Dummy function to avoid errors
 
-# Try to set up database tables at startup
+
 ensure_tables_exist()
 
 if __name__ == '__main__':
