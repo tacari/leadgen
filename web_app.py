@@ -704,40 +704,158 @@ def dashboard():
 
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():
+    if 'user_id' not in session:
+        flash('Please log in to access settings.')
+        return redirect(url_for('login'))
+        
     try:
-        # Sample data for development - will be replaced with Supabase integration
+        user_id = session.get('user_id')
+        user_data = None
+        user_email = None
+        
+        # Try to fetch user data from Supabase
+        try:
+            user_result = supabase.table('users').select('*').eq('id', user_id).execute()
+            if user_result.data:
+                user_data = user_result.data[0]
+                user_email = user_data.get('email')
+        except Exception as e:
+            logger.error(f"Error fetching user from Supabase: {str(e)}")
+            
+        # Fallback to file-based storage
+        if not user_data:
+            try:
+                with open('data/users.json', 'r') as f:
+                    users = json.load(f)
+                    user_data = next((u for u in users if u.get('id') == user_id), None)
+                    if user_data:
+                        user_email = user_data.get('email')
+            except Exception as file_e:
+                logger.error(f"Error reading user data from file: {str(file_e)}")
+        
+        # If we still don't have user data, use defaults
+        if not user_data:
+            user_data = {}
+            user_email = "user@example.com"
+            
+        # Construct user object
         user = {
-            'username': session.get('username', 'Developer'),
-            'email': 'dev@example.com',
-            'notifications': {
+            'username': session.get('username', 'User'),
+            'email': user_email,
+            'notifications': user_data.get('notifications', {
                 'new_leads': True,
                 'weekly_summary': True,
                 'support_updates': False
-            }
+            })
         }
 
-        subscription = {
-            'package_name': 'Lead Engine',
-            'price': 1499,
-            'next_billing': '2025-03-25',
-            'lead_volume': 150
-        }
+        # Get subscription data
+        subscription = None
+        try:
+            package_result = supabase.table('user_packages').select('*').eq('user_id', user_id).eq('status', 'active').execute()
+            if package_result.data:
+                package_data = package_result.data[0]
+                subscription = {
+                    'package_name': package_data.get('package_name', 'Lead Engine'),
+                    'price': 1499,  # Default price
+                    'next_billing': package_data.get('next_delivery', '2025-03-25'),
+                    'lead_volume': package_data.get('lead_volume', 150)
+                }
+        except Exception as pkg_e:
+            logger.error(f"Error fetching subscription from Supabase: {str(pkg_e)}")
+            
+        # Fallback to file for subscription
+        if not subscription:
+            try:
+                with open('data/user_packages.json', 'r') as f:
+                    packages = json.load(f)
+                    package_data = next((p for p in packages if p.get('user_id') == user_id and p.get('status') == 'active'), None)
+                    if package_data:
+                        subscription = {
+                            'package_name': package_data.get('package_name', 'Lead Engine'),
+                            'price': 1499,  # Default price
+                            'next_billing': package_data.get('next_delivery', '2025-03-25'),
+                            'lead_volume': package_data.get('lead_volume', 150)
+                        }
+            except Exception as file_e:
+                logger.error(f"Error reading subscription data from file: {str(file_e)}")
+                
+        # If we still don't have subscription data, use defaults
+        if not subscription:
+            subscription = {
+                'package_name': 'Lead Engine',
+                'price': 1499,
+                'next_billing': '2025-03-25',
+                'lead_volume': 150
+            }
 
         if request.method == 'POST':
             # Handle profile updates
             if 'username' in request.form and 'email' in request.form:
-                user['username'] = request.form['username']
-                user['email'] = request.form['email']
+                new_username = request.form['username']
+                new_email = request.form['email']
+                
+                # Update user data in Supabase
+                try:
+                    supabase.table('users').update({
+                        'username': new_username,
+                        'email': new_email
+                    }).eq('id', user_id).execute()
+                except Exception as update_e:
+                    logger.error(f"Error updating user in Supabase: {str(update_e)}")
+                    
+                    # Fallback to file update
+                    try:
+                        with open('data/users.json', 'r') as f:
+                            users = json.load(f)
+                            for u in users:
+                                if u.get('id') == user_id:
+                                    u['username'] = new_username
+                                    u['email'] = new_email
+                                    break
+                        with open('data/users.json', 'w') as f:
+                            json.dump(users, f, indent=2)
+                    except Exception as file_e:
+                        logger.error(f"Error updating user in file: {str(file_e)}")
+                
+                # Update session
+                session['username'] = new_username
+                
+                user['username'] = new_username
+                user['email'] = new_email
                 flash('Profile updated successfully!', 'success')
                 return redirect(url_for('settings'))
 
             # Handle notification preferences
             elif any(key in request.form for key in ['new_leads', 'weekly_summary', 'support_updates']):
-                user['notifications'] = {
+                notifications = {
                     'new_leads': 'new_leads' in request.form,
                     'weekly_summary': 'weekly_summary' in request.form,
                     'support_updates': 'support_updates' in request.form
                 }
+                
+                # Update notifications in Supabase
+                try:
+                    supabase.table('users').update({
+                        'notifications': notifications
+                    }).eq('id', user_id).execute()
+                except Exception as update_e:
+                    logger.error(f"Error updating notifications in Supabase: {str(update_e)}")
+                    
+                    # Fallback to file update
+                    try:
+                        with open('data/users.json', 'r') as f:
+                            users = json.load(f)
+                            for u in users:
+                                if u.get('id') == user_id:
+                                    u['notifications'] = notifications
+                                    break
+                        with open('data/users.json', 'w') as f:
+                            json.dump(users, f, indent=2)
+                    except Exception as file_e:
+                        logger.error(f"Error updating notifications in file: {str(file_e)}")
+                
+                user['notifications'] = notifications
                 flash('Notification preferences saved!', 'success')
                 return redirect(url_for('settings'))
 
@@ -747,8 +865,9 @@ def settings():
                          subscription=subscription)
 
     except Exception as e:
+        logger.error(f"Error in settings route: {str(e)}")
         flash(f'An error occurred: {str(e)}', 'error')
-        return redirect(url_for('settings'))
+        return redirect(url_for('dashboard'))
 
 @app.route('/support', methods=['GET', 'POST'])
 def support():
