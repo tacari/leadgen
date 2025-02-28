@@ -7,6 +7,27 @@
         <h1 class="text-4xl font-bold">Hey {{ username }}, Welcome to Your Leadzap Dashboard</h1>
     </header>
 
+    <!-- Next Delivery Section -->
+    <div class="mb-6">
+        <h2 class="text-xl font-semibold mb-3">Next Lead Delivery</h2>
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-4">
+            {% if subscription.package_name.lower() == 'launch' %}
+                <p class="text-[#A1A9B8] text-center">One-time delivery of 50 leads</p>
+            {% elif subscription.package_name.lower() == 'engine' %}
+                <p class="text-[#A1A9B8] text-center">Next weekly delivery: {{ ((datetime.now() + timedelta(days=7)).strftime('%A, %b %d')) }}</p>
+                <p class="text-[#A1A9B8] text-center text-sm">~38 leads per week</p>
+            {% elif subscription.package_name.lower() == 'accelerator' %}
+                <p class="text-[#A1A9B8] text-center">Next daily delivery: {{ ((datetime.now() + timedelta(days=1)).strftime('%A, %b %d')) }}</p>
+                <p class="text-[#A1A9B8] text-center text-sm">~10 leads per day</p>
+            {% elif subscription.package_name.lower() == 'empire' %}
+                <p class="text-[#A1A9B8] text-center">Next daily delivery: {{ ((datetime.now() + timedelta(days=1)).strftime('%A, %b %d')) }}</p>
+                <p class="text-[#A1A9B8] text-center text-sm">~20 leads per day</p>
+            {% else %}
+                <p class="text-[#A1A9B8] text-center">No active subscription</p>
+            {% endif %}
+        </div>
+    </div>
+
     <!-- Leads -->
     <section class="mb-12">
         <h2 class="text-3xl font-bold text-center mb-6">Your Lead Pipeline</h2>

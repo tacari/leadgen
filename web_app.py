@@ -1145,17 +1145,17 @@ def generate_custom_leads():
         logger.error(f"Error in generate_custom_leads: {str(e)}")
         flash(f'An error occurred: {str(e)}', 'error')
         return redirect(url_for('dashboard'))
-        
+
 @app.route('/outreach-templates', methods=['GET'])
 def outreach_templates():
     if 'user_id' not in session:
         flash('Please log in to view outreach templates.')
         return redirect(url_for('login'))
-        
+
     try:
         user_id = session.get('user_id')
         username = session.get('username', 'Demo User')
-        
+
         # Get user's subscription to determine template access
         user_subscription = None
         try:
@@ -1164,7 +1164,7 @@ def outreach_templates():
                 user_subscription = package_result.data[0]
         except Exception as e:
             logger.error(f"Error fetching subscription from Supabase: {str(e)}")
-            
+
         # Fallback to file for subscription
         if not user_subscription:
             try:
@@ -1174,10 +1174,10 @@ def outreach_templates():
                         user_subscription = next((p for p in packages if p.get('user_id') == user_id and p.get('status') == 'active'), None)
             except Exception as file_e:
                 logger.error(f"Error reading subscription data from file: {str(file_e)}")
-                
+
         # Use default values if no subscription found
         package_name = user_subscription.get('package_name', 'Lead Launch') if user_subscription else 'Lead Launch'
-        
+
         # Get a sample lead for template preview
         sample_lead = {
             'name': 'Acme Company',
@@ -1186,13 +1186,13 @@ def outreach_templates():
             'score': 85,
             'verified': True
         }
-        
+
         # Get templates based on package
         from scraper import LeadScraper
         scraper = LeadScraper()
         email_template = scraper.generate_email_template(sample_lead, package_name)
         linkedin_template = scraper.generate_linkedin_dm(sample_lead, package_name)
-        
+
         # Determine how many templates are available based on package
         template_counts = {
             'launch': {'email': 1, 'linkedin': 0, 'sms': 0},
@@ -1200,16 +1200,16 @@ def outreach_templates():
             'accelerator': {'email': 5, 'linkedin': 1, 'sms': 0},
             'empire': {'email': 7, 'linkedin': 1, 'sms': 1}
         }
-        
+
         template_access = template_counts.get(package_name.lower(), template_counts['launch'])
-        
+
         return render_template('outreach_templates.html',
                             username=username,
                             email_template=email_template,
                             linkedin_template=linkedin_template,
                             package_name=package_name,
                             template_access=template_access)
-    
+
     except Exception as e:
         logger.error(f"Error in outreach_templates: {str(e)}")
         flash(f'An error occurred: {str(e)}', 'error')
@@ -1640,14 +1640,31 @@ if __name__ == '__main__':
         scheduler = APScheduler()
         scheduler.init_app(app)
 
-        # Add the lead delivery job
+        # Initialize lead scheduler
+        from lead_scheduler import LeadScheduler
+        lead_scheduler = LeadScheduler()
+        lead_scheduler.create_lead_pool_table()
+
+        # Schedule lead delivery job
         scheduler.add_job(
             id='lead_delivery',
-            func=schedule_lead_delivery,
+            func=lead_scheduler.process_lead_deliveries,
             trigger='interval',
-            hours=24,
+            hours=6,  # Run every 6 hours to catch all delivery times
             next_run_time=datetime.now() + timedelta(minutes=1)
         )
+
+        # Schedule weekly lead pool refresh
+        scheduler.add_job(
+            id='lead_pool_refresh',
+            func=lead_scheduler.schedule_weekly_pool_refresh,
+            trigger='interval',
+            days=7,  # Run weekly
+            next_run_time=datetime.now() + timedelta(minutes=5)  # Start after 5 minutes
+        )
+
+        # Initial population of lead pool (in background thread to not block startup)
+        threading.Thread(target=lead_scheduler.populate_initial_pool).start()
 
         # Start the scheduler
         logger.info("Starting scheduler")
