@@ -1,68 +1,279 @@
+
 {% extends "dashboard_base.html" %}
 {% block content %}
-<div class="bg-[#0D1321] min-h-screen text-white p-8">
-    <h1 class="text-4xl font-bold text-center mb-4 animate-fade-in">Choose Your Plan</h1>
-    <p class="text-lg text-[#A1A9B8] italic text-center mb-12">Every lead, every detail—your full pipeline at a glance.</p>
-
-    <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6">
-        <!-- Lead Launch Package -->
-        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 text-center animate-fade-in">
-            <h2 class="text-2xl font-bold mb-4">Lead Launch</h2>
-            <p class="text-[#A1A9B8] mb-4">$499 <span class="text-sm">One-Time</span></p>
-            <p class="text-[#A1A9B8] mb-4">50 Qualified Leads</p>
-            <ul class="text-[#A1A9B8] text-sm mb-6">
-                <li class="mb-2">AI Targets Your Ideal Prospects</li>
-                <li class="mb-2">Delivered in 7 Days</li>
-                <li class="mb-2">CSV + Email Delivery</li>
-                <li>1 Personalized Email Template</li>
-            </ul>
-            <a href="{{ url_for('checkout', package='launch') }}" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Get Started</a>
+<div class="bg-[#0D1321] min-h-screen text-white">
+    <!-- Hero Section -->
+    <header class="relative text-center py-20">
+        <canvas id="waveCanvas" class="absolute inset-0 w-full h-full opacity-20"></canvas>
+        <div class="relative z-10">
+            <h1 class="text-5xl font-bold mb-6">Power Your Growth with Precision Lead Generation</h1>
+            <p class="text-2xl text-[#A1A9B8] italic mb-8">From $499 trials to $24,999 enterprise solutions—engineered for billion-dollar outcomes.</p>
+            <a href="#packages" class="inline-block bg-gradient-to-r from-[#7B00FF] to-[#8F00FF] text-white px-8 py-4 rounded-lg text-xl font-bold hover:from-[#8F00FF] hover:to-[#A100FF] hover:shadow-xl transition-all duration-300">Explore Plans</a>
         </div>
+    </header>
 
-        <!-- Lead Engine Package -->
-        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 text-center animate-fade-in">
-            <h2 class="text-2xl font-bold mb-4">Lead Engine</h2>
-            <p class="text-[#A1A9B8] mb-4">$1,499 <span class="text-sm">/month</span></p>
-            <p class="text-[#A1A9B8] mb-4">150 Monthly Leads</p>
-            <ul class="text-[#A1A9B8] text-sm mb-6">
-                <li class="mb-2">Weekly Lead Delivery</li>
-                <li class="mb-2">CSV + Dashboard Access</li>
-                <li class="mb-2">3 Email Templates</li>
-                <li>Basic Analytics</li>
-            </ul>
-            <a href="{{ url_for('checkout', package='engine') }}" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Subscribe</a>
+    <!-- Package Cards -->
+    <section id="packages" class="py-16">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 px-4">
+            <!-- Lead Starter -->
+            <div class="bg-[#1A2236] border-2 border-[#7B00FF] rounded-xl p-6 animate-fade-in hover:shadow-[0_0_15px_#7B00FF] transition-all duration-300" style="animation-delay: 0.2s;">
+                <h3 class="text-3xl font-bold text-center mb-4">Lead Starter</h3>
+                <p class="text-[#7B00FF] text-4xl font-bold text-center mb-2">$499</p>
+                <p class="text-[#A1A9B8] text-lg text-center mb-4">One-Time</p>
+                <p class="text-[#A1A9B8] italic text-center mb-6">Launch your lead gen journey</p>
+                <ul class="text-[#A1A9B8] text-sm mb-6 space-y-2">
+                    <li class="flex items-start">
+                        <span class="text-[#7B00FF] mr-2">•</span>50 leads (one-time)
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-[#7B00FF] mr-2">•</span>Basic lead scoring (source-based)
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-[#7B00FF] mr-2">•</span>Yellow Pages leads
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-[#7B00FF] mr-2">•</span>Email verification (syntax check)
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-[#7B00FF] mr-2">•</span>1 email template
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-[#7B00FF] mr-2">•</span>One-time delivery in 7 days
+                    </li>
+                </ul>
+                <a href="{{ url_for('checkout', package='launch') }}" 
+                   class="block bg-[#7B00FF] text-white px-6 py-3 rounded-lg text-center text-xl font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-all duration-200">
+                   Get Started
+                </a>
+            </div>
+            
+            <!-- Lead Growth -->
+            <div class="bg-[#1A2236] border-2 border-[#7B00FF] rounded-xl p-6 animate-fade-in hover:shadow-[0_0_15px_#7B00FF] transition-all duration-300" style="animation-delay: 0.4s;">
+                <h3 class="text-3xl font-bold text-center mb-4">Lead Growth</h3>
+                <p class="text-[#7B00FF] text-4xl font-bold text-center mb-2">$2,999</p>
+                <p class="text-[#A1A9B8] text-lg text-center mb-4">Monthly</p>
+                <p class="text-[#A1A9B8] italic text-center mb-6">Scale with precision</p>
+                <ul class="text-[#A1A9B8] text-sm mb-6 space-y-2">
+                    <li class="flex items-start">
+                        <span class="text-[#7B00FF] mr-2">•</span>200 leads/month
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-[#7B00FF] mr-2">•</span>Full lead scoring (source + verification)
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-[#7B00FF] mr-2">•</span>Yellow Pages and Google Maps leads
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-[#7B00FF] mr-2">•</span>Full email and phone verification
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-[#7B00FF] mr-2">•</span>3 email templates
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-[#7B00FF] mr-2">•</span>Weekly delivery
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-[#7B00FF] mr-2">•</span>Basic CRM sync
+                    </li>
+                </ul>
+                <a href="{{ url_for('checkout', package='engine') }}" 
+                   class="block bg-[#7B00FF] text-white px-6 py-3 rounded-lg text-center text-xl font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-all duration-200">
+                   Subscribe
+                </a>
+            </div>
+            
+            <!-- Lead Pro -->
+            <div class="bg-[#1A2236] border-2 border-[#7B00FF] rounded-xl p-6 animate-fade-in hover:shadow-[0_0_15px_#7B00FF] transition-all duration-300 relative" style="animation-delay: 0.6s;">
+                <div class="absolute top-0 right-0 bg-[#7B00FF] text-white px-4 py-1 rounded-tr-lg rounded-bl-lg">Popular</div>
+                <h3 class="text-3xl font-bold text-center mb-4">Lead Pro</h3>
+                <p class="text-[#7B00FF] text-4xl font-bold text-center mb-2">$9,999</p>
+                <p class="text-[#A1A9B8] text-lg text-center mb-4">Monthly</p>
+                <p class="text-[#A1A9B8] italic text-center mb-6">Accelerate your dominance</p>
+                <ul class="text-[#A1A9B8] text-sm mb-6 space-y-2">
+                    <li class="flex items-start">
+                        <span class="text-[#7B00FF] mr-2">•</span>500 leads/month
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-[#7B00FF] mr-2">•</span>Advanced lead scoring (intent parsing)
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-[#7B00FF] mr-2">•</span>All sources (YP, GM, LinkedIn)
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-[#7B00FF] mr-2">•</span>Full email, phone, and LinkedIn verification
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-[#7B00FF] mr-2">•</span>5 email templates + LinkedIn/SMS placeholders
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-[#7B00FF] mr-2">•</span>Daily delivery
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-[#7B00FF] mr-2">•</span>Full CRM automation (pipeline, Slack)
+                    </li>
+                </ul>
+                <a href="{{ url_for('checkout', package='accelerator') }}" 
+                   class="block bg-[#7B00FF] text-white px-6 py-3 rounded-lg text-center text-xl font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-all duration-200">
+                   Subscribe
+                </a>
+            </div>
+            
+            <!-- Lead Enterprise -->
+            <div class="bg-[#1A2236] border-2 border-[#7B00FF] rounded-xl p-6 animate-fade-in hover:shadow-[0_0_15px_#7B00FF] transition-all duration-300" style="animation-delay: 0.8s;">
+                <h3 class="text-3xl font-bold text-center mb-4">Lead Enterprise</h3>
+                <p class="text-[#7B00FF] text-4xl font-bold text-center mb-2">$24,999</p>
+                <p class="text-[#A1A9B8] text-lg text-center mb-4">Monthly</p>
+                <p class="text-[#A1A9B8] italic text-center mb-6">Engineered for billion-dollar scale</p>
+                <ul class="text-[#A1A9B8] text-sm mb-6 space-y-2">
+                    <li class="flex items-start">
+                        <span class="text-[#7B00FF] mr-2">•</span>1,000 leads/month
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-[#7B00FF] mr-2">•</span>Premium lead scoring (real-time updates)
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-[#7B00FF] mr-2">•</span>All sources + competitor insights
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-[#7B00FF] mr-2">•</span>Full email, phone, and LinkedIn verification
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-[#7B00FF] mr-2">•</span>7 email templates + LinkedIn/SMS integration
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-[#7B00FF] mr-2">•</span>Daily priority delivery
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-[#7B00FF] mr-2">•</span>Full CRM automation + custom workflows
+                    </li>
+                </ul>
+                <a href="{{ url_for('checkout', package='empire') }}" 
+                   class="block bg-[#7B00FF] text-white px-6 py-3 rounded-lg text-center text-xl font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-all duration-200">
+                   Contact Sales
+                </a>
+            </div>
         </div>
+    </section>
 
-        <!-- Lead Accelerator Package -->
-        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 text-center animate-fade-in relative">
-            <div class="absolute top-0 right-0 bg-[#7B00FF] text-white px-4 py-1 rounded-tr-lg rounded-bl-lg">Popular</div>
-            <h2 class="text-2xl font-bold mb-4">Lead Accelerator</h2>
-            <p class="text-[#A1A9B8] mb-4">$2,999 <span class="text-sm">/month</span></p>
-            <p class="text-[#A1A9B8] mb-4">300 Monthly Leads</p>
-            <ul class="text-[#A1A9B8] text-sm mb-6">
-                <li class="mb-2">Daily Lead Delivery</li>
-                <li class="mb-2">Premium Dashboard Access</li>
-                <li class="mb-2">5 Email Templates</li>
-                <li>Advanced Analytics + Reports</li>
-            </ul>
-            <a href="{{ url_for('checkout', package='accelerator') }}" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Subscribe</a>
+    <!-- Feature Comparison Table -->
+    <section class="py-16 px-4">
+        <h2 class="text-4xl font-bold text-center mb-12">Precision-Engineered Features for Every Scale</h2>
+        <div class="max-w-7xl mx-auto overflow-x-auto">
+            <table class="w-full text-[#A1A9B8] text-sm border border-[#7B00FF] rounded-lg bg-[#1A2236]">
+                <thead class="bg-[#1E2A44]">
+                    <tr class="border-b border-[#7B00FF]">
+                        <th class="p-4 text-left">Feature</th>
+                        <th class="p-4 text-center">Lead Starter<br><span class="text-[#7B00FF] text-2xl">$499</span><br><span class="text-sm">One-Time</span></th>
+                        <th class="p-4 text-center">Lead Growth<br><span class="text-[#7B00FF] text-2xl">$2,999</span><br><span class="text-sm">/month</span></th>
+                        <th class="p-4 text-center">Lead Pro<br><span class="text-[#7B00FF] text-2xl">$9,999</span><br><span class="text-sm">/month</span></th>
+                        <th class="p-4 text-center">Lead Enterprise<br><span class="text-[#7B00FF] text-2xl">$24,999</span><br><span class="text-sm">/month</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="border-b border-[#7B00FF] hover:bg-[#2A334F]">
+                        <td class="p-4">Leads per Month</td>
+                        <td class="p-4 text-center">50 (one-time)</td>
+                        <td class="p-4 text-center">200</td>
+                        <td class="p-4 text-center">500</td>
+                        <td class="p-4 text-center">1,000</td>
+                    </tr>
+                    <tr class="border-b border-[#7B00FF] hover:bg-[#2A334F]">
+                        <td class="p-4">Lead Scoring</td>
+                        <td class="p-4 text-center">Basic</td>
+                        <td class="p-4 text-center">Full</td>
+                        <td class="p-4 text-center">Advanced</td>
+                        <td class="p-4 text-center">Premium</td>
+                    </tr>
+                    <tr class="border-b border-[#7B00FF] hover:bg-[#2A334F]">
+                        <td class="p-4">Multi-Source Scraping</td>
+                        <td class="p-4 text-center">Yellow Pages</td>
+                        <td class="p-4 text-center">Yellow Pages, Google Maps</td>
+                        <td class="p-4 text-center">All Sources</td>
+                        <td class="p-4 text-center">All + Competitor Insights</td>
+                    </tr>
+                    <tr class="border-b border-[#7B00FF] hover:bg-[#2A334F]">
+                        <td class="p-4">Email Verification</td>
+                        <td class="p-4 text-center">Syntax Check</td>
+                        <td class="p-4 text-center">Full</td>
+                        <td class="p-4 text-center">Full</td>
+                        <td class="p-4 text-center">Full</td>
+                    </tr>
+                    <tr class="border-b border-[#7B00FF] hover:bg-[#2A334F]">
+                        <td class="p-4">Phone Verification</td>
+                        <td class="p-4 text-center">-</td>
+                        <td class="p-4 text-center">Yes</td>
+                        <td class="p-4 text-center">Yes</td>
+                        <td class="p-4 text-center">Yes</td>
+                    </tr>
+                    <tr class="border-b border-[#7B00FF] hover:bg-[#2A334F]">
+                        <td class="p-4">LinkedIn Verification</td>
+                        <td class="p-4 text-center">-</td>
+                        <td class="p-4 text-center">-</td>
+                        <td class="p-4 text-center">Yes</td>
+                        <td class="p-4 text-center">Yes</td>
+                    </tr>
+                    <tr class="border-b border-[#7B00FF] hover:bg-[#2A334F]">
+                        <td class="p-4">Automated Outreach</td>
+                        <td class="p-4 text-center">1 Email Template</td>
+                        <td class="p-4 text-center">3 Email Templates</td>
+                        <td class="p-4 text-center">5 Email + LinkedIn/SMS Placeholders</td>
+                        <td class="p-4 text-center">7 Email + LinkedIn/SMS Integration</td>
+                    </tr>
+                    <tr class="border-b border-[#7B00FF] hover:bg-[#2A334F]">
+                        <td class="p-4">Delivery Scheduling</td>
+                        <td class="p-4 text-center">One-Time (7 days)</td>
+                        <td class="p-4 text-center">Weekly</td>
+                        <td class="p-4 text-center">Daily</td>
+                        <td class="p-4 text-center">Daily (Priority)</td>
+                    </tr>
+                    <tr class="border-b border-[#7B00FF] hover:bg-[#2A334F]">
+                        <td class="p-4">CRM Workflow Automation</td>
+                        <td class="p-4 text-center">-</td>
+                        <td class="p-4 text-center">Basic Sync</td>
+                        <td class="p-4 text-center">Full (Pipeline, Slack)</td>
+                        <td class="p-4 text-center">Full + Custom Workflows</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
+    </section>
 
-        <!-- Lead Empire Package -->
-        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 text-center animate-fade-in">
-            <h2 class="text-2xl font-bold mb-4">Lead Empire</h2>
-            <p class="text-[#A1A9B8] mb-4">$5,999 <span class="text-sm">/month</span></p>
-            <p class="text-[#A1A9B8] mb-4">600 Monthly Leads</p>
-            <ul class="text-[#A1A9B8] text-sm mb-6">
-                <li class="mb-2">Real-time Lead Delivery</li>
-                <li class="mb-2">Enterprise Dashboard</li>
-                <li class="mb-2">7 Custom Templates</li>
-                <li>Priority Support + Strategy</li>
-            </ul>
-            <a href="{{ url_for('checkout', package='empire') }}" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">Subscribe</a>
-        </div>
-    </div>
+    <!-- CTA Section -->
+    <section class="text-center py-20">
+        <h2 class="text-4xl font-bold mb-6 relative inline-block">
+            Unlock Billion-Dollar Growth Today
+            <span class="absolute left-0 right-0 bottom-[-8px] h-1 bg-gradient-to-r from-[#7B00FF] to-[#8F00FF]"></span>
+        </h2>
+        <p class="text-xl text-[#A1A9B8] mb-8">From startups to enterprises—Leadzap powers precision lead generation at every scale.</p>
+        <a href="{{ url_for('pricing') }}" class="inline-block bg-[#7B00FF] text-white px-8 py-4 rounded-lg text-2xl font-bold hover:bg-[#8F00FF] hover:shadow-xl transform hover:scale-105 transition-all duration-300">Start Now</a>
+    </section>
 </div>
+
+<!-- Wave Animation -->
+<script>
+    const canvas = document.getElementById('waveCanvas');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = 300;
+
+        let time = 0;
+        function drawWave() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath();
+            for (let x = 0; x < canvas.width; x++) {
+                const y = 150 + 20 * Math.sin((x + time) * 0.01);
+                ctx.lineTo(x, y);
+            }
+            ctx.strokeStyle = 'rgba(123, 0, 255, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            time += 1;
+            requestAnimationFrame(drawWave);
+        }
+        drawWave();
+    }
+</script>
 
 <style>
 @keyframes fade-in {
@@ -75,4 +286,3 @@
 }
 </style>
 {% endblock %}
-<script src="{{ url_for('static', filename='js/script.js') }}"></script>
