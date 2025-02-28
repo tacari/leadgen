@@ -6,6 +6,15 @@ import psutil
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response, jsonify
 from supabase import create_client, Client
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
+import stripe
+import psycopg2
+import threading
+import csv
+import io
+import base64
+from flask_apscheduler import APScheduler
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -16,6 +25,9 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key')
 supabase_url = os.environ.get('SUPABASE_URL')
 supabase_key = os.environ.get('SUPABASE_KEY')
 supabase = create_client(supabase_url, supabase_key)
+
+stripe.api_key = os.environ.get('STRIPE_API_KEY')
+sendgrid_api_key = os.environ.get('SENDGRID_API_KEY')
 
 def terminate_port_process(port):
     """Terminate any process using the specified port"""
@@ -33,6 +45,28 @@ def terminate_port_process(port):
     except Exception as e:
         logger.error(f"Error terminating process on port {port}: {str(e)}")
     return False
+
+def ensure_local_data_files():
+    """Ensure local data files exist"""
+    data_dir = 'data'
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+        logger.info(f"Created data directory: {data_dir}")
+
+    for file_name in ['users.json', 'user_packages.json', 'leads.json']:
+        file_path = os.path.join(data_dir, file_name)
+        if not os.path.exists(file_path):
+            with open(file_path, 'w') as f:
+                json.dump([], f)
+            logger.info(f"Created empty JSON file: {file_path}")
+
+# Ensure local files exist
+ensure_local_data_files()
+
+# Initialize scheduler
+scheduler = APScheduler()
+scheduler.init_app(app)
+scheduler.start()
 
 def ensure_tables_exist():
     """Ensure all required tables exist"""
@@ -406,7 +440,7 @@ def send_lead_email(user_id, package_name):
         message.attachment = attachment
 
         # Send email
-        sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+        sg = SendGridAPIClient(sendgrid_api_key)
         response = sg.send(message)
 
         logger.info(f"Sent lead email to {email} with status code {response.status_code}")
@@ -449,18 +483,6 @@ def schedule_lead_delivery():
 
     except Exception as e:
         logger.error(f"Error in lead delivery schedule: {str(e)}")
-
-# Start scheduler
-scheduler = APScheduler()
-scheduler.init_app(app)
-scheduler.add_job(
-    id='lead_delivery',
-    func=schedule_lead_delivery,
-    trigger='interval',
-    hours=24,
-    next_run_time=datetime.now() + timedelta(seconds=10)
-)
-scheduler.start()
 
 @app.route('/')
 def home():
@@ -899,8 +921,6 @@ def success():
                 except Exception as file_e:
                     logger.error(f"File-based storage error: {str(file_e)}")
 
-                logger.info(f"Updated subscription in file for user {user_id}: package={package}")
-
             if package == 'launch':
                 flash('Payment successful! Your leads will be generated and emailed shortly.')
             else:
@@ -1152,7 +1172,11 @@ if __name__ == '__main__':
                 with open(file_path, 'w') as f:
                     json.dump([], f)
 
-        # Start the Flask server
+        # First, terminate any existing process on port 5000
+        if terminate_port_process(5000):
+            logger.info("Terminated existing process on port 5000")
+
+        # Try to start the server
         logger.info("Starting Flask server...")
         app.run(host='0.0.0.0', port=5000, debug=True)
 
