@@ -1,0 +1,141 @@
+
+{% extends "dashboard_base.html" %}
+{% block title %}Outreach Templates{% endblock %}
+{% block content %}
+<div class="bg-[#0D1321] min-h-screen text-white p-8">
+    <!-- Header -->
+    <header class="text-center py-10 relative animate-fade-in">
+        <h1 class="text-4xl font-bold">{{ package_name }} Outreach Templates</h1>
+        <p class="text-[#A1A9B8] mt-2">Customize and use these templates for your lead outreach</p>
+    </header>
+
+    <!-- Templates -->
+    <section class="mb-12">
+        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 max-w-6xl mx-auto">
+            <!-- Email Templates -->
+            <div class="mb-10">
+                <h2 class="text-2xl font-bold mb-4">Email Templates <span class="text-[#7B00FF]">({{ template_access.email }} available)</span></h2>
+                <div class="bg-[#0D1321] border border-[#7B00FF] rounded-lg p-4">
+                    <p class="text-[#A1A9B8] mb-2 text-sm">Template Preview:</p>
+                    <div class="bg-[#0D1321] border border-[#7B00FF] p-4 rounded-lg mb-4">
+                        {{ email_template|safe }}
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-4">
+                        <button class="bg-[#7B00FF] px-4 py-2 rounded text-white hover:bg-[#8F00FF]">Copy Template</button>
+                        {% if template_access.email > 1 %}
+                        <button class="bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded text-white hover:bg-[#7B00FF]">View More Templates</button>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="text-[#A1A9B8] mt-4 text-sm">
+                    <p>Your {{ package_name }} package includes access to {{ template_access.email }} email templates.</p>
+                    <p>These templates are also used in automated outreach when enabled.</p>
+                </div>
+            </div>
+            
+            <!-- LinkedIn Templates -->
+            <div class="mb-10">
+                <h2 class="text-2xl font-bold mb-4">LinkedIn Message Templates <span class="text-[#7B00FF]">({{ template_access.linkedin }} available)</span></h2>
+                
+                {% if template_access.linkedin > 0 %}
+                <div class="bg-[#0D1321] border border-[#7B00FF] rounded-lg p-4">
+                    <p class="text-[#A1A9B8] mb-2 text-sm">Template Preview:</p>
+                    <div class="bg-[#0D1321] border border-[#7B00FF] p-4 rounded-lg mb-4">
+                        <p>{{ linkedin_template }}</p>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-4">
+                        <button class="bg-[#7B00FF] px-4 py-2 rounded text-white hover:bg-[#8F00FF]">Copy Template</button>
+                    </div>
+                </div>
+                
+                <div class="text-[#A1A9B8] mt-4 text-sm">
+                    <p>Copy and paste this template into LinkedIn to reach out to your leads.</p>
+                </div>
+                {% else %}
+                <div class="bg-[#0D1321] border border-gray-700 rounded-lg p-4">
+                    <p class="text-gray-400">LinkedIn templates are available in Accelerator and Empire packages.</p>
+                    <a href="{{ url_for('pricing') }}" class="text-[#7B00FF] hover:underline">Upgrade your plan</a>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- SMS Templates -->
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold mb-4">SMS Templates <span class="text-[#7B00FF]">({{ template_access.sms }} available)</span></h2>
+                
+                {% if template_access.sms > 0 %}
+                <div class="bg-[#0D1321] border border-[#7B00FF] rounded-lg p-4">
+                    <p class="text-[#A1A9B8] mb-2 text-sm">Template Preview:</p>
+                    <div class="bg-[#0D1321] border border-[#7B00FF] p-4 rounded-lg mb-4">
+                        <p>Hi [Name], this is LeadZap. We found your business online and would love to chat about how we can help you grow. When would be a good time?</p>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-4">
+                        <button class="bg-[#7B00FF] px-4 py-2 rounded text-white hover:bg-[#8F00FF]">Copy Template</button>
+                    </div>
+                </div>
+                
+                <div class="text-[#A1A9B8] mt-4 text-sm">
+                    <p>SMS templates for personal outreach to your leads.</p>
+                </div>
+                {% else %}
+                <div class="bg-[#0D1321] border border-gray-700 rounded-lg p-4">
+                    <p class="text-gray-400">SMS templates are available exclusively in the Empire package.</p>
+                    <a href="{{ url_for('pricing') }}" class="text-[#7B00FF] hover:underline">Upgrade your plan</a>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Outreach Settings -->
+            <div class="mt-8 border-t border-[#7B00FF] pt-8">
+                <h2 class="text-2xl font-bold mb-4">Outreach Settings</h2>
+                <p class="text-[#A1A9B8] mb-6">Control how and when your automated outreach happens</p>
+                
+                <form class="space-y-4">
+                    <div>
+                        <label class="flex items-center space-x-2 text-white">
+                            <input type="checkbox" checked class="form-checkbox rounded bg-[#0D1321] border-[#7B00FF] text-[#7B00FF]">
+                            <span>Enable automated email outreach</span>
+                        </label>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-[#A1A9B8] mb-2">Outreach frequency:</label>
+                        <select class="w-full bg-[#0D1321] border border-[#7B00FF] rounded-lg p-3 text-white">
+                            {% if package_name.lower() in ['accelerator', 'empire'] %}
+                            <option value="daily">Daily (recommended)</option>
+                            <option value="weekly">Weekly</option>
+                            {% else %}
+                            <option value="weekly">Weekly (recommended)</option>
+                            <option value="monthly">Monthly</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-[#A1A9B8] mb-2">Email signature:</label>
+                        <textarea class="w-full bg-[#0D1321] border border-[#7B00FF] rounded-lg p-3 text-white" rows="3">Best regards,
+Your LeadZap Team</textarea>
+                    </div>
+                    
+                    <button type="submit" class="bg-[#7B00FF] px-6 py-2 rounded text-white hover:bg-[#8F00FF]">Save Settings</button>
+                </form>
+            </div>
+        </div>
+    </section>
+</div>
+
+<style>
+    @keyframes fade-in {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+        animation: fade-in 0.5s ease-out;
+        animation-fill-mode: both;
+    }
+</style>
+{% endblock %}

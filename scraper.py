@@ -4,7 +4,7 @@ import logging
 import requests
 import re
 from bs4 import BeautifulSoup
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 import psycopg2
 import json
@@ -12,6 +12,11 @@ from faker import Faker
 import threading
 from urllib.parse import urlparse
 from email_validator import validate_email, EmailNotValidError
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
+import base64
+import io
+import csv
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -385,6 +390,13 @@ class LeadScraper:
         if all_leads:
             if self.save_leads_to_db(all_leads, user_id):
                 self.logger.info(f"Successfully generated {len(all_leads)} leads for user {user_id}")
+                
+                # Schedule automated outreach based on package type
+                # For Launch: One-time delivery after lead generation
+                # For Engine: Weekly outreach
+                # For Accelerator/Empire: Daily outreach
+                self.schedule_automated_outreach(user_id, package_name, all_leads)
+                
                 return len(all_leads)
         return 0
 
@@ -633,6 +645,208 @@ class LeadScraper:
             
         self.logger.info(f"Multi-source scraping complete. Generated {len(all_leads)} unique leads.")
         return all_leads
+
+    def generate_email_template(self, lead, package_name):
+        """Generate a personalized email template based on package tier"""
+        templates = {
+            'launch': f"""
+                <p>Hello {lead.get('name', 'there').split()[0]},</p>
+                <p>I noticed your business while researching {lead.get('source', 'online')} and wanted to reach out.</p>
+                <p>We've helped businesses like yours grow their customer base through targeted lead generation.</p>
+                <p>Would you be open to a quick chat about how we might help your business?</p>
+                <p>Best regards,<br>Your LeadZap Team</p>
+            """,
+            'engine': f"""
+                <p>Hi {lead.get('name', 'there').split()[0]},</p>
+                <p>We recently found your business on {lead.get('source', 'online')} and were impressed by what we saw.</p>
+                <p>Our clients in your industry have seen an average 27% increase in qualified leads after working with us.</p>
+                <p>I'd love to share how our lead generation service could work specifically for {lead.get('name', 'your business')}.</p>
+                <p>When would be a good time to connect?</p>
+                <p>Regards,<br>Your LeadZap Team</p>
+            """,
+            'accelerator': f"""
+                <p>Hello {lead.get('name', 'there').split()[0]},</p>
+                <p>I came across your business while analyzing top companies in your area on {lead.get('source', 'online')}.</p>
+                <p>We specialize in helping businesses like yours generate more qualified leads through our AI-powered platform.</p>
+                <p>Based on your profile, I believe we could help increase your customer acquisition by 30% within 90 days.</p>
+                <p>Would you be interested in a personalized demo to see how this would work for your specific business?</p>
+                <p>Best regards,<br>Your LeadZap Team</p>
+            """,
+            'empire': f"""
+                <p>Hello {lead.get('name', 'there').split()[0]},</p>
+                <p>I was specifically researching industry leaders on {lead.get('source', 'online')} when I came across {lead.get('name', 'your business')}.</p>
+                <p>We've worked with similar businesses in your sector to dramatically increase their lead flow and conversion rates.</p>
+                <p>Our premium lead generation service has helped our enterprise clients achieve an average 42% growth in qualified opportunities within the first quarter.</p>
+                <p>I've actually prepared some initial research on your market position and would be happy to share these insights in a brief call.</p>
+                <p>When would be most convenient for you this week?</p>
+                <p>Warm regards,<br>Your LeadZap Team</p>
+            """
+        }
+        
+        # Default to launch template if package not found
+        return templates.get(package_name.lower(), templates['launch'])
+        
+    def generate_linkedin_dm(self, lead, package_name):
+        """Generate LinkedIn DM template based on package tier"""
+        templates = {
+            'launch': f"Hi {lead.get('name', 'there').split()[0]}, I found your profile while searching for businesses in your field. Would you be open to discussing how we could help with lead generation?",
+            'engine': f"Hello {lead.get('name', 'there').split()[0]}, I noticed your business on LinkedIn and was impressed. We've helped similar companies increase leads by 25%. Would you be open to a quick conversation?",
+            'accelerator': f"Hi {lead.get('name', 'there').split()[0]}, I was researching top companies in your sector and your profile stood out. We specialize in AI-powered lead generation for businesses like yours. Would you be interested in learning how we've helped others increase qualified leads by 30%?",
+            'empire': f"Hello {lead.get('name', 'there').split()[0]}, I've been specifically researching industry leaders and was impressed by {lead.get('name', 'your business')}. We've developed a custom approach for businesses in your position that has generated 40%+ growth in quality leads. I've prepared some initial thoughts - when would be a good time to discuss?"
+        }
+        
+        # Default to launch template if package not found
+        return templates.get(package_name.lower(), templates['launch'])
+    
+    def schedule_automated_outreach(self, user_id, package_name, leads, delay_days=1):
+        """Schedule automated outreach based on package type"""
+        self.logger.info(f"Scheduling automated outreach for {len(leads)} leads (Package: {package_name})")
+        
+        # Get SendGrid API key
+        sendgrid_api_key = os.environ.get('SENDGRID_API_KEY')
+        if not sendgrid_api_key:
+            self.logger.error("No SendGrid API key found, skipping automated outreach")
+            return False
+            
+        # Get user's email for notifications
+        try:
+            self.cur.execute("SELECT email FROM users WHERE id = %s", (user_id,))
+            user_email = self.cur.fetchone()[0]
+        except Exception as e:
+            self.logger.error(f"Error getting user email: {str(e)}")
+            user_email = "user@example.com"  # Fallback
+        
+        # Schedule based on package type
+        if package_name.lower() == 'launch':
+            # One-time delivery after 7 days
+            threading.Timer(7 * 86400, lambda: self.send_email_batch(leads, user_id, user_email, package_name)).start()
+            
+        elif package_name.lower() == 'engine':
+            # Weekly delivery
+            threading.Timer(7 * 86400, lambda: self.send_email_batch(leads, user_id, user_email, package_name)).start()
+            
+        elif package_name.lower() in ['accelerator', 'empire']:
+            # Daily delivery, staggered throughout the day
+            for i, lead_batch in enumerate(self.chunk_list(leads, 5)):  # Send in batches of 5
+                # Stagger outreach throughout the day (every 2 hours)
+                delay = delay_days * 86400 + i * 7200  # base delay + 2 hours per batch
+                threading.Timer(delay, lambda batch=lead_batch: self.send_email_batch(batch, user_id, user_email, package_name)).start()
+        
+        return True
+    
+    def chunk_list(self, lst, n):
+        """Split a list into chunks of size n"""
+        for i in range(0, len(lst), n):
+            yield lst[i:i+n]
+    
+    def send_email_batch(self, leads, user_id, user_email, package_name):
+        """Send a batch of emails to leads"""
+        self.logger.info(f"Sending email batch for {len(leads)} leads (Package: {package_name})")
+        
+        try:
+            sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+            
+            # Send individual emails to leads
+            successful_emails = 0
+            for lead in leads:
+                try:
+                    # Generate personalized content
+                    html_content = self.generate_email_template(lead, package_name)
+                    
+                    # Prepare email
+                    message = Mail(
+                        from_email='leads@leadzap.io',
+                        to_emails=lead.get('email'),
+                        subject=f"Opportunity for {lead.get('name')}",
+                        html_content=html_content
+                    )
+                    
+                    # Send email
+                    response = sg.send(message)
+                    
+                    # Update lead status if successful
+                    if response.status_code in [200, 201, 202]:
+                        successful_emails += 1
+                        self.cur.execute(
+                            "UPDATE leads SET status = 'Contacted' WHERE id = %s",
+                            (lead.get('id'),)
+                        )
+                        self.conn.commit()
+                    
+                    # Add delay between emails to avoid rate limiting
+                    time.sleep(1)
+                    
+                except Exception as e:
+                    self.logger.error(f"Error sending email to {lead.get('email')}: {str(e)}")
+            
+            # Send summary email to user
+            if successful_emails > 0:
+                # Create CSV of leads for attachment
+                output = io.StringIO()
+                writer = csv.writer(output)
+                writer.writerow(['Name', 'Email', 'Source', 'Score', 'Status', 'Date Added'])
+                
+                for lead in leads:
+                    writer.writerow([
+                        lead.get('name', 'N/A'),
+                        lead.get('email', 'N/A'),
+                        lead.get('source', 'N/A'),
+                        lead.get('score', 0),
+                        'Contacted',
+                        lead.get('date_added', datetime.now().isoformat())
+                    ])
+                
+                csv_content = output.getvalue()
+                csv_base64 = base64.b64encode(csv_content.encode('utf-8')).decode('utf-8')
+                
+                # Create summary email
+                summary_message = Mail(
+                    from_email='outreach@leadzap.io',
+                    to_emails=user_email,
+                    subject=f"Automated Outreach Update - {successful_emails} Leads Contacted",
+                    html_content=f"""
+                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                            <h2 style="color: #7B00FF;">Outreach Update</h2>
+                            <p>Your automated outreach has been sent to {successful_emails} leads.</p>
+                            
+                            <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                                <h3 style="color: #333;">Outreach Summary:</h3>
+                                <ul>
+                                    <li>Package: {package_name}</li>
+                                    <li>Emails Sent: {successful_emails}</li>
+                                    <li>Date: {datetime.now().strftime('%Y-%m-%d')}</li>
+                                </ul>
+                            </div>
+                            
+                            <p>Access your dashboard for more insights and to manage your leads.</p>
+                            
+                            <div style="margin-top: 30px; padding: 20px; border-top: 1px solid #eee;">
+                                <p style="color: #666; font-size: 12px;">
+                                    The contacted leads are attached in CSV format for your records.
+                                </p>
+                            </div>
+                        </div>
+                    """
+                )
+                
+                # Attach CSV
+                attachment = Attachment(
+                    FileContent(csv_base64),
+                    FileName(f'contacted_leads_{datetime.now().strftime("%Y%m%d")}.csv'),
+                    FileType('text/csv'),
+                    Disposition('attachment')
+                )
+                summary_message.attachment = attachment
+                
+                # Send summary email
+                sg.send(summary_message)
+                
+            self.logger.info(f"Email batch completed: {successful_emails} successful out of {len(leads)} attempts")
+            return successful_emails
+            
+        except Exception as e:
+            self.logger.error(f"Error in send_email_batch: {str(e)}")
+            return 0
 
     def __del__(self):
         """Clean up database connections"""
