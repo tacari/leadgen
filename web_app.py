@@ -23,6 +23,25 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+def terminate_port_process(port):
+    """Terminate any process using the specified port"""
+    try:
+        logger.info(f"Checking for processes using port {port}")
+        for proc in psutil.process_iter(['pid', 'name', 'connections']):
+            try:
+                for conn in proc.connections():
+                    if conn.laddr.port == port:
+                        logger.info(f"Found process {proc.pid} using port {port}")
+                        proc.terminate()
+                        proc.wait(timeout=5)
+                        logger.info(f"Terminated process {proc.pid}")
+                        return True
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
+                continue
+    except Exception as e:
+        logger.error(f"Error checking/terminating port {port}: {str(e)}")
+    return False
+
 # Initialize Flask app
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key')
@@ -35,6 +54,7 @@ supabase = create_client(supabase_url, supabase_key)
 # Initialize Stripe
 stripe.api_key = os.environ.get('STRIPE_API_KEY')
 sendgrid_api_key = os.environ.get('SENDGRID_API_KEY')
+
 
 def ensure_tables_exist():
     """Ensure all required tables exist"""
@@ -93,6 +113,24 @@ def ensure_tables_exist():
         if cur: cur.close()
         if conn: conn.close()
 
+def ensure_local_data_files():
+    """Ensure local data files exist"""
+    data_dir = 'data'
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+        logger.info(f"Created data directory: {data_dir}")
+
+    for file_name in ['users.json', 'user_packages.json', 'leads.json']:
+        file_path = os.path.join(data_dir, file_name)
+        if not os.path.exists(file_path):
+            with open(file_path, 'w') as f:
+                json.dump([], f)
+            logger.info(f"Created empty JSON file: {file_path}")
+
+# Initialize local files and database tables
+ensure_local_data_files()
+ensure_tables_exist()
+
 def schedule_lead_delivery():
     """Schedule lead delivery based on package type"""
     try:
@@ -126,37 +164,6 @@ def schedule_lead_delivery():
 
     except Exception as e:
         logger.error(f"Error in lead delivery schedule: {str(e)}")
-
-def ensure_local_data_files():
-    """Ensure local data files exist"""
-    data_dir = 'data'
-    if not os.path.exists(data_dir):
-        os.makedirs(data_dir)
-        logger.info(f"Created data directory: {data_dir}")
-
-    for file_name in ['users.json', 'user_packages.json', 'leads.json']:
-        file_path = os.path.join(data_dir, file_name)
-        if not os.path.exists(file_path):
-            with open(file_path, 'w') as f:
-                json.dump([], f)
-            logger.info(f"Created empty JSON file: {file_path}")
-
-# Initialize local data files
-ensure_local_data_files()
-
-# Create database tables
-ensure_tables_exist()
-
-# Initialize scheduler after app setup
-scheduler = APScheduler()
-scheduler.init_app(app)
-scheduler.add_job(
-    id='lead_delivery',
-    func=schedule_lead_delivery,
-    trigger='interval',
-    hours=24,
-    next_run_time=datetime.now() + timedelta(minutes=1)
-)
 
 def send_lead_email(user_id, package_name):
     """Send leads via email using SendGrid"""
@@ -1150,36 +1157,56 @@ from io import StringIO
 def terminate_port_process(port):
     """Terminate any process using the specified port"""
     try:
-        import psutil
-        for proc in psutil.process_iter():
+        logger.info(f"Checking for processes using port {port}")
+        for proc in psutil.process_iter(['pid', 'name', 'connections']):
             try:
-                for conn in proc.connections(kind='inet'):
-                    if conn.laddr.port == port and proc.pid != os.getpid():
-                        print(f"Terminating process {proc.pid} using port {port}", file=sys.stderr)
+                for conn in proc.connections():
+                    if conn.laddr.port == port:
+                        logger.info(f"Found process {proc.pid} using port {port}")
                         proc.terminate()
-                        proc.wait(timeout=3)
-            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired, AttributeError):
+                        proc.wait(timeout=5)
+                        logger.info(f"Terminated process {proc.pid}")
+                        return True
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
                 continue
     except Exception as e:
-        print(f"Error in terminate_port_process: {str(e)}", file=sys.stderr)
+        logger.error(f"Error checking/terminating port {port}: {str(e)}")
+    return False
 
 # Configure data directories first
 ensure_local_data_files()
 ensure_tables_exist()
 
 # Then add the scheduled job
-scheduler.add_job(
-    id='lead_delivery',
-    func=schedule_lead_delivery,
-    trigger='interval',
-    hours=24,
-    next_run_time=datetime.now() + timedelta(minutes=1)
-)
+scheduler = APScheduler()
+scheduler.init_app(app)
 
 if __name__ == '__main__':
     try:
-        logger.info("Starting Flask server...")
+        # First, terminate any existing process on port 5000
+        logger.info("Checking for existing processes on port 5000")
+        terminate_port_process(5000)
+
+        # Initialize the scheduler
+        logger.info("Initializing scheduler")
+        scheduler = APScheduler()
+        scheduler.init_app(app)
+
+        # Add the lead delivery job
+        scheduler.add_job(
+            id='lead_delivery',
+            func=schedule_lead_delivery,
+            trigger='interval',
+            hours=24,
+            next_run_time=datetime.now() + timedelta(minutes=1)
+        )
+
+        # Start the scheduler
+        logger.info("Starting scheduler")
         scheduler.start()
+
+        # Start the Flask server
+        logger.info("Starting Flask server on port 5000")
         app.run(host='0.0.0.0', port=5000, debug=True)
     except Exception as e:
         logger.error(f"Failed to start server: {str(e)}")
