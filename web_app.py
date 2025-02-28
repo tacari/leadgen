@@ -17,22 +17,28 @@ import base64
 from flask_apscheduler import APScheduler
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
+# Initialize Flask app
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key')
+
+# Initialize Supabase client
 supabase_url = os.environ.get('SUPABASE_URL')
 supabase_key = os.environ.get('SUPABASE_KEY')
 supabase = create_client(supabase_url, supabase_key)
 
+# Initialize Stripe
 stripe.api_key = os.environ.get('STRIPE_API_KEY')
 sendgrid_api_key = os.environ.get('SENDGRID_API_KEY')
 
 def ensure_tables_exist():
     """Ensure all required tables exist"""
     try:
-        # Create tables through SQL to ensure proper order and constraints
         conn = psycopg2.connect(os.environ['DATABASE_URL'])
         cur = conn.cursor()
 
@@ -87,7 +93,39 @@ def ensure_tables_exist():
         if cur: cur.close()
         if conn: conn.close()
 
-# Rest of your imports and configuration...
+def schedule_lead_delivery():
+    """Schedule lead delivery based on package type"""
+    try:
+        # Try to fetch from Supabase
+        try:
+            users = supabase.table('user_packages').select('user_id, package_name').eq('status', 'active').execute().data
+        except Exception as e:
+            logger.error(f"Error in lead delivery schedule: {str(e)}")
+            # Fallback to file-based data
+            with open('data/user_packages.json', 'r') as f:
+                users = json.load(f)
+                users = [u for u in users if u.get('status') == 'active']
+
+        for user in users:
+            user_id = user['user_id']
+            package = user['package_name']
+
+            # Only deliver on appropriate schedule
+            if package == 'engine' and datetime.now().weekday() == 0:  # Monday
+                from scraper import LeadScraper
+                scraper = LeadScraper()
+                scraper.generate_leads_for_package(user_id, 38)  # Weekly batch
+                send_lead_email(user_id, package)
+
+            elif package in ['accelerator', 'empire']:  # Daily delivery
+                from scraper import LeadScraper
+                scraper = LeadScraper()
+                volume = 12 if package == 'accelerator' else 25
+                scraper.generate_leads_for_package(user_id, volume)
+                send_lead_email(user_id, package)
+
+    except Exception as e:
+        logger.error(f"Error in lead delivery schedule: {str(e)}")
 
 def ensure_local_data_files():
     """Ensure local data files exist"""
@@ -103,37 +141,22 @@ def ensure_local_data_files():
                 json.dump([], f)
             logger.info(f"Created empty JSON file: {file_path}")
 
-# Initialize local files
+# Initialize local data files
 ensure_local_data_files()
 
-# Initialize scheduler
+# Create database tables
+ensure_tables_exist()
+
+# Initialize scheduler after app setup
 scheduler = APScheduler()
 scheduler.init_app(app)
 scheduler.add_job(
     id='lead_delivery',
-    func='web_app:schedule_lead_delivery',
+    func=schedule_lead_delivery,
     trigger='interval',
     hours=24,
-    next_run_time=datetime.now() + timedelta(seconds=10)
+    next_run_time=datetime.now() + timedelta(minutes=1)
 )
-scheduler.start()
-
-def terminate_port_process(port):
-    """Terminate any process using the specified port"""
-    try:
-        for proc in psutil.process_iter(['pid', 'name', 'connections']):
-            try:
-                for conn in proc.connections():
-                    if conn.laddr.port == port:
-                        proc.terminate()
-                        proc.wait(timeout=5)
-                        logger.info(f"Terminated process {proc.pid} using port {port}")
-                        return True
-            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
-                continue
-    except Exception as e:
-        logger.error(f"Error terminating process on port {port}: {str(e)}")
-    return False
 
 def send_lead_email(user_id, package_name):
     """Send leads via email using SendGrid"""
@@ -222,40 +245,6 @@ def send_lead_email(user_id, package_name):
     except Exception as e:
         logger.error(f"Error sending lead email: {str(e)}")
         return False
-
-def schedule_lead_delivery():
-    """Schedule lead delivery based on package type"""
-    try:
-        # Try to fetch from Supabase
-        try:
-            users = supabase.table('user_packages').select('user_id, package_name').eq('status', 'active').execute().data
-        except Exception as e:
-            logger.error(f"Error in lead delivery schedule: {str(e)}")
-            # Fallback to file-based data
-            with open('data/user_packages.json', 'r') as f:
-                users = json.load(f)
-                users = [u for u in users if u.get('status') == 'active']
-
-        for user in users:
-            user_id = user['user_id']
-            package = user['package_name']
-
-            # Only deliver on appropriate schedule
-            if package == 'engine' and datetime.now().weekday() == 0:  # Monday
-                from scraper import LeadScraper
-                scraper = LeadScraper()
-                scraper.generate_leads_for_package(user_id, 38)  # Weekly batch
-                send_lead_email(user_id, package)
-
-            elif package in ['accelerator', 'empire']:  # Daily delivery
-                from scraper import LeadScraper
-                scraper = LeadScraper()
-                volume = 12 if package == 'accelerator' else 25
-                scraper.generate_leads_for_package(user_id, volume)
-                send_lead_email(user_id, package)
-
-    except Exception as e:
-        logger.error(f"Error in lead delivery schedule: {str(e)}")
 
 @app.route('/')
 def home():
@@ -676,7 +665,7 @@ def dashboard():
                     'status': 'New'
                 },
                 {
-                    'name': "Test Lead 2", 
+                    'name': "Test Lead 2",
                     'email': 'lead2@example.com',
                     'source': 'Google',
                     'score': 92,
@@ -841,7 +830,7 @@ def checkout(package):
             }
         )
 
-        print(f"Created checkout session: {checkout_session.id}")  # Debug log
+        print(f"Createdcheckout session: {checkout_session.id}")  # Debug log
         return redirect(checkout_session.url)
 
     except Exception as e:
@@ -1174,37 +1163,24 @@ def terminate_port_process(port):
     except Exception as e:
         print(f"Error in terminate_port_process: {str(e)}", file=sys.stderr)
 
-# Create required data directories on startup
-ensure_local_data_files = lambda: None #Dummy function to avoid errors
-
-
+# Configure data directories first
+ensure_local_data_files()
 ensure_tables_exist()
+
+# Then add the scheduled job
+scheduler.add_job(
+    id='lead_delivery',
+    func=schedule_lead_delivery,
+    trigger='interval',
+    hours=24,
+    next_run_time=datetime.now() + timedelta(minutes=1)
+)
 
 if __name__ == '__main__':
     try:
-        # Configure logging
-        logging.basicConfig(level=logging.INFO)
-        logger = logging.getLogger(__name__)
-
-        # Ensure data directories exist
-        data_dir = 'data'
-        if not os.path.exists(data_dir):
-            os.makedirs(data_dir)
-
-        for file_name in ['users.json', 'user_packages.json', 'leads.json']:
-            file_path = os.path.join(data_dir, file_name)
-            if not os.path.exists(file_path):
-                with open(file_path, 'w') as f:
-                    json.dump([], f)
-
-        # First, terminate any existing process on port 5000
-        if terminate_port_process(5000):
-            logger.info("Terminated existing process on port 5000")
-
-        # Try to start the server
         logger.info("Starting Flask server...")
+        scheduler.start()
         app.run(host='0.0.0.0', port=5000, debug=True)
-
     except Exception as e:
         logger.error(f"Failed to start server: {str(e)}")
         sys.exit(1)
