@@ -11,6 +11,7 @@ import json
 from faker import Faker
 import threading
 from urllib.parse import urlparse
+from email_validator import validate_email, EmailNotValidError
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -114,6 +115,32 @@ class LeadScraper:
         # Normalize score to 0-100 range
         return min(max(score, 0), 100)
 
+    def verify_email(self, email):
+        """Verify if an email address is valid and deliverable
+        
+        Args:
+            email (str): The email address to verify
+            
+        Returns:
+            bool: True if the email is valid and deliverable, False otherwise
+        """
+        if not email or '@' not in email:
+            return False
+            
+        try:
+            # First check basic syntax
+            valid = validate_email(email)
+            
+            # Then check deliverability if syntax is valid
+            # This checks if the domain has valid MX records
+            valid = validate_email(valid.email, check_deliverability=True)
+            
+            self.logger.info(f"Verified email: {email} is valid")
+            return True
+        except EmailNotValidError as e:
+            self.logger.info(f"Email verification failed for {email}: {str(e)}")
+            return False
+            
     def score_lead(self, lead_data):
         """Calculate a lead score from 1-100 based on various factors"""
         # Start with a baseline score
@@ -189,6 +216,9 @@ class LeadScraper:
 
                     # Generate business email (could be enhanced with website domain if available)
                     email = f"contact@{name.lower().replace(' ', '').replace('&', 'and')}.com"
+                    
+                    # Verify the email
+                    is_verified = self.verify_email(email)
 
                     lead = {
                         'name': name,
@@ -197,7 +227,7 @@ class LeadScraper:
                         'website': website,
                         'description': description,
                         'source': 'Yellow Pages',
-                        'verified': False,
+                        'verified': is_verified,
                         'date_added': datetime.now().isoformat()
                     }
 
@@ -265,6 +295,9 @@ class LeadScraper:
                         lead['email'] = f"contact@{domain}"
                     else:
                         lead['email'] = f"contact@{name.lower().replace(' ', '').replace('&', 'and')}.com"
+                        
+                    # Verify the email
+                    lead['verified'] = self.verify_email(lead['email'])
 
                     lead['score'] = self._calculate_lead_score(lead)
                     leads.append(lead)
@@ -457,13 +490,16 @@ class LeadScraper:
                         sanitized_name = company_name.lower().replace(' ', '').replace('.', '').replace(',', '')
                         email = f"contact@{sanitized_name}.com"
                     
+                    # Verify the email
+                    is_verified = self.verify_email(email)
+                    
                     lead = {
                         'name': company_name,
                         'email': email,
                         'website': website,
                         'description': description,
                         'source': 'LinkedIn',
-                        'verified': False,
+                        'verified': is_verified,
                         'date_added': datetime.now().isoformat()
                     }
                     

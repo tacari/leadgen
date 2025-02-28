@@ -13,16 +13,13 @@
         <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 max-w-6xl mx-auto">
             <div class="flex flex-wrap gap-4 mb-4">
                 <a href="{{ url_for('dashboard') }}?filter=all" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if not request.args.get('filter') or request.args.get('filter') == 'all' }}">All</a>
-                <a href="{{ url_for('dashboard') }}?filter=verified" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if request.args.get('filter') == 'verified' }}">Verified Only</a>
+                <a href="{{ url_for('dashboard') }}?filter=verified" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if request.args.get('filter') == 'verified' }}">Verified Emails</a>
+                <a href="{{ url_for('dashboard') }}?filter=unverified" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if request.args.get('filter') == 'unverified' }}">Unverified Emails</a>
                 <a href="{{ url_for('dashboard') }}?filter=high_score" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if request.args.get('filter') == 'high_score' }}">High Score (>75)</a>
                 <a href="{{ url_for('dashboard') }}?filter=last_week" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if request.args.get('filter') == 'last_week' }}">Last 7 Days</a>
             </div>
             <!-- Desktop Table / Mobile Cards -->
             <div class="flex flex-wrap gap-4 mb-4">
-                <a href="{{ url_for('dashboard') }}?filter=all" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if not request.args.get('filter') or request.args.get('filter') == 'all' }}">All</a>
-                <a href="{{ url_for('dashboard') }}?filter=verified" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if request.args.get('filter') == 'verified' }}">Verified Only</a>
-                <a href="{{ url_for('dashboard') }}?filter=high_score" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if request.args.get('filter') == 'high_score' }}">High Score (>75)</a>
-                <a href="{{ url_for('dashboard') }}?filter=last_week" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if request.args.get('filter') == 'last_week' }}">Last 7 Days</a>
                 <!-- Source-based filters -->
                 <a href="{{ url_for('dashboard') }}?filter=linkedin" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if request.args.get('filter') == 'linkedin' }}">LinkedIn</a>
                 <a href="{{ url_for('dashboard') }}?filter=google_maps" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if request.args.get('filter') == 'google_maps' }}">Google Maps</a>
@@ -37,6 +34,7 @@
                             <th class="p-3">Source</th>
                             <th class="p-3">Phone</th>
                             <th class="p-3">Website</th>
+                            <th class="p-3">Verified</th>
                             <th class="p-3">Score</th>
                             <th class="p-3">Status</th>
                             <th class="p-3">Date Added</th>
@@ -59,6 +57,11 @@
                                 {% else %}
                                 N/A
                                 {% endif %}
+                            </td>
+                            <td class="p-3">
+                                <span class="px-2 py-1 rounded {% if lead.verified %}bg-green-900 text-white{% else %}bg-red-900 text-white{% endif %}">
+                                    {{ 'Yes' if lead.verified else 'No' }}
+                                </span>
                             </td>
                             <td class="p-3 {% if lead.score > 75 %}text-[#9F5FFF] font-medium{% else %}text-[#A1A9B8]{% endif %}" title="AI-powered lead score"> {{ lead.score }}</td>
                             <td class="p-3">{{ lead.status }}</td>
@@ -89,6 +92,12 @@
                     {% if lead.website %}
                     <p class="text-[#A1A9B8] text-sm mb-1">Website: <a href="{{ lead.website }}" target="_blank" class="text-[#7B00FF] hover:underline">Visit</a></p>
                     {% endif %}
+                    <p class="text-[#A1A9B8] text-sm mb-1">
+                        Email Verified: 
+                        <span class="px-2 py-1 rounded text-xs {% if lead.verified %}bg-green-900 text-white{% else %}bg-red-900 text-white{% endif %}">
+                            {{ 'Yes' if lead.verified else 'No' }}
+                        </span>
+                    </p>
                     <div class="flex justify-between text-sm">
                         <span>Status: {{ lead.status }}</span>
                         <span>{{ lead.date_added }}</span>

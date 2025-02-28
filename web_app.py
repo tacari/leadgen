@@ -167,20 +167,20 @@ def schedule_lead_delivery():
 
 def score_lead(lead_data):
     """Calculate a lead score from 1-100 based on various factors using AI-powered analysis
-    
+
     Factors considered:
     - Source quality (LinkedIn, Google, etc.)
     - Email verification status
     - Intent signals (keywords in name, description or other fields)
     - Company profile (website, size, industry)
     - Behavioral data (if available)
-    
+
     Returns:
         int: Score between 1-100
     """
     # Start with a baseline score
     score = 50
-    
+
     # Score based on source (where the lead came from)
     source = lead_data.get('source', '').lower()
     source_scores = {
@@ -192,17 +192,17 @@ def score_lead(lead_data):
         'instagram': 7,
         'twitter': 5
     }
-    
+
     # Add source score
     for src, points in source_scores.items():
         if src in source:
             score += points
             break
-            
+
     # Add points for verified email
     if lead_data.get('verified', False):
         score += 10
-    
+
     # Email domain analysis
     if lead_data.get('email'):
         email = lead_data.get('email', '').lower()
@@ -213,18 +213,18 @@ def score_lead(lead_data):
                 score += 5
             else:
                 score += 12
-    
+
     # Check for intent signals in name or other fields
     intent_keywords = ['looking for', 'need', 'want', 'searching', 'interested', 
                       'inquiry', 'request', 'seeking', 'explore', 'considering']
-    
+
     # Check name for intent signals
     lead_name = lead_data.get('name', '').lower()
     for keyword in intent_keywords:
         if keyword in lead_name:
             score += 15
             break
-    
+
     # Check description for intent signals if available
     description = lead_data.get('description', '').lower()
     if description:
@@ -234,21 +234,21 @@ def score_lead(lead_data):
                 break
         # Basic points for having a description
         score += 5
-    
+
     # Website availability bonus
     if lead_data.get('website'):
         score += 8
-    
+
     # Phone availability bonus
     if lead_data.get('phone'):
         score += 5
-    
+
     # Industry relevance (if available)
     industry = lead_data.get('industry', '').lower()
     if industry:
         # Add logic here to score based on target industries
         score += 5
-    
+
     # Cap the score at 100
     return min(100, score)
 
@@ -749,10 +749,10 @@ def dashboard():
     try:
         user_id = session.get('user_id')
         username = session.get('username', 'Demo User')
-        
+
         # Get filter type from request
         filter_type = request.args.get('filter', 'all')
-        
+
         # Get user's leads from database or fallback to sample data
         real_leads = []
         try:
@@ -763,7 +763,7 @@ def dashboard():
                 logger.info(f"Found {len(real_leads)} leads for user {user_id}")
         except Exception as e:
             logger.error(f"Error fetching leads from Supabase: {str(e)}")
-        
+
         # Fallback to sample data if no real leads
         if not real_leads:
             real_leads = [
@@ -795,7 +795,7 @@ def dashboard():
                     'date_added': datetime.now().isoformat()
                 }
             ]
-        
+
         # Apply filters
         leads = []
         for lead in real_leads:
@@ -807,9 +807,11 @@ def dashboard():
                     lead_date = datetime.now()
             else:
                 lead_date = datetime.now()
-            
+
             # Apply the selected filter
             if filter_type == 'verified' and not lead.get('verified', False):
+                continue
+            elif filter_type == 'unverified' and lead.get('verified', False):
                 continue
             elif filter_type == 'high_score' and lead.get('score', 0) <= 75:
                 continue
@@ -822,9 +824,9 @@ def dashboard():
                 continue
             elif filter_type == 'yellow_pages' and lead.get('source', '').lower() != 'yellow pages':
                 continue
-            
+
             leads.append(lead)
-        
+
         # Get user's real subscription data
         subscription = None
         try:
@@ -840,7 +842,7 @@ def dashboard():
                 logger.info(f"Found subscription for user {user_id}: {subscription}")
         except Exception as e:
             logger.error(f"Error fetching subscription from Supabase: {str(e)}")
-            
+
         # Fallback to file for subscription
         if not subscription:
             try:
@@ -850,7 +852,7 @@ def dashboard():
                         package_data = next((p for p in packages if p.get('user_id') == user_id and p.get('status') == 'active'), None)
                     else:
                         package_data = next((packages[pid] for pid in packages if packages[pid].get('user_id') == user_id and packages[pid].get('status') == 'active'), None)
-                    
+
                     if package_data:
                         subscription = {
                             'package_name': package_data.get('package_name', 'Lead Engine'),
@@ -860,7 +862,7 @@ def dashboard():
                         logger.info(f"Found subscription in file for user {user_id}: {subscription}")
             except Exception as file_e:
                 logger.error(f"Error reading subscription data from file: {str(file_e)}")
-                
+
         # If we still don't have subscription data, use defaults
         if not subscription:
             subscription = {
@@ -868,7 +870,7 @@ def dashboard():
                 'status': 'inactive',
                 'lead_volume': 0
             }
-        
+
         # Simple analytics
         analytics = {
             'total_leads': len(leads),
@@ -892,12 +894,12 @@ def settings():
     if 'user_id' not in session:
         flash('Please log in to access settings.')
         return redirect(url_for('login'))
-        
+
     try:
         user_id = session.get('user_id')
         user_data = None
         user_email = None
-        
+
         # Try to fetch user data from Supabase
         try:
             user_result = supabase.table('users').select('*').eq('id', user_id).execute()
@@ -906,7 +908,7 @@ def settings():
                 user_email = user_data.get('email')
         except Exception as e:
             logger.error(f"Error fetching user from Supabase: {str(e)}")
-            
+
         # Fallback to file-based storage
         if not user_data:
             try:
@@ -917,12 +919,12 @@ def settings():
                         user_email = user_data.get('email')
             except Exception as file_e:
                 logger.error(f"Error reading user data from file: {str(file_e)}")
-        
+
         # If we still don't have user data, use defaults
         if not user_data:
             user_data = {}
             user_email = "user@example.com"
-            
+
         # Construct user object
         user = {
             'username': session.get('username', 'User'),
@@ -948,7 +950,7 @@ def settings():
                 }
         except Exception as pkg_e:
             logger.error(f"Error fetching subscription from Supabase: {str(pkg_e)}")
-            
+
         # Fallback to file for subscription
         if not subscription:
             try:
@@ -964,7 +966,7 @@ def settings():
                         }
             except Exception as file_e:
                 logger.error(f"Error reading subscription data from file: {str(file_e)}")
-                
+
         # If we still don't have subscription data, use defaults
         if not subscription:
             subscription = {
@@ -979,7 +981,7 @@ def settings():
             if 'username' in request.form and 'email' in request.form:
                 new_username = request.form['username']
                 new_email = request.form['email']
-                
+
                 # Update user data in Supabase
                 try:
                     supabase.table('users').update({
@@ -988,7 +990,7 @@ def settings():
                     }).eq('id', user_id).execute()
                 except Exception as update_e:
                     logger.error(f"Error updating user in Supabase: {str(update_e)}")
-                    
+
                     # Fallback to file update
                     try:
                         with open('data/users.json', 'r') as f:
@@ -1002,10 +1004,10 @@ def settings():
                             json.dump(users, f, indent=2)
                     except Exception as file_e:
                         logger.error(f"Error updating user in file: {str(file_e)}")
-                
+
                 # Update session
                 session['username'] = new_username
-                
+
                 user['username'] = new_username
                 user['email'] = new_email
                 flash('Profile updated successfully!', 'success')
@@ -1018,7 +1020,7 @@ def settings():
                     'weekly_summary': 'weekly_summary' in request.form,
                     'support_updates': 'support_updates' in request.form
                 }
-                
+
                 # Update notifications in Supabase
                 try:
                     supabase.table('users').update({
@@ -1026,7 +1028,7 @@ def settings():
                     }).eq('id', user_id).execute()
                 except Exception as update_e:
                     logger.error(f"Error updating notifications in Supabase: {str(update_e)}")
-                    
+
                     # Fallback to file update
                     try:
                         with open('data/users.json', 'r') as f:
@@ -1039,7 +1041,7 @@ def settings():
                             json.dump(users, f, indent=2)
                     except Exception as file_e:
                         logger.error(f"Error updating notifications in file: {str(file_e)}")
-                
+
                 user['notifications'] = notifications
                 flash('Notification preferences saved!', 'success')
                 return redirect(url_for('settings'))
@@ -1076,10 +1078,10 @@ def generate_custom_leads():
     if 'user_id' not in session:
         flash('Please log in to generate leads.')
         return redirect(url_for('login'))
-        
+
     try:
         user_id = session.get('user_id')
-        
+
         # Get user's subscription to determine lead volume
         user_subscription = None
         try:
@@ -1088,7 +1090,7 @@ def generate_custom_leads():
                 user_subscription = package_result.data[0]
         except Exception as e:
             logger.error(f"Error fetching subscription from Supabase: {str(e)}")
-            
+
         # Fallback to file for subscription
         if not user_subscription:
             try:
@@ -1098,18 +1100,18 @@ def generate_custom_leads():
                         user_subscription = next((p for p in packages if p.get('user_id') == user_id and p.get('status') == 'active'), None)
             except Exception as file_e:
                 logger.error(f"Error reading subscription data from file: {str(file_e)}")
-        
+
         # Use default values if no subscription found
         package_name = user_subscription.get('package_name', 'Lead Launch') if user_subscription else 'Lead Launch'
-        
+
         if request.method == 'POST':
             niche = request.form.get('niche')
             location = request.form.get('location')
-            
+
             if not niche or not location:
                 flash('Please provide both niche and location.')
                 return redirect(url_for('generate_custom_leads'))
-                
+
             # Save user preferences
             try:
                 supabase.table('users').update({
@@ -1118,22 +1120,22 @@ def generate_custom_leads():
                 }).eq('id', user_id).execute()
             except Exception as update_e:
                 logger.error(f"Error updating user preferences: {str(update_e)}")
-            
+
             # Generate leads
             from scraper import LeadScraper
             scraper = LeadScraper()
-            
+
             # Run in a background thread to not block the UI
             def generate_leads_task():
                 scraper.generate_leads_for_package(user_id, package_name)
-                
+
             threading.Thread(target=generate_leads_task).start()
-            
+
             flash(f'Lead generation started for "{niche}" in "{location}". Check your dashboard in a few minutes.')
             return redirect(url_for('dashboard'))
-            
+
         return render_template('generate_leads.html', username=session.get('username', "Developer"))
-        
+
     except Exception as e:
         logger.error(f"Error in generate_custom_leads: {str(e)}")
         flash(f'An error occurred: {str(e)}', 'error')
