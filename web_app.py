@@ -660,42 +660,83 @@ def dashboard():
         return redirect(url_for('login'))
 
     try:
-        # For now, use test data to show dashboard functionality
-        test_data = {
-            'username': session.get('username', 'Demo User'),
-            'leads': [
-                {
-                    'name': "Test Lead 1",
-                    'email': 'lead1@example.com',
-                    'source': 'LinkedIn',
-                    'score': 85,
-                    'status': 'New'
-                },
-                {
-                    'name': "Test Lead 2",
-                    'email': 'lead2@example.com',
-                    'source': 'Google',
-                    'score': 92,
-                    'status': 'Contacted'
-                }
-            ],
-            'subscription': {
-                'package_name': 'Lead Engine',
-                'status': 'active',
-                'lead_volume': 150
+        user_id = session.get('user_id')
+        username = session.get('username', 'Demo User')
+        
+        # Get user's leads (for now using sample data)
+        leads = [
+            {
+                'name': "Test Lead 1",
+                'email': 'lead1@example.com',
+                'source': 'LinkedIn',
+                'score': 85,
+                'status': 'New'
             },
-            'analytics': {
-                'total_leads': 2,
-                'high_quality_leads': 2,
-                'conversion_rate': '10%'
+            {
+                'name': "Test Lead 2",
+                'email': 'lead2@example.com',
+                'source': 'Google',
+                'score': 92,
+                'status': 'Contacted'
             }
+        ]
+        
+        # Get user's real subscription data
+        subscription = None
+        try:
+            # Try to fetch from Supabase
+            package_result = supabase.table('user_packages').select('*').eq('user_id', user_id).eq('status', 'active').execute()
+            if package_result.data:
+                package_data = package_result.data[0]
+                subscription = {
+                    'package_name': package_data.get('package_name', 'Lead Engine'),
+                    'status': 'active',
+                    'lead_volume': package_data.get('lead_volume', 150)
+                }
+                logger.info(f"Found subscription for user {user_id}: {subscription}")
+        except Exception as e:
+            logger.error(f"Error fetching subscription from Supabase: {str(e)}")
+            
+        # Fallback to file for subscription
+        if not subscription:
+            try:
+                with open('data/user_packages.json', 'r') as f:
+                    packages = json.load(f)
+                    if isinstance(packages, list):
+                        package_data = next((p for p in packages if p.get('user_id') == user_id and p.get('status') == 'active'), None)
+                    else:
+                        package_data = next((packages[pid] for pid in packages if packages[pid].get('user_id') == user_id and packages[pid].get('status') == 'active'), None)
+                    
+                    if package_data:
+                        subscription = {
+                            'package_name': package_data.get('package_name', 'Lead Engine'),
+                            'status': 'active',
+                            'lead_volume': package_data.get('lead_volume', 150)
+                        }
+                        logger.info(f"Found subscription in file for user {user_id}: {subscription}")
+            except Exception as file_e:
+                logger.error(f"Error reading subscription data from file: {str(file_e)}")
+                
+        # If we still don't have subscription data, use defaults
+        if not subscription:
+            subscription = {
+                'package_name': 'No Active Plan',
+                'status': 'inactive',
+                'lead_volume': 0
+            }
+        
+        # Simple analytics
+        analytics = {
+            'total_leads': len(leads),
+            'high_quality_leads': sum(1 for lead in leads if lead.get('score', 0) > 75),
+            'conversion_rate': '10%'  # Placeholder
         }
 
         return render_template('dashboard.html',
-                           username=test_data['username'],
-                           leads=test_data['leads'],
-                           subscription=test_data['subscription'],
-                           analytics=test_data['analytics'])
+                           username=username,
+                           leads=leads,
+                           subscription=subscription,
+                           analytics=analytics)
 
     except Exception as e:
         logger.error(f"Dashboard error: {str(e)}")
