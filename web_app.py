@@ -1646,7 +1646,8 @@ if __name__ == '__main__':
         lead_scheduler = LeadScheduler()
         lead_scheduler.create_lead_pool_table()
 
-        # Schedule lead delivery job        scheduler.add_job(
+        # Schedule lead delivery job
+        scheduler.add_job(
             id='lead_delivery',
             func=lead_scheduler.process_lead_deliveries,
             trigger='interval',
