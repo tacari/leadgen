@@ -2,11 +2,19 @@ import time
 import random
 import logging
 import requests
+import re
 from bs4 import BeautifulSoup
 from datetime import datetime
 import os
 import psycopg2
 import json
+from faker import Faker
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+fake = Faker()
 
 class LeadScraper:
     def __init__(self):
@@ -28,6 +36,10 @@ class LeadScraper:
         self.serpapi_key = os.environ.get('SERPAPI_KEY')
         self.conn = psycopg2.connect(os.environ['DATABASE_URL'])
         self.cur = self.conn.cursor()
+        self.sources = ['LinkedIn', 'Google Maps', 'Yellow Pages', 'Facebook', 'Instagram']
+        self.statuses = ['New', 'Contacted', 'Qualified', 'Proposal', 'Closed']
+        self.intent_phrases = ['looking for', 'interested in', 'need help with', 'seeking', 'want to improve']
+
 
     def _delay_request(self):
         """Add delay between requests to avoid rate limiting"""
@@ -68,6 +80,45 @@ class LeadScraper:
 
         # Normalize score to 0-100 range
         return min(max(score, 0), 100)
+
+    def score_lead(self, lead_data):
+        """Calculate a lead score from 1-100 based on various factors"""
+        # Start with a baseline score
+        score = 50
+
+        # Score based on source (where the lead came from)
+        source = lead_data.get('source', '').lower()
+        source_scores = {
+            'linkedin': 20,
+            'google': 10,
+            'google maps': 10,
+            'yellow pages': 5,
+            'facebook': 8,
+            'instagram': 7,
+            'twitter': 5
+        }
+
+        # Add source score
+        for src, points in source_scores.items():
+            if src in source.lower():
+                score += points
+                break
+
+        # Add points for verified email
+        if lead_data.get('verified', False):
+            score += 10
+
+        # Check for intent signals in name or other fields
+        intent_keywords = ['looking for', 'need', 'want', 'searching', 'interested', 'inquiry', 'request']
+        lead_name = lead_data.get('name', '').lower()
+
+        for keyword in intent_keywords:
+            if keyword in lead_name:
+                score += 15
+                break
+
+        # Cap the score at 100
+        return min(100, score)
 
     def scrape_yellow_pages(self, niche="plumbers", location="Austin, TX", limit=50):
         """Scrape leads from Yellow Pages"""
@@ -266,6 +317,52 @@ class LeadScraper:
                 self.logger.info(f"Successfully generated {len(all_leads)} leads for user {user_id}")
                 return len(all_leads)
         return 0
+
+    def _save_leads(self, leads):
+        """Save generated leads to database or file"""
+        try:
+            from web_app import supabase
+
+            # Try to save to Supabase
+            for lead in leads:
+                # Ensure each lead has a score
+                if 'score' not in lead:
+                    lead['score'] = self.score_lead(lead)
+
+                supabase.table('leads').insert(lead).execute()
+
+            logger.info(f"Saved {len(leads)} leads to Supabase")
+            return True
+        except Exception as e:
+            logger.error(f"Error saving to Supabase: {str(e)}")
+
+            # Fallback to file storage
+            try:
+                leads_file = 'data/leads.json'
+
+                # Load existing leads
+                existing_leads = []
+                if os.path.exists(leads_file):
+                    with open(leads_file, 'r') as f:
+                        existing_leads = json.load(f)
+
+                # Make sure each lead has a score before adding
+                for lead in leads:
+                    if 'score' not in lead:
+                        lead['score'] = self.score_lead(lead)
+
+                # Add new leads
+                existing_leads.extend(leads)
+
+                # Save updated leads
+                with open(leads_file, 'w') as f:
+                    json.dump(existing_leads, f, indent=2)
+
+                logger.info(f"Saved {len(leads)} leads to file")
+                return True
+            except Exception as file_e:
+                logger.error(f"Error saving to file: {str(file_e)}")
+                return False
 
     def __del__(self):
         """Clean up database connections"""

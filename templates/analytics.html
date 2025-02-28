@@ -122,6 +122,25 @@
                 </ul>
             </div>
             {% endif %}
+
+            <!-- Lead Score Insights -->
+            <div class="mb-4 p-4 bg-[#1A2236] border border-[#7B00FF] rounded-lg">
+                <h3 class="text-xl font-bold mb-2">Lead Score Breakdown</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <p class="text-[#A1A9B8]">High Quality Leads (>75)</p>
+                        <p class="text-white text-xl">{{ analytics.charts.status.data[3] }} <span class="text-[#7B00FF]">({{ (analytics.charts.status.data[3] / analytics.total_leads * 100)|round(1) }}%)</span></p>
+                    </div>
+                    <div>
+                        <p class="text-[#A1A9B8]">Average Score</p>
+                        <p class="text-white text-xl">{{ (leads|sum(attribute='avg_score') / leads|length)|round(1) if leads|length > 0 else 0 }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[#A1A9B8]">Highest Converting Source</p>
+                        <p class="text-white text-xl">LinkedIn <span class="text-[#7B00FF]">(+20 Score)</span></p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

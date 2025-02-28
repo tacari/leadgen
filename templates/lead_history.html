@@ -83,7 +83,7 @@
                             <td class="p-3"><span class="name">{{ lead.name }}</span></td>
                             <td class="p-3"><a href="mailto:{{ lead.email }}" class="email hover:text-[#7B00FF]">{{ lead.email }}</a></td>
                             <td class="p-3"><span class="source">{{ lead.source }}</span></td>
-                            <td class="p-3 {% if lead.score > 75 %}text-[#7B00FF]{% endif %}">{{ lead.score }}</td>
+                            <td class="p-3 {% if lead.score > 75 %}text-[#7B00FF] font-bold{% endif %}">{{ lead.score }}</td>
                             <td class="p-3">{{ lead.status }}</td>
                             <td class="p-3">{{ lead.date_added }}</td>
                             <td class="p-3">{{ lead.notes }}</td>

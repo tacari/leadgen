@@ -95,7 +95,7 @@ def ensure_tables_exist():
                 name VARCHAR(255) NOT NULL,
                 email VARCHAR(255) NOT NULL,
                 source VARCHAR(255),
-                score INTEGER,
+                score INTEGER DEFAULT 50,
                 verified BOOLEAN DEFAULT FALSE,
                 status VARCHAR(50) DEFAULT 'new',
                 date_added TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -164,6 +164,54 @@ def schedule_lead_delivery():
 
     except Exception as e:
         logger.error(f"Error in lead delivery schedule: {str(e)}")
+
+def score_lead(lead_data):
+    """Calculate a lead score from 1-100 based on various factors
+    
+    Factors considered:
+    - Source quality (LinkedIn, Google, etc.)
+    - Email verification status
+    - Intent signals (keywords in name or other fields)
+    
+    Returns:
+        int: Score between 1-100
+    """
+    # Start with a baseline score
+    score = 50
+    
+    # Score based on source (where the lead came from)
+    source = lead_data.get('source', '').lower()
+    source_scores = {
+        'linkedin': 20,
+        'google': 10,
+        'google maps': 10,
+        'yellow pages': 5,
+        'facebook': 8,
+        'instagram': 7,
+        'twitter': 5
+    }
+    
+    # Add source score
+    for src, points in source_scores.items():
+        if src in source:
+            score += points
+            break
+            
+    # Add points for verified email
+    if lead_data.get('verified', False):
+        score += 10
+        
+    # Check for intent signals in name or other fields
+    intent_keywords = ['looking for', 'need', 'want', 'searching', 'interested', 'inquiry', 'request']
+    lead_name = lead_data.get('name', '').lower()
+    
+    for keyword in intent_keywords:
+        if keyword in lead_name:
+            score += 15
+            break
+    
+    # Cap the score at 100
+    return min(100, score)
 
 def send_lead_email(user_id, package_name):
     """Send leads via email using SendGrid"""
@@ -663,23 +711,73 @@ def dashboard():
         user_id = session.get('user_id')
         username = session.get('username', 'Demo User')
         
-        # Get user's leads (for now using sample data)
-        leads = [
-            {
-                'name': "Test Lead 1",
-                'email': 'lead1@example.com',
-                'source': 'LinkedIn',
-                'score': 85,
-                'status': 'New'
-            },
-            {
-                'name': "Test Lead 2",
-                'email': 'lead2@example.com',
-                'source': 'Google',
-                'score': 92,
-                'status': 'Contacted'
-            }
-        ]
+        # Get filter type from request
+        filter_type = request.args.get('filter', 'all')
+        
+        # Get user's leads from database or fallback to sample data
+        real_leads = []
+        try:
+            # Try to fetch from Supabase
+            leads_result = supabase.table('leads').select('*').eq('user_id', user_id).execute()
+            if leads_result.data:
+                real_leads = leads_result.data
+                logger.info(f"Found {len(real_leads)} leads for user {user_id}")
+        except Exception as e:
+            logger.error(f"Error fetching leads from Supabase: {str(e)}")
+        
+        # Fallback to sample data if no real leads
+        if not real_leads:
+            real_leads = [
+                {
+                    'name': "Test Lead 1",
+                    'email': 'lead1@example.com',
+                    'source': 'LinkedIn',
+                    'score': 85,
+                    'verified': True,
+                    'status': 'New',
+                    'date_added': datetime.now().isoformat()
+                },
+                {
+                    'name': "Test Lead 2",
+                    'email': 'lead2@example.com',
+                    'source': 'Google',
+                    'score': 92,
+                    'verified': True,
+                    'status': 'Contacted',
+                    'date_added': datetime.now().isoformat()
+                },
+                {
+                    'name': "Test Lead 3",
+                    'email': 'lead3@example.com',
+                    'source': 'Yellow Pages',
+                    'score': 55,
+                    'verified': False,
+                    'status': 'New',
+                    'date_added': datetime.now().isoformat()
+                }
+            ]
+        
+        # Apply filters
+        leads = []
+        for lead in real_leads:
+            # Convert date_added to datetime if it's a string
+            if isinstance(lead.get('date_added'), str):
+                try:
+                    lead_date = datetime.fromisoformat(lead['date_added'].replace('Z', '+00:00'))
+                except:
+                    lead_date = datetime.now()
+            else:
+                lead_date = datetime.now()
+            
+            # Apply the selected filter
+            if filter_type == 'verified' and not lead.get('verified', False):
+                continue
+            elif filter_type == 'high_score' and lead.get('score', 0) <= 75:
+                continue
+            elif filter_type == 'last_week' and (datetime.now() - lead_date).days > 7:
+                continue
+            
+            leads.append(lead)
         
         # Get user's real subscription data
         subscription = None
