@@ -14,13 +14,13 @@
             {% if subscription.package_name.lower() == 'launch' %}
                 <p class="text-[#A1A9B8] text-center">One-time delivery of 50 leads</p>
             {% elif subscription.package_name.lower() == 'engine' %}
-                <p class="text-[#A1A9B8] text-center">Next weekly delivery: {{ ((now + timedelta(days=7)).strftime('%A, %b %d')) }}</p>
+                <p class="text-[#A1A9B8] text-center">Next weekly delivery: {{ (now.strftime('%A, %b %d')) }}</p>
                 <p class="text-[#A1A9B8] text-center text-sm">~38 leads per week</p>
             {% elif subscription.package_name.lower() == 'accelerator' %}
-                <p class="text-[#A1A9B8] text-center">Next daily delivery: {{ ((now + timedelta(days=1)).strftime('%A, %b %d')) }}</p>
+                <p class="text-[#A1A9B8] text-center">Next daily delivery: {{ (now.strftime('%A, %b %d')) }}</p>
                 <p class="text-[#A1A9B8] text-center text-sm">~10 leads per day</p>
             {% elif subscription.package_name.lower() == 'empire' %}
-                <p class="text-[#A1A9B8] text-center">Next daily delivery: {{ ((now + timedelta(days=1)).strftime('%A, %b %d')) }}</p>
+                <p class="text-[#A1A9B8] text-center">Next daily delivery: {{ (now.strftime('%A, %b %d')) }}</p>
                 <p class="text-[#A1A9B8] text-center text-sm">~20 leads per day</p>
             {% else %}
                 <p class="text-[#A1A9B8] text-center">No active subscription</p>
@@ -247,7 +247,7 @@
         <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 max-w-[400px] mx-auto animate-fade-in">
             {% if subscription %}
                 {% if subscription.package_name == 'Lead Launch' %}
-                    <p class="text-[#A1A9B8] text-base text-center">Your 50 leads arrive by {{ (now + timedelta(days=7)).strftime('%B %d, %Y') }}</p>
+                    <p class="text-[#A1A9B8] text-base text-center">Your 50 leads arrive by {{ now.strftime('%B %d, %Y') }}</p>
                 {% elif subscription.package_name == 'Lead Engine' %}
                     <p class="text-[#A1A9B8] text-base text-center">Next 37-38 leads: Weekly delivery</p>
                 {% elif subscription.package_name == 'Lead Accelerator' %}
