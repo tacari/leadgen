@@ -346,19 +346,13 @@ def dashboard():
                 'package_name': 'Lead Engine',
                 'status': 'active',
                 'lead_volume': 150
-            },
-            'analytics': {
-                'total_leads': 2,
-                'high_quality_leads': 2,
-                'conversion_rate': '10%'
             }
         }
 
         return render_template('dashboard.html',
                            username=test_data['username'],
                            leads=test_data['leads'],
-                           subscription=test_data['subscription'],
-                           analytics=test_data['analytics'])
+                           subscription=test_data['subscription'])
 
     except Exception as e:
         logger.error(f"Dashboard error: {str(e)}")
@@ -875,12 +869,8 @@ def success():
         try:
             # Try to use Supabase
             try:
-                # Generate a unique ID for the user_package
-                package_id = f"pkg_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-                
-                # Insert or update user package with explicit ID
+                # Insert or update user package
                 supabase.table('user_packages').upsert({
-                    'id': package_id,
                     'user_id': user_id,
                     'package_name': package,
                     'lead_volume': lead_volume,
@@ -896,31 +886,14 @@ def success():
                 # Fallback to file-based storage
                 user_packages_file = 'data/user_packages.json'
                 
-                try:
-                    with open(user_packages_file, 'r') as f:
-                        packages = json.load(f)
-                    
-                    if not isinstance(packages, list):
-                        packages = []
-                    
-                    # Update or add package
-                    package_found = False
-                    for p in packages:
-                        if p.get('user_id') == user_id:
-                            p.update({
-                                'package_name': package,
-                                'lead_volume': lead_volume,
-                                'stripe_subscription_id': subscription_id,
-                                'status': 'active',
-                                'next_delivery': datetime.now().isoformat(),
-                                'updated_at': datetime.now().isoformat()
-                            })
-                            package_found = True
-                            break
-                    
-                    if not package_found:
-                        packages.append({
-                            'user_id': user_id,
+                with open(user_packages_file, 'r') as f:
+                    packages = json.load(f)
+                
+                # Update or add package
+                package_found = False
+                for p in packages:
+                    if p.get('user_id') == user_id:
+                        p.update({
                             'package_name': package,
                             'lead_volume': lead_volume,
                             'stripe_subscription_id': subscription_id,
@@ -928,13 +901,22 @@ def success():
                             'next_delivery': datetime.now().isoformat(),
                             'updated_at': datetime.now().isoformat()
                         })
-                    
-                    with open(user_packages_file, 'w') as f:
-                        json.dump(packages, f, indent=2)
-                    
-                    logger.info(f"Updated subscription in file for user {user_id}: package={package}")
-                except Exception as file_e:
-                    logger.error(f"File-based storage error: {str(file_e)}")
+                        package_found = True
+                        break
+                
+                if not package_found:
+                    packages.append({
+                        'user_id': user_id,
+                        'package_name': package,
+                        'lead_volume': lead_volume,
+                        'stripe_subscription_id': subscription_id,
+                        'status': 'active',
+                        'next_delivery': datetime.now().isoformat(),
+                        'updated_at': datetime.now().isoformat()
+                    })
+                
+                with open(user_packages_file, 'w') as f:
+                    json.dump(packages, f, indent=2)
                 
                 logger.info(f"Updated subscription in file for user {user_id}: package={package}")
 
@@ -962,34 +944,16 @@ def success():
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    payload = request.data
+    payload = request.get_json()
     sig_header = request.headers.get('Stripe-Signature')
-    webhook_secret = os.environ.get('STRIPE_WEBHOOK_SECRET')
-
-    # Log debugging information
-    logger.info(f"Webhook received with signature: {sig_header[:10]}...")
-    logger.info(f"Webhook secret is set: {webhook_secret is not None}")
-    
-    if not webhook_secret:
-        logger.error("STRIPE_WEBHOOK_SECRET is not set in environment variables")
-        # Return 200 to prevent Stripe from retrying when we're still setting up
-        return jsonify({"status": "configuration_error", "message": "Webhook secret not configured"}), 200
 
     try:
         event = stripe.Webhook.construct_event(
-            payload, sig_header, webhook_secret
+            payload, sig_header, os.environ.get('STRIPE_WEBHOOK_SECRET')
         )
         logger.info(f"Received webhook event: {event.type}")
-    except ValueError as e:
-        # Invalid payload
-        logger.error(f"Webhook validation error (invalid payload): {str(e)}")
-        return '', 400
-    except stripe.error.SignatureVerificationError as e:
-        # Invalid signature
-        logger.error(f"Webhook signature verification error: {str(e)}")
-        return '', 400
     except Exception as e:
-        logger.error(f"Webhook error: {str(e)}")
+        logger.error(f"Webhook validation error: {str(e)}")
         return '', 400
 
     if event.type == 'checkout.session.completed':
