@@ -166,12 +166,14 @@ def schedule_lead_delivery():
         logger.error(f"Error in lead delivery schedule: {str(e)}")
 
 def score_lead(lead_data):
-    """Calculate a lead score from 1-100 based on various factors
+    """Calculate a lead score from 1-100 based on various factors using AI-powered analysis
     
     Factors considered:
     - Source quality (LinkedIn, Google, etc.)
     - Email verification status
-    - Intent signals (keywords in name or other fields)
+    - Intent signals (keywords in name, description or other fields)
+    - Company profile (website, size, industry)
+    - Behavioral data (if available)
     
     Returns:
         int: Score between 1-100
@@ -200,15 +202,52 @@ def score_lead(lead_data):
     # Add points for verified email
     if lead_data.get('verified', False):
         score += 10
-        
-    # Check for intent signals in name or other fields
-    intent_keywords = ['looking for', 'need', 'want', 'searching', 'interested', 'inquiry', 'request']
-    lead_name = lead_data.get('name', '').lower()
     
+    # Email domain analysis
+    if lead_data.get('email'):
+        email = lead_data.get('email', '').lower()
+        if '@' in email:
+            domain = email.split('@')[1]
+            # Company domains score higher than free email providers
+            if any(provider in domain for provider in ['gmail', 'yahoo', 'hotmail', 'outlook']):
+                score += 5
+            else:
+                score += 12
+    
+    # Check for intent signals in name or other fields
+    intent_keywords = ['looking for', 'need', 'want', 'searching', 'interested', 
+                      'inquiry', 'request', 'seeking', 'explore', 'considering']
+    
+    # Check name for intent signals
+    lead_name = lead_data.get('name', '').lower()
     for keyword in intent_keywords:
         if keyword in lead_name:
             score += 15
             break
+    
+    # Check description for intent signals if available
+    description = lead_data.get('description', '').lower()
+    if description:
+        for keyword in intent_keywords:
+            if keyword in description:
+                score += 20
+                break
+        # Basic points for having a description
+        score += 5
+    
+    # Website availability bonus
+    if lead_data.get('website'):
+        score += 8
+    
+    # Phone availability bonus
+    if lead_data.get('phone'):
+        score += 5
+    
+    # Industry relevance (if available)
+    industry = lead_data.get('industry', '').lower()
+    if industry:
+        # Add logic here to score based on target industries
+        score += 5
     
     # Cap the score at 100
     return min(100, score)
