@@ -1,4 +1,3 @@
-
 -- Create users table
 CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
@@ -34,5 +33,6 @@ CREATE TABLE IF NOT EXISTS leads (
     phone_verified BOOLEAN DEFAULT FALSE,
     linkedin_verified BOOLEAN DEFAULT FALSE,
     status TEXT DEFAULT 'New',
-    date_added TIMESTAMPTZ DEFAULT NOW()
+    date_added TIMESTAMPTZ DEFAULT NOW(),
+    hubspot_id TEXT
 );

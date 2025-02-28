@@ -19,6 +19,8 @@ import io
 import csv
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
+from hubspot import HubSpot
+from hubspot.crm.contacts import SimplePublicObjectInput
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -38,7 +40,7 @@ class LeadScraper:
         except EmailNotValidError:
             return False
 
-    def verify_phone(self, phone_number):
+    def verify_phone(self, phone_number, lead=None):
         """Verify if a phone number is valid using Twilio Lookup API"""
         if not phone_number or not twilio_client:
             return False
@@ -64,8 +66,15 @@ class LeadScraper:
             line_type = lookup.line_type_intelligence.get('type', '')
             valid_types = ['landline', 'mobile']
             
+            is_valid = line_type in valid_types
             self.logger.info(f"Phone {phone_number} verified as {line_type}")
-            return line_type in valid_types
+            
+            # If valid and we have a lead object, sync to HubSpot
+            if is_valid and lead and hubspot_client:
+                lead['phone_verified'] = True
+                self.sync_lead_to_hubspot(lead)
+                
+            return is_valid
             
         except TwilioRestException as e:
             self.logger.error(f"Twilio error verifying phone {phone_number}: {str(e)}")
@@ -74,7 +83,7 @@ class LeadScraper:
             self.logger.error(f"Error verifying phone {phone_number}: {str(e)}")
             return False
 
-    def verify_linkedin(self, linkedin_url):
+    def verify_linkedin(self, linkedin_url, lead=None):
         """Verify if a LinkedIn profile URL exists and is valid"""
         if not linkedin_url:
             return False
@@ -95,6 +104,12 @@ class LeadScraper:
             valid = response.status_code == 200 and "profile not found" not in response.text.lower()
             
             self.logger.info(f"LinkedIn URL {linkedin_url} verified: {valid}")
+            
+            # If valid and we have a lead object, sync to HubSpot
+            if valid and lead and hubspot_client:
+                lead['linkedin_verified'] = True
+                self.sync_lead_to_hubspot(lead)
+                
             return valid
             
         except Exception as e:
@@ -114,6 +129,14 @@ try:
 except Exception as e:
     logger.error(f"Error initializing Twilio client: {str(e)}")
     twilio_client = None
+
+# Initialize HubSpot client
+try:
+    hubspot_api_key = os.environ.get('HUBSPOT_API_KEY')
+    hubspot_client = HubSpot(api_key=hubspot_api_key) if hubspot_api_key else None
+except Exception as e:
+    logger.error(f"Error initializing HubSpot client: {str(e)}")
+    hubspot_client = None
 
 class LeadScraper:
     def __init__(self):
@@ -211,11 +234,12 @@ class LeadScraper:
         # Normalize score to 0-100 range
         return min(max(score, 0), 100)
 
-    def verify_email(self, email):
+    def verify_email(self, email, lead=None):
         """Verify if an email address is valid and deliverable
         
         Args:
             email (str): The email address to verify
+            lead (dict, optional): Lead data dictionary to update if verification succeeds
             
         Returns:
             bool: True if the email is valid and deliverable, False otherwise
@@ -232,6 +256,12 @@ class LeadScraper:
             valid = validate_email(valid.email, check_deliverability=True)
             
             self.logger.info(f"Verified email: {email} is valid")
+            
+            # If we have a lead object, update it and sync to HubSpot
+            if lead and hubspot_client:
+                lead['verified'] = True
+                self.sync_lead_to_hubspot(lead)
+                
             return True
         except EmailNotValidError as e:
             self.logger.info(f"Email verification failed for {email}: {str(e)}")
@@ -409,15 +439,16 @@ class LeadScraper:
         return leads
 
     def save_leads_to_db(self, leads, user_id):
-        """Save scraped leads to PostgreSQL database"""
+        """Save scraped leads to PostgreSQL database and sync to HubSpot"""
         try:
             for lead in leads:
                 self.cur.execute("""
                     INSERT INTO leads (
                         user_id, name, email, source, score,
                         verified, status, date_added, website,
-                        phone, description
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        phone, description, phone_verified, linkedin_verified
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    RETURNING id
                 """, (
                     user_id,
                     lead['name'],
@@ -429,8 +460,21 @@ class LeadScraper:
                     datetime.now(),
                     lead.get('website'),
                     lead.get('phone'),
-                    lead.get('description')
+                    lead.get('description'),
+                    lead.get('phone_verified', False),
+                    lead.get('linkedin_verified', False)
                 ))
+                
+                # Get the lead ID
+                lead_id = self.cur.fetchone()[0]
+                lead['id'] = lead_id
+                
+                # Sync to HubSpot
+                if hubspot_client:
+                    # Add user ID to the lead for HubSpot sync
+                    lead['user_id'] = user_id
+                    self.sync_lead_to_hubspot(lead)
+                
             self.conn.commit()
             return True
         except Exception as e:
@@ -829,6 +873,39 @@ class LeadScraper:
         """Split a list into chunks of size n"""
         for i in range(0, len(lst), n):
             yield lst[i:i+n]
+            
+    def sync_lead_to_hubspot(self, lead):
+        """Sync lead data to HubSpot CRM"""
+        if not hubspot_client:
+            logger.warning("HubSpot client not initialized, skipping sync")
+            return False
+            
+        try:
+            # Prepare properties for HubSpot contact
+            properties = {
+                "email": lead.get('email'),
+                "firstname": lead.get('name', '').split()[0] if lead.get('name') else '',
+                "lastname": lead.get('name', '').split()[-1] if lead.get('name') and len(lead.get('name', '').split()) > 1 else '',
+                "company": lead.get('name'),
+                "website": lead.get('website', ''),
+                "phone": lead.get('phone', ''),
+                "leadzap_source": lead.get('source', ''),
+                "leadzap_score": str(lead.get('score', 0)),
+                "email_verified": "Yes" if lead.get('verified', False) else "No",
+                "phone_verified": "Yes" if lead.get('phone_verified', False) else "No",
+                "linkedin_verified": "Yes" if lead.get('linkedin_verified', False) else "No"
+            }
+            
+            # Create or update contact in HubSpot
+            simple_public_object_input = SimplePublicObjectInput(properties=properties)
+            response = hubspot_client.crm.contacts.basic_api.create(simple_public_object_input=simple_public_object_input)
+            
+            logger.info(f"Successfully synced lead {lead.get('name')} to HubSpot (ID: {response.id})")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error syncing lead to HubSpot: {str(e)}")
+            return False
     
     def send_email_batch(self, leads, user_id, user_email, package_name):
         """Send a batch of emails to leads"""

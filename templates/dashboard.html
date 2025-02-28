@@ -34,12 +34,15 @@
         <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 max-w-6xl mx-auto">
             <div class="flex flex-wrap gap-4 mb-4">
                 <a href="{{ url_for('dashboard') }}?filter=all" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if not request.args.get('filter') or request.args.get('filter') == 'all' }}">All</a>
-                <a href="{{ url_for('dashboard') }}?filter=verified" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if request.args.get('filter') == 'verified' }}">Verified Emails</a>
-                <a href="{{ url_for('dashboard') }}?filter=unverified" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if request.args.get('filter') == 'unverified' }}">Unverified Emails</a>
+                <a href="{{ url_for('dashboard') }}?filter=verified" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if request.args.get('filter') == 'verified' }}">Email Verified</a>
+                <a href="{{ url_for('dashboard') }}?filter=unverified" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if request.args.get('filter') == 'unverified' }}">Unverified</a>
+                <a href="{{ url_for('dashboard') }}?filter=phone_verified" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if request.args.get('filter') == 'phone_verified' }}">Phone Verified</a>
+                <a href="{{ url_for('dashboard') }}?filter=linkedin_verified" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if request.args.get('filter') == 'linkedin_verified' }}">LinkedIn Verified</a>
+                <a href="{{ url_for('dashboard') }}?filter=fully_verified" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if request.args.get('filter') == 'fully_verified' }}">Fully Verified</a>
                 <a href="{{ url_for('dashboard') }}?filter=high_score" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if request.args.get('filter') == 'high_score' }}">High Score (>75)</a>
                 <a href="{{ url_for('dashboard') }}?filter=last_week" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if request.args.get('filter') == 'last_week' }}">Last 7 Days</a>
             </div>
-            <!-- Desktop Table / Mobile Cards -->
+            <!-- Source-based filters -->
             <div class="flex flex-wrap gap-4 mb-4">
                 <!-- Source-based filters -->
                 <a href="{{ url_for('dashboard') }}?filter=linkedin" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if request.args.get('filter') == 'linkedin' }}">LinkedIn</a>
@@ -53,13 +56,13 @@
                             <th class="p-3">Name</th>
                             <th class="p-3">Email</th>
                             <th class="p-3">Source</th>
-                            <th class="p-3">Phone</th>
-                            <th class="p-3">Website</th>
-                            <th class="p-3">Verified</th>
                             <th class="p-3">Score</th>
+                            <th class="p-3">Email Verified</th>
+                            <th class="p-3">Phone Verified</th>
+                            <th class="p-3">LinkedIn Verified</th>
                             <th class="p-3">Status</th>
                             <th class="p-3">Date Added</th>
-                            <th class="p-3">Outreach</th>
+                            <th class="p-3">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -81,22 +84,26 @@
                                 {% endif %}
                             </td>
                             <td class="p-3">
-                                <div class="flex flex-col gap-1">
-                                    <div class="flex items-center">
-                                        <span class="w-3 h-3 mr-2 rounded-full {{ 'bg-green-500' if lead.verified else 'bg-gray-300' }}"></span>
-                                        <span>Email: {{ "Yes" if lead.verified else "No" }}</span>
-                                    </div>
-                                    <div class="flex items-center">
-                                        <span class="w-3 h-3 mr-2 rounded-full {{ 'bg-green-500' if lead.phone_verified else 'bg-gray-300' }}"></span>
-                                        <span>Phone: {{ "Yes" if lead.phone_verified else "No" }}</span>
-                                    </div>
-                                    <div class="flex items-center">
-                                        <span class="w-3 h-3 mr-2 rounded-full {{ 'bg-green-500' if lead.linkedin_verified else 'bg-gray-300' }}"></span>
-                                        <span>LinkedIn: {{ "Yes" if lead.linkedin_verified else "No" }}</span>
-                                    </div>
-                                </div>
+                                {% if lead.verified %}
+                                <span class="text-[#00DB77] font-bold">✓</span>
+                                {% else %}
+                                <span class="text-[#FF4444]">✗</span>
+                                {% endif %}
                             </td>
-                            <td class="p-3 {% if lead.score > 75 %}text-[#9F5FFF] font-medium{% else %}text-[#A1A9B8]{% endif %}" title="AI-powered lead score"> {{ lead.score }}</td>
+                            <td class="p-3">
+                                {% if lead.phone_verified %}
+                                <span class="text-[#00DB77] font-bold">✓</span>
+                                {% else %}
+                                <span class="text-[#FF4444]">✗</span>
+                                {% endif %}
+                            </td>
+                            <td class="p-3">
+                                {% if lead.linkedin_verified %}
+                                <span class="text-[#00DB77] font-bold">✓</span>
+                                {% else %}
+                                <span class="text-[#FF4444]">✗</span>
+                                {% endif %}
+                            </td>
                             <td class="p-3">
                                 <span class="px-2 py-1 rounded-full text-xs
                                     {% if lead.status == 'Contacted' %}bg-blue-900 text-white
