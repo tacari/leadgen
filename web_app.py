@@ -48,7 +48,7 @@ def ensure_tables_exist():
         except Exception as e:
             logger.error(f"Error with users table: {str(e)}")
             # Table might not exist - we'll try SQL directly in a future version
-        
+
         # Try to create user_packages table
         try:
             logger.info("Checking/creating user_packages table")
@@ -64,7 +64,7 @@ def ensure_tables_exist():
             logger.info("User packages table exists")
         except Exception as e:
             logger.error(f"Error with user_packages table: {str(e)}")
-            
+
         # Try to create leads table
         try:
             logger.info("Checking/creating leads table")
@@ -80,11 +80,11 @@ def ensure_tables_exist():
             logger.info("Leads table exists")
         except Exception as e:
             logger.error(f"Error with leads table: {str(e)}")
-        
+
         logger.info("Database tables check completed")
     except Exception as e:
         logger.error(f"Error ensuring tables exist: {str(e)}")
-    
+
     # Always ensure local data files exist as fallback
     ensure_local_data_files()
 
@@ -93,7 +93,7 @@ def ensure_local_data_files():
     data_dir = 'data'
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
-    
+
     for file_name in ['users.json', 'user_packages.json', 'leads.json']:
         file_path = os.path.join(data_dir, file_name)
         if not os.path.exists(file_path):
@@ -134,7 +134,7 @@ def signup():
                     ]).execute()
                     # Delete test row
                     supabase.table('users').delete().eq('id', 'test').execute()
-                
+
                 # Now check if username exists
                 existing_user = supabase.table('users').select('username').eq('username', username).execute()
                 if existing_user.data:
@@ -165,7 +165,7 @@ def signup():
                     'email': email,
                     'password': password
                 })
-                
+
                 if hasattr(auth_response, 'user') and auth_response.user:
                     user_id = auth_response.user.id
                     logger.info(f"Supabase Auth signup successful for {email} with ID {user_id}")
@@ -192,13 +192,13 @@ def signup():
                     logger.info(f"User data stored in Supabase for {email}")
             except Exception as db_e:
                 logger.error(f"Error inserting user in Supabase: {str(db_e)}")
-            
+
             # Fallback to file-based storage if Supabase failed
             if not db_success:
                 try:
                     with open('data/users.json', 'r') as f:
                         users = json.load(f)
-                    
+
                     users.append({
                         'id': user_id,
                         'username': username,
@@ -206,10 +206,10 @@ def signup():
                         'created_at': datetime.utcnow().isoformat(),
                         'password': password  # Store password for file-based auth
                     })
-                    
+
                     with open('data/users.json', 'w') as f:
                         json.dump(users, f, indent=2)
-                    
+
                     logger.info(f"User data stored in file for {email}")
                 except Exception as file_e:
                     logger.error(f"Error storing user in file: {str(file_e)}")
@@ -239,7 +239,7 @@ def login():
         password = request.form['password']
 
         logger.info(f"Login attempt for email: {email}")
-        
+
         try:
             # First try with Supabase Auth
             supabase_login_success = False
@@ -254,7 +254,7 @@ def login():
                     try:
                         user_data = supabase.table('users').select('username').eq('id', auth_response.user.id).execute()
                         username = user_data.data[0]['username'] if user_data.data else "User"
-                        
+
                         session['user_id'] = auth_response.user.id
                         session['username'] = username
                         session.modified = True
@@ -274,13 +274,13 @@ def login():
                         return redirect(url_for('dashboard'))
             except Exception as auth_e:
                 logger.error(f"Supabase login error: {str(auth_e)}")
-            
+
             # If Supabase login failed, try file-based login
             if not supabase_login_success:
                 try:
                     with open('data/users.json', 'r') as f:
                         users = json.load(f)
-                    
+
                     user = next((u for u in users if u.get('email') == email and u.get('password') == password), None)
                     if user:
                         session['user_id'] = user.get('id', f"local_{datetime.now().strftime('%Y%m%d%H%M%S')}")
@@ -291,7 +291,7 @@ def login():
                         return redirect(url_for('dashboard'))
                 except Exception as file_e:
                     logger.error(f"File-based login error: {str(file_e)}")
-            
+
             # If we reach here, both login methods failed
             flash('Invalid email or password.')
             logger.warning(f"Failed login attempt for {email}")
@@ -321,7 +321,7 @@ def dashboard():
     if 'user_id' not in session:
         flash('Please log in to access the dashboard.')
         return redirect(url_for('login'))
-        
+
     try:
         # For now, use test data to show dashboard functionality
         test_data = {
@@ -877,7 +877,7 @@ def success():
             try:
                 # Generate a unique ID for the user_package
                 package_id = f"pkg_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-                
+
                 # Insert or update user package with explicit ID
                 supabase.table('user_packages').upsert({
                     'id': package_id,
@@ -889,20 +889,20 @@ def success():
                     'next_delivery': datetime.now().isoformat(),
                     'updated_at': datetime.now().isoformat()
                 }).execute()
-                
+
                 logger.info(f"Updated subscription for user {user_id}: package={package}")
             except Exception as db_e:
                 logger.error(f"Database error in success route: {str(db_e)}")
                 # Fallback to file-based storage
                 user_packages_file = 'data/user_packages.json'
-                
+
                 try:
                     with open(user_packages_file, 'r') as f:
                         packages = json.load(f)
-                    
+
                     if not isinstance(packages, list):
                         packages = []
-                    
+
                     # Update or add package
                     package_found = False
                     for p in packages:
@@ -917,7 +917,7 @@ def success():
                             })
                             package_found = True
                             break
-                    
+
                     if not package_found:
                         packages.append({
                             'user_id': user_id,
@@ -928,14 +928,14 @@ def success():
                             'next_delivery': datetime.now().isoformat(),
                             'updated_at': datetime.now().isoformat()
                         })
-                    
+
                     with open(user_packages_file, 'w') as f:
                         json.dump(packages, f, indent=2)
-                    
+
                     logger.info(f"Updated subscription in file for user {user_id}: package={package}")
                 except Exception as file_e:
                     logger.error(f"File-based storage error: {str(file_e)}")
-                
+
                 logger.info(f"Updated subscription in file for user {user_id}: package={package}")
 
             if package == 'launch':
@@ -971,7 +971,7 @@ def webhook():
     if sig_header:
         logger.info(f"Signature header present: {sig_header[:10]}...")
     logger.info(f"Webhook secret is set: {webhook_secret is not None}")
-    
+
     # For development, we'll process the webhook even without verification
     # This allows testing while you're setting up the webhook secret
     if not webhook_secret:
@@ -980,7 +980,7 @@ def webhook():
             event_data = json.loads(payload)
             event_type = event_data.get('type')
             logger.info(f"Processing unverified webhook event: {event_type}")
-            
+
             if event_type == 'checkout.session.completed':
                 session = event_data.get('data', {}).get('object', {})
                 if session:
@@ -991,7 +991,7 @@ def webhook():
                 if subscription:
                     logger.info(f"Processing subscription update: {subscription.get('id')}")
                     handle_subscription_update(subscription)
-            
+
             return jsonify({"status": "processed_without_verification"}), 200
         except json.JSONDecodeError:
             logger.error("Invalid JSON payload received")
@@ -999,14 +999,14 @@ def webhook():
         except Exception as e:
             logger.error(f"Error processing webhook without verification: {str(e)}")
             return jsonify({"status": "error", "message": str(e)}), 400
-    
+
     # If we have a webhook secret, use it to verify the signature
     try:
         event = stripe.Webhook.construct_event(
             payload, sig_header, webhook_secret
         )
         logger.info(f"Received verified webhook event: {event.type}")
-        
+
         if event.type == 'checkout.session.completed':
             session = event.data.object
             logger.info(f"Processing completed checkout session: {session.id}")
@@ -1015,7 +1015,7 @@ def webhook():
             subscription = event.data.object
             logger.info(f"Processing subscription update: {subscription.id}")
             handle_subscription_update(subscription)
-        
+
         return '', 200
     except ValueError as e:
         # Invalid payload
@@ -1058,15 +1058,15 @@ def handle_successful_payment(session):
             }).execute()
 
             logger.info(f"Webhook: Updated subscription for user {user_id}: package={package}")
-            
+
         except Exception as db_e:
             logger.error(f"Database error in webhook: {str(db_e)}")
             # Fallback to file-based storage
             user_packages_file = 'data/user_packages.json'
-            
+
             with open(user_packages_file, 'r') as f:
                 packages = json.load(f)
-            
+
             # Update or add package
             package_found = False
             for p in packages:
@@ -1080,7 +1080,7 @@ def handle_successful_payment(session):
                     })
                     package_found = True
                     break
-            
+
             if not package_found:
                 packages.append({
                     'user_id': user_id,
@@ -1090,7 +1090,7 @@ def handle_successful_payment(session):
                     'created_at': datetime.now().isoformat(),
                     'updated_at': datetime.now().isoformat()
                 })
-            
+
             with open(user_packages_file, 'w') as f:
                 json.dump(packages, f, indent=2)
 
@@ -1121,15 +1121,15 @@ def handle_subscription_update(subscription):
             }).eq('user_id', user_id).execute()
 
             logger.info(f"Updated subscription status for user {user_id}: subscription={subscription.id}")
-            
+
         except Exception as db_e:
             logger.error(f"Database error in subscription update: {str(db_e)}")
             # Fallback to file-based storage
             user_packages_file = 'data/user_packages.json'
-            
+
             with open(user_packages_file, 'r') as f:
                 packages = json.load(f)
-            
+
             # Update package status
             for p in packages:
                 if p.get('user_id') == user_id:
@@ -1139,7 +1139,7 @@ def handle_subscription_update(subscription):
                         'updated_at': datetime.now().isoformat()
                     })
                     break
-            
+
             with open(user_packages_file, 'w') as f:
                 json.dump(packages, f, indent=2)
 
