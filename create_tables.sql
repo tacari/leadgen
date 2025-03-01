@@ -3,7 +3,9 @@ CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     username TEXT NOT NULL,
     email TEXT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    hubspot_api_key VARCHAR(255),
+    slack_webhook_url VARCHAR(255)
 );
 
 -- Create user_packages table
@@ -34,5 +36,6 @@ CREATE TABLE IF NOT EXISTS leads (
     linkedin_verified BOOLEAN DEFAULT FALSE,
     status TEXT DEFAULT 'New',
     date_added TIMESTAMPTZ DEFAULT NOW(),
-    hubspot_id TEXT
+    hubspot_id TEXT,
+    crm_id VARCHAR(50)
 );

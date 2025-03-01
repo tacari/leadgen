@@ -824,8 +824,7 @@ def dashboard():
             ]
 
         # Apply filters - safely handle potential invalid data
-        leads = []
-        for lead in real_leads:
+        leads = []for lead in real_leads:
             try:
                 # Convert date_added to datetime if it's a string
                 if isinstance(lead.get('date_added'), str):
@@ -887,7 +886,7 @@ def dashboard():
             try:
                 with open('data/user_packages.json', 'r') as f:
                     packages = json.load(f)
-                    
+
                     if not packages:
                         logger.warning(f"Empty packages in user_packages.json")
                     elif isinstance(packages, list):
@@ -959,168 +958,38 @@ def dashboard():
 
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():
-    if 'user_id' not in session:
-        flash('Please log in to access settings.')
-        return redirect(url_for('login'))
-
     try:
-        user_id = session.get('user_id')
-        user_data = None
-        user_email = None
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
 
-        # Try to fetch user data from Supabase
-        try:
-            user_result = supabase.table('users').select('*').eq('id', user_id).execute()
-            if user_result.data:
-                user_data = user_result.data[0]
-                user_email = user_data.get('email')
-        except Exception as e:
-            logger.error(f"Error fetching user from Supabase: {str(e)}")
+        user_id = session['user_id']
 
-        # Fallback to file-based storage
-        if not user_data:
-            try:
-                with open('data/users.json', 'r') as f:
-                    users = json.load(f)
-                    user_data = next((u for u in users if u.get('id') == user_id), None)
-                    if user_data:
-                        user_email = user_data.get('email')
-            except Exception as file_e:
-                logger.error(f"Error reading user data from file: {str(file_e)}")
+        # Get user preferences from Supabase
+        response = supabase.table('users').select('*').eq('id', user_id).execute()
+        user_data = response.data[0] if response.data else {}
 
-        # If we still don't have user data, use defaults
-        if not user_data:
-            user_data = {}
-            user_email = "user@example.com"
+        # Get active package
+        package_response = supabase.table('user_packages').select('*').eq('user_id', user_id).eq('status', 'active').execute()
+        package = package_response.data[0] if package_response.data else {}
 
-        # Construct user object
-        user = {
-            'username': session.get('username', 'User'),
-            'email': user_email,
-            'notifications': user_data.get('notifications', {
-                'new_leads': True,
-                'weekly_summary': True,
-                'support_updates': False
-            })
-        }
+        # Generate a fake API key for now
+        api_key = f"lz_{user_id}_{'x' * 30}"
 
-        # Get subscription data
-        subscription = None
-        try:
-            package_result = supabase.table('user_packages').select('*').eq('user_id', user_id).eq('status', 'active').execute()
-            if package_result.data:
-                package_data = package_result.data[0]
-                subscription = {
-                    'package_name': package_data.get('package_name', 'Lead Engine'),
-                    'price': 1499,  # Default price
-                    'next_billing': package_data.get('next_delivery', '2025-03-25'),
-                    'lead_volume': package_data.get('lead_volume', 150)
-                }
-        except Exception as pkg_e:
-            logger.error(f"Error fetching subscription from Supabase: {str(pkg_e)}")
+        # Get CRM settings
+        hubspot_api_key = user_data.get('hubspot_api_key', '')
+        slack_webhook_url = user_data.get('slack_webhook_url', '')
 
-        # Fallback to file for subscription
-        if not subscription:
-            try:
-                with open('data/user_packages.json', 'r') as f:
-                    packages = json.load(f)
-                    package_data = next((p for p in packages if p.get('user_id') == user_id and p.get('status') == 'active'), None)
-                    if package_data:
-                        subscription = {
-                            'package_name': package_data.get('package_name', 'Lead Engine'),
-                            'price': 1499,  # Default price
-                            'next_billing': package_data.get('next_delivery', '2025-03-25'),
-                            'lead_volume': package_data.get('lead_volume', 150)
-                        }
-            except Exception as file_e:
-                logger.error(f"Error reading subscription data from file: {str(file_e)}")
-
-        # If we still don't have subscription data, use defaults
-        if not subscription:
-            subscription = {
-                'package_name': 'Lead Engine',
-                'price': 1499,
-                'next_billing': '2025-03-25',
-                'lead_volume': 150
-            }
-
-        if request.method == 'POST':
-            # Handle profile updates
-            if 'username' in request.form and 'email' in request.form:
-                new_username = request.form['username']
-                new_email = request.form['email']
-
-                # Update user data in Supabase
-                try:
-                    supabase.table('users').update({
-                        'username': new_username,
-                        'email': new_email
-                    }).eq('id', user_id).execute()
-                except Exception as update_e:
-                    logger.error(f"Error updating user in Supabase: {str(update_e)}")
-
-                    # Fallback to file update
-                    try:
-                        with open('data/users.json', 'r') as f:
-                            users = json.load(f)
-                            for u in users:
-                                if u.get('id') == user_id:
-                                    u['username'] = new_username
-                                    u['email'] = new_email
-                                    break
-                        with open('data/users.json', 'w') as f:
-                            json.dump(users, f, indent=2)
-                    except Exception as file_e:
-                        logger.error(f"Error updating user in file: {str(file_e)}")
-
-                # Update session
-                session['username'] = new_username
-
-                user['username'] = new_username
-                user['email'] = new_email
-                flash('Profile updated successfully!', 'success')
-                return redirect(url_for('settings'))
-
-            # Handle notification preferences
-            elif any(key in request.form for key in ['new_leads', 'weekly_summary', 'support_updates']):
-                notifications = {
-                    'new_leads': 'new_leads' in request.form,
-                    'weekly_summary': 'weekly_summary' in request.form,
-                    'support_updates': 'support_updates' in request.form
-                }
-
-                # Update notifications in Supabase
-                try:
-                    supabase.table('users').update({
-                        'notifications': notifications
-                    }).eq('id', user_id).execute()
-                except Exception as update_e:
-                    logger.error(f"Error updating notifications in Supabase: {str(update_e)}")
-
-                    # Fallback to file update
-                    try:
-                        with open('data/users.json', 'r') as f:
-                            users = json.load(f)
-                            for u in users:
-                                if u.get('id') == user_id:
-                                    u['notifications'] = notifications
-                                    break
-                        with open('data/users.json', 'w') as f:
-                            json.dump(users, f, indent=2)
-                    except Exception as file_e:
-                        logger.error(f"Error updating notifications in file: {str(file_e)}")
-
-                user['notifications'] = notifications
-                flash('Notification preferences saved!', 'success')
-                return redirect(url_for('settings'))
-
-        return render_template('settings.html',
-                         username=session.get('username', "User"),
-                         user=user,
-                         subscription=subscription)
-
+        return render_template(
+            'settings.html', 
+            username=session.get('username', 'User'),
+            user_data=user_data,
+            api_key=api_key,
+            package=package,
+            hubspot_api_key=hubspot_api_key,
+            slack_webhook_url=slack_webhook_url
+        )
     except Exception as e:
-        logger.error(f"Error in settings route: {str(e)}")
+        logging.error(f"Error loading settings: {str(e)}")
         flash(f'An error occurred: {str(e)}', 'error')
         return redirect(url_for('dashboard'))
 
@@ -1395,7 +1264,7 @@ def success():
         subscription_id = checkout_session.subscription if hasattr(checkout_session, 'subscription') else None
 
         package_created = False
-        
+
         # Try to use Supabase first
         try:
             # Generate a unique ID for the user_package
@@ -1423,21 +1292,21 @@ def success():
         if not package_created:
             try:
                 user_packages_file = 'data/user_packages.json'
-                
+
                 # Make sure the file exists
                 if not os.path.exists('data'):
                     os.makedirs('data')
                 if not os.path.exists(user_packages_file):
                     with open(user_packages_file, 'w') as f:
                         json.dump([], f)
-                
+
                 # Read existing packages
                 with open(user_packages_file, 'r') as f:
                     try:
                         packages = json.load(f)
                     except json.JSONDecodeError:
                         packages = []
-                
+
                 # Ensure packages is a list
                 if not isinstance(packages, list):
                     packages = []

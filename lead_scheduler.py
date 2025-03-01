@@ -156,6 +156,17 @@ class LeadScheduler:
             if len(available_leads) < num_leads:
                 # Not enough leads in pool, generate more
                 self.logger.info(f"Not enough leads in pool for {user_id}, generating more")
+                
+            # Get user's CRM settings
+            self.cur.execute("""
+                SELECT hubspot_api_key, slack_webhook_url
+                FROM users
+                WHERE id = %s
+            """, (user_id,))
+            
+            user_settings = self.cur.fetchone()
+            hubspot_api_key = user_settings[0] if user_settings else None
+            slack_webhook_url = user_settings[1] if user_settings else None
                 self.generate_lead_pool(niche, city, num_leads - len(available_leads))
                 
                 # Try again to get leads
@@ -313,3 +324,41 @@ class LeadScheduler:
             self.cur.close()
         if hasattr(self, 'conn') and self.conn:
             self.conn.close()
+def sync_lead_to_crm(lead, user):
+    """
+    Sync a lead to the user's configured CRM system
+    """
+    try:
+        # Check if user has configured HubSpot integration
+        if hasattr(user, 'hubspot_api_key') and user.hubspot_api_key:
+            # Add the lead to HubSpot
+            crm_id = add_lead_to_hubspot(lead, user.hubspot_api_key)
+            if crm_id:
+                # Update the lead with the CRM ID
+                lead.crm_id = crm_id
+                
+                # Send Slack notification if configured
+                if hasattr(user, 'slack_webhook_url') and user.slack_webhook_url:
+                    notify_slack(lead, user.slack_webhook_url)
+                
+                # Update status if needed
+                if lead.status == 'Emailed':
+                    update_lead_status(lead, 'Contacted', user.hubspot_api_key)
+                    
+                return True
+    except Exception as e:
+        self.logger.error(f"Error syncing lead to CRM: {str(e)}")
+    
+    return False
+
+def sync_leads_to_crm(leads, user):
+    """
+    Sync multiple leads to a user's CRM
+    """
+    synced_count = 0
+    for lead in leads:
+        if sync_lead_to_crm(lead, user):
+            synced_count += 1
+    
+    self.logger.info(f"Synced {synced_count} of {len(leads)} leads to CRM for user {user.id}")
+    return synced_count

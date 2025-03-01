@@ -7,6 +7,7 @@ from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileT
 import base64
 import csv
 import io
+from crm_integration import add_lead_to_hubspot, update_lead_status, notify_slack
 
 class LeadManager:
     def __init__(self):
@@ -124,6 +125,16 @@ class LeadManager:
                         SET next_delivery = %s
                         WHERE user_id = %s
                     """, (next_delivery, user_id))
+
+                    # CRM Integration
+                    for lead in leads:
+                        try:
+                            add_lead_to_hubspot(lead)
+                            update_lead_status(lead['id'], 'Emailed')
+                            notify_slack(f"Lead {lead['id']} sent to {user_email}")
+                        except Exception as crm_error:
+                            self.logger.error(f"CRM Error processing lead {lead['id']}: {crm_error}")
+
 
                     self.conn.commit()
 

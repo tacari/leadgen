@@ -3,7 +3,7 @@
 {% block content %}
 <div class="bg-[#0D1321] min-h-screen text-white p-8">
     <h1 class="text-4xl font-bold text-center mb-12">Account Settings</h1>
-    
+
     <!-- Profile Section -->
     <div class="max-w-2xl mx-auto space-y-8">
         <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
@@ -84,6 +84,60 @@
                         Manage Billing
                     </a>
                 </div>
+            </div>
+        </div>
+
+        <!-- API Integration Section -->
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-center mb-8">API Integration</h2>
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 max-w-2xl mx-auto">
+                <p class="text-[#A1A9B8] mb-4">Your API Key:</p>
+                <div class="flex items-center">
+                    <input type="text" value="{{ api_key }}" id="apiKey" readonly class="w-full bg-[#0D1321] border border-[#7B00FF] rounded-lg p-3 text-[#A1A9B8]">
+                    <button onclick="copyApiKey()" class="ml-2 bg-[#7B00FF] text-white p-3 rounded-lg hover:bg-[#8F00FF]">
+                        Copy
+                    </button>
+                </div>
+                <p class="text-[#A1A9B8] mt-4 text-sm">Use this API key to access the Leadzap API for custom integrations.</p>
+            </div>
+        </div>
+
+        <!-- CRM Workflow Automation Settings -->
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-center mb-8">CRM Workflow Automation</h2>
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 max-w-2xl mx-auto">
+                <form method="POST" action="{{ url_for('update_crm_settings') }}">
+                    <div class="mb-4">
+                        <label class="block text-white text-base font-bold mb-2">HubSpot API Key</label>
+                        <input name="hubspot_api_key" type="text" value="{{ hubspot_api_key or '' }}" class="w-full bg-[#0D1321] border border-[#7B00FF] rounded-lg p-3 text-white placeholder-[#A1A9B8]" placeholder="Enter your HubSpot API key">
+                        <p class="text-[#A1A9B8] mt-1 text-sm">Get this from your HubSpot Developer Account</p>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-white text-base font-bold mb-2">Slack Webhook URL</label>
+                        <input name="slack_webhook_url" type="text" value="{{ slack_webhook_url or '' }}" class="w-full bg-[#0D1321] border border-[#7B00FF] rounded-lg p-3 text-white placeholder-[#A1A9B8]" placeholder="Enter your Slack webhook URL">
+                        <p class="text-[#A1A9B8] mt-1 text-sm">Create this in your Slack App Settings</p>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div class="text-[#A1A9B8]">
+                            <span class="font-bold">Status:</span> 
+                            {% if hubspot_api_key %}
+                            <span class="text-green-400">Active ✓</span>
+                            {% else %}
+                            <span class="text-yellow-400">Inactive ⚠</span>
+                            {% endif %}
+                        </div>
+                        <button type="submit" class="bg-[#7B00FF] text-white px-6 py-3 rounded-lg text-lg font-bold hover:bg-[#8F00FF] hover:shadow-lg">Save Settings</button>
+                    </div>
+                </form>
+            </div>
+            <div class="max-w-2xl mx-auto mt-4 p-4 bg-[#1A2236] border border-[#7B00FF] rounded-lg">
+                <h3 class="text-xl font-bold mb-2 text-white">How it works:</h3>
+                <ul class="list-disc pl-5 text-[#A1A9B8] space-y-2">
+                    <li>Your leads are automatically added to your HubSpot CRM</li>
+                    <li>High-scoring leads (>75) are tagged as "Hot Leads" for priority follow-up</li>
+                    <li>Your team receives instant Slack notifications for new leads</li>
+                    <li>Lead statuses update automatically based on interactions</li>
+                </ul>
             </div>
         </div>
     </div>

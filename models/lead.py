@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 
 class Lead:
-    def __init__(self, id, name, email, source, score, status, date_added, user_id):
+    def __init__(self, id, name, email, source, score, status, date_added, user_id, crm_id=None):
         self.id = id
         self.name = name
         self.email = email
@@ -11,6 +11,7 @@ class Lead:
         self.status = status
         self.date_added = date_added
         self.user_id = user_id
+        self.crm_id = crm_id
 
     @staticmethod
     def create(name, email, source, score, user_id, status="Pending"):
