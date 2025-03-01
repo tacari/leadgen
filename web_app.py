@@ -824,7 +824,8 @@ def dashboard():
             ]
 
         # Apply filters - safely handle potential invalid data
-        leads = []for lead in real_leads:
+        leads = []
+        for lead in real_leads:
             try:
                 # Convert date_added to datetime if it's a string
                 if isinstance(lead.get('date_added'), str):
