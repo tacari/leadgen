@@ -810,7 +810,6 @@ def login():
                         session['user_id'] = user.get('id', f"local_{datetime.now().strftime('%Y%m%d%H%M%S')}")
                         session['username'] = user.get('username', email.split('@')[0])
                         session.modified = True
-True
                         flash('Successfully logged in!')
                         logger.info(f"File-based login successful for {email}")
                         return redirect(url_for('dashboard'))
