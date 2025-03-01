@@ -167,21 +167,22 @@ class LeadScheduler:
             user_settings = self.cur.fetchone()
             hubspot_api_key = user_settings[0] if user_settings else None
             slack_webhook_url = user_settings[1] if user_settings else None
-                self.generate_lead_pool(niche, city, num_leads - len(available_leads))
-                
-                # Try again to get leads
-                self.cur.execute("""
-                    SELECT id, name, email, source, score, verified, niche, city 
-                    FROM lead_pool 
-                    WHERE status = 'Available' 
-                      AND (niche = %s OR %s = 'general')
-                      AND (city = %s OR %s = 'general')
-                    ORDER BY score DESC
-                    LIMIT %s
-                """, (niche, niche, city, city, num_leads - len(available_leads)))
-                
-                additional_leads = self.cur.fetchall()
-                available_leads.extend(additional_leads)
+            
+            self.generate_lead_pool(niche, city, num_leads - len(available_leads))
+            
+            # Try again to get leads
+            self.cur.execute("""
+                SELECT id, name, email, source, score, verified, niche, city 
+                FROM lead_pool 
+                WHERE status = 'Available' 
+                  AND (niche = %s OR %s = 'general')
+                  AND (city = %s OR %s = 'general')
+                ORDER BY score DESC
+                LIMIT %s
+            """, (niche, niche, city, city, num_leads - len(available_leads)))
+            
+            additional_leads = self.cur.fetchall()
+            available_leads.extend(additional_leads)
             
             # Mark leads as assigned in pool
             for lead in available_leads:
