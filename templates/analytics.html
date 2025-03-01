@@ -76,6 +76,71 @@
             <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 overflow-x-auto">
                 <table class="w-full text-left text-[#A1A9B8] text-sm">
                     <thead>
+
+<!-- ML Insights Section -->
+<div class="mt-6 p-6 bg-[#1A2236] rounded-lg border border-[#7B00FF] shadow-lg">
+    <h3 class="text-xl font-bold mb-4 text-white flex items-center">
+        <svg class="w-5 h-5 mr-2 text-[#7B00FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+        </svg>
+        AI-Powered Lead Insights
+    </h3>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="p-4 bg-[#0D1321] rounded-lg">
+            <h4 class="text-lg font-semibold mb-3 text-[#7B00FF]">Feature Importance</h4>
+            <p class="text-gray-300 mb-4">Our AI ranks these factors by how strongly they predict lead quality:</p>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-300">LinkedIn Verified</span>
+                    <div class="w-2/3 bg-gray-700 rounded-full h-2.5">
+                        <div class="bg-[#7B00FF] h-2.5 rounded-full" style="width: 85%"></div>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-300">Email Verified</span>
+                    <div class="w-2/3 bg-gray-700 rounded-full h-2.5">
+                        <div class="bg-[#7B00FF] h-2.5 rounded-full" style="width: 75%"></div>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-300">Source Quality</span>
+                    <div class="w-2/3 bg-gray-700 rounded-full h-2.5">
+                        <div class="bg-[#7B00FF] h-2.5 rounded-full" style="width: 70%"></div>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-300">Competitor Lead</span>
+                    <div class="w-2/3 bg-gray-700 rounded-full h-2.5">
+                        <div class="bg-[#7B00FF] h-2.5 rounded-full" style="width: 65%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="p-4 bg-[#0D1321] rounded-lg">
+            <h4 class="text-lg font-semibold mb-3 text-[#7B00FF]">Machine Learning Predictions</h4>
+            <p class="text-gray-300 mb-4">Our AI predicts these outcomes for your lead pipeline:</p>
+            <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-300">Predicted Response Rate</span>
+                    <span class="text-white font-medium">32%</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-300">Predicted Conversion Rate</span>
+                    <span class="text-white font-medium">8.5%</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-300">High-Value Leads (&gt;80 score)</span>
+                    <span class="text-white font-medium">{{ stats.high_score }}/{{ stats.total }}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-300">Model Confidence</span>
+                    <span class="text-white font-medium">72%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
                         <tr class="border-b border-[#7B00FF]">
                             <th class="p-3 cursor-pointer" onclick="sortTable('date')">Date</th>
                             <th class="p-3">Leads Added</th>

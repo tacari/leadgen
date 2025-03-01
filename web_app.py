@@ -210,10 +210,26 @@ def score_lead(lead_data):
     - Intent signals (keywords in name, description or other fields)
     - Company profile (website, size, industry)
     - Behavioral data (if available)
+    - ML prediction (if model is available)
 
     Returns:
         int: Score between 1-100
     """
+    try:
+        # Try using ML model for scoring
+        from ml_engine import lead_model
+        
+        # Use ML model if it's ready (singleton)
+        if lead_model.pipeline is not None:
+            # Get ML prediction for this lead
+            ml_scores = lead_model.predict([lead_data])
+            if ml_scores and len(ml_scores) > 0:
+                return ml_scores[0]
+    except Exception as e:
+        logger.error(f"ML scoring error: {str(e)}. Falling back to rule-based scoring.")
+    
+    # Fallback to rule-based scoring if ML fails
+    
     # Start with a baseline score
     score = 50
 
@@ -288,6 +304,10 @@ def score_lead(lead_data):
     if industry:
         # Add logic here to score based on target industries
         score += 5
+
+    # Competitor source bonus
+    if lead_data.get('competitor_source'):
+        score += 10
 
     # Cap the score at 100
     return min(100, score)
@@ -1825,3 +1845,29 @@ if __name__ == '__main__':
     except Exception as e:
         logger.error(f"Failed to start server: {str(e)}")
         sys.exit(1)
+
+
+@app.route('/train_ml_model', methods=['POST'])
+def train_ml_model():
+    """Train the ML model with available lead data"""
+    if 'user_id' not in session:
+        flash('Please log in to access this feature.')
+        return redirect(url_for('login'))
+        
+    try:
+        from ml_engine import lead_model
+        
+        # Train the model with database connection
+        success = lead_model.train_from_database(psycopg2.connect(os.environ['DATABASE_URL']))
+        
+        if success:
+            flash('Machine learning model trained successfully!', 'success')
+        else:
+            flash('Not enough data to train the model yet. Keep adding leads with status updates.', 'warning')
+            
+        return redirect(url_for('analytics'))
+        
+    except Exception as e:
+        logger.error(f"Error training ML model: {str(e)}")
+        flash(f'Error training model: {str(e)}', 'error')
+        return redirect(url_for('analytics'))

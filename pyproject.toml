@@ -29,6 +29,9 @@ dependencies = [
     "flask-apscheduler>=1.13.1",
     "faker>=36.1.1",
     "hubspot-api-client>=11.1.0",
+    "scikit-learn>=1.6.1",
+    "joblib>=1.4.2",
+    "numpy>=2.2.3",
 ]
 
 [tool.uv.sources]
