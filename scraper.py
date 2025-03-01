@@ -604,128 +604,139 @@ class LeadScraper:
             params = {
 
 
-def scrape_competitor_website(url):
-    """Scrape a competitor website for leads"""
-    self.logger.info(f"Starting competitor website scraping for {url}")
-    leads = []
+def scrape_competitor_website(self, url):
+        """Scrape a competitor website for leads"""
+        self.logger.info(f"Starting competitor website scraping for {url}")
+        leads = []
 
-    try:
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-        response = self.session.get(url, headers=headers, timeout=10)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        # Extract from testimonials
-        for testimonial in soup.select('.testimonial, .review, .quote, .customer, .client'):
-            try:
-                name_elem = testimonial.select_one('.name, .author, h3, h4, p strong, .customer-name, .client-name')
-                if name_elem and name_elem.text.strip():
-                    name = name_elem.text.strip()
-                    # Clean up the name - remove quotes and extra text
-                    name = re.sub(r'[""]', '', name)
-                    name = name.split('-')[0].strip() if '-' in name else name
-                    
-                    # Try to extract email if present
-                    email = None
-                    email_match = re.search(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', testimonial.text)
-                    if email_match:
-                        email = email_match.group(0)
-                    
-                    lead = {
-                        'name': name,
-                        'email': email,
-                        'source': 'Competitor',
-                        'competitor_source': url,
-                        'verified': False,
-                        'phone': None,
-                        'phone_verified': False,
-                        'linkedin_url': None,
-                        'linkedin_verified': False,
-                        'date_added': datetime.now().isoformat()
-                    }
-                    
-                    # Add score
-                    lead['score'] = self._calculate_lead_score(lead) + 15  # Bonus for competitor leads
-                    leads.append(lead)
-                    self.logger.info(f"Scraped competitor lead: {name} from testimonial")
-            except Exception as e:
-                self.logger.error(f"Error processing testimonial: {str(e)}")
-                continue
-        
-        # Extract from team pages
-        for team_member in soup.select('.team-member, .staff, .employee, .team, .about-us'):
-            try:
-                name_elem = team_member.select_one('.name, h3, h4, p strong, .employee-name')
-                if name_elem and name_elem.text.strip():
-                    name = name_elem.text.strip()
-                    
-                    # Try to find LinkedIn URL
-                    linkedin_url = None
-                    linkedin_elem = team_member.select_one('a[href*="linkedin.com"]')
-                    if linkedin_elem and linkedin_elem.has_attr('href'):
-                        linkedin_url = linkedin_elem['href']
-                    
-                    # Generate email based on name and domain
-                    email = None
-                    domain = urlparse(url).netloc
-                    if domain:
-                        first_name = name.split()[0].lower()
-                        email = f"{first_name}@{domain}"
-                    
-                    lead = {
-                        'name': name,
-                        'email': email,
-                        'source': 'Competitor',
-                        'competitor_source': url,
-                        'verified': False,
-                        'phone': None,
-                        'phone_verified': False,
-                        'linkedin_url': linkedin_url,
-                        'linkedin_verified': False if not linkedin_url else self.verify_linkedin(linkedin_url),
-                        'date_added': datetime.now().isoformat()
-                    }
-                    
-                    # Add score
-                    lead['score'] = self._calculate_lead_score(lead) + 15  # Bonus for competitor leads
-                    leads.append(lead)
-                    self.logger.info(f"Scraped competitor lead: {name} from team page")
-            except Exception as e:
-                self.logger.error(f"Error processing team member: {str(e)}")
-                continue
-        
-        # Extract from client lists
-        for client in soup.select('.client, .customer, .portfolio-item, .case-study'):
-            try:
-                name_elem = client.select_one('.name, h3, h4, p strong, .client-name')
-                if name_elem and name_elem.text.strip():
-                    name = name_elem.text.strip()
-                    
-                    lead = {
-                        'name': name,
-                        'email': None,
-                        'source': 'Competitor',
-                        'competitor_source': url,
-                        'verified': False,
-                        'phone': None,
-                        'phone_verified': False,
-                        'linkedin_url': None,
-                        'linkedin_verified': False,
-                        'date_added': datetime.now().isoformat()
-                    }
-                    
-                    # Add score
-                    lead['score'] = self._calculate_lead_score(lead) + 15  # Bonus for competitor leads
-                    leads.append(lead)
-                    self.logger.info(f"Scraped competitor lead: {name} from client list")
-            except Exception as e:
-                self.logger.error(f"Error processing client: {str(e)}")
-                continue
+        try:
+            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+            response = self.session.get(url, headers=headers, timeout=10)
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # Extract from testimonials
+            for testimonial in soup.select('.testimonial, .review, .quote, .customer, .client'):
+                try:
+                    name_elem = testimonial.select_one('.name, .author, h3, h4, p strong, .customer-name, .client-name')
+                    if name_elem and name_elem.text.strip():
+                        name = name_elem.text.strip()
+                        # Clean up the name - remove quotes and extra text
+                        name = re.sub(r'[""]', '', name)
+                        name = name.split('-')[0].strip() if '-' in name else name
+                        
+                        # Try to extract email if present
+                        email = None
+                        email_match = re.search(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', testimonial.text)
+                        if email_match:
+                            email = email_match.group(0)
+                        
+                        lead = {
+                            'name': name,
+                            'email': email,
+                            'source': 'Competitor',
+                            'competitor_source': url,
+                            'verified': False,
+                            'phone': None,
+                            'phone_verified': False,
+                            'linkedin_url': None,
+                            'linkedin_verified': False,
+                            'date_added': datetime.now().isoformat()
+                        }
+                        
+                        # Add score
+                        lead['score'] = self._calculate_lead_score(lead) + 15  # Bonus for competitor leads
+                        leads.append(lead)
+                        self.logger.info(f"Scraped competitor lead: {name} from testimonial")
+                except Exception as e:
+                    self.logger.error(f"Error processing testimonial: {str(e)}")
+                    continue
+            
+            # Extract from team pages
+            for team_member in soup.select('.team-member, .staff, .employee, .team, .about-us'):
+                try:
+                    name_elem = team_member.select_one('.name, h3, h4, p strong, .employee-name')
+                    if name_elem and name_elem.text.strip():
+                        name = name_elem.text.strip()
+                        
+                        # Try to find LinkedIn URL
+                        linkedin_url = None
+                        linkedin_elem = team_member.select_one('a[href*="linkedin.com"]')
+                        if linkedin_elem and linkedin_elem.has_attr('href'):
+                            linkedin_url = linkedin_elem['href']
+                        
+                        # Generate email based on name and domain
+                        email = None
+                        domain = urlparse(url).netloc
+                        if domain:
+                            first_name = name.split()[0].lower()
+                            email = f"{first_name}@{domain}"
+                        
+                        lead = {
+                            'name': name,
+                            'email': email,
+                            'source': 'Competitor',
+                            'competitor_source': url,
+                            'verified': False,
+                            'phone': None,
+                            'phone_verified': False,
+                            'linkedin_url': linkedin_url,
+                            'linkedin_verified': False if not linkedin_url else self.verify_linkedin(linkedin_url),
+                            'date_added': datetime.now().isoformat()
+                        }
+                        
+                        # Add score
+                        lead['score'] = self._calculate_lead_score(lead) + 15  # Bonus for competitor leads
+                        leads.append(lead)
+                        self.logger.info(f"Scraped competitor lead: {name} from team page")
+                except Exception as e:
+                    self.logger.error(f"Error processing team member: {str(e)}")
+                    continue
+            
+            # Extract from client lists
+            for client in soup.select('.client, .customer, .portfolio-item, .case-study'):
+                try:
+                    name_elem = client.select_one('.name, h3, h4, p strong, .client-name')
+                    if name_elem and name_elem.text.strip():
+                        name = name_elem.text.strip()
+                        
+                        lead = {
+                            'name': name,
+                            'email': None,
+                            'source': 'Competitor',
+                            'competitor_source': url,
+                            'verified': False,
+                            'phone': None,
+                            'phone_verified': False,
+                            'linkedin_url': None,
+                            'linkedin_verified': False,
+                            'date_added': datetime.now().isoformat()
+                        }
+                        
+                        # Add score
+                        lead['score'] = self._calculate_lead_score(lead) + 15  # Bonus for competitor leads
+                        leads.append(lead)
+                        self.logger.info(f"Scraped competitor lead: {name} from client list")
+                except Exception as e:
+                    self.logger.error(f"Error processing client: {str(e)}")
+                    continue
 
-        return leads[:50]  # Cap at 50 leads per competitor site
-        
-    except Exception as e:
-        self.logger.error(f"Competitor website scraping error: {str(e)}")
-        return []
+            return leads[:50]  # Cap at 50 leads per competitor site
+            
+        except Exception as e:
+            self.logger.error(f"Competitor website scraping error: {str(e)}")
+            return []
 
+    def scrape_linkedin(self, niche="SaaS", location="Austin, TX", limit=50):
+        """Scrape leads from LinkedIn via SerpAPI"""
+        self.logger.info(f"Starting LinkedIn scraping for {niche} in {location}")
+        leads = []
+
+        if not self.serpapi_key:
+            self.logger.warning("No SerpAPI key found, skipping LinkedIn scraping")
+            return []
+
+        try:
+            params = {
                 "engine": "google",
                 "q": f"{niche} companies in {location} site:linkedin.com/company",
                 "api_key": self.serpapi_key,
