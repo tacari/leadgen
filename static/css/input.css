@@ -1,0 +1,13 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --neon-purple: #7B00FF;
+  --neon-purple-hover: #8F00FF;
+  --white: #ffffff;
+  --steel-gray: #A1A9B8;
+}
+
+/* Custom styles can go here */
