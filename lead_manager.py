@@ -16,11 +16,15 @@ class LeadManager:
         self.cur = self.conn.cursor()
         self.sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
 
+        # Get CRM integration keys
+        self.hubspot_api_key = os.environ.get('HUBSPOT_API_KEY')
+        self.slack_webhook_url = os.environ.get('SLACK_WEBHOOK_URL')
+
     def get_due_deliveries(self):
         """Get all packages due for lead delivery"""
         try:
             self.cur.execute("""
-                SELECT up.user_id, up.package_name, up.lead_volume, u.email
+                SELECT up.user_id, up.package_name, up.lead_volume, u.email, u.hubspot_api_key, u.slack_webhook_url
                 FROM user_packages up
                 JOIN users u ON u.id = up.user_id
                 WHERE up.next_delivery <= NOW()
@@ -96,7 +100,7 @@ class LeadManager:
     def process_scheduled_deliveries(self):
         """Process all scheduled lead deliveries"""
         deliveries = self.get_due_deliveries()
-        for user_id, package_name, lead_volume, user_email in deliveries:
+        for user_id, package_name, lead_volume, user_email, hubspot_key, slack_url in deliveries:
             try:
                 # Get leads
                 leads = self.get_leads_for_user(user_id, lead_volume)
@@ -126,15 +130,22 @@ class LeadManager:
                         WHERE user_id = %s
                     """, (next_delivery, user_id))
 
+                    # Use user-specific API keys if available, fall back to global ones
+                    hubspot_api_key = hubspot_key or self.hubspot_api_key
+                    slack_webhook_url = slack_url or self.slack_webhook_url
+
                     # CRM Integration
                     for lead in leads:
                         try:
-                            add_lead_to_hubspot(lead)
-                            update_lead_status(lead['id'], 'Emailed')
-                            notify_slack(f"Lead {lead['id']} sent to {user_email}")
+                            if hubspot_api_key:
+                                crm_id = add_lead_to_hubspot(lead, hubspot_api_key)
+                                if crm_id:
+                                    update_lead_status(lead, 'Emailed', hubspot_api_key)
+
+                            if slack_webhook_url:
+                                notify_slack(lead, slack_webhook_url)
                         except Exception as crm_error:
                             self.logger.error(f"CRM Error processing lead {lead['id']}: {crm_error}")
-
 
                     self.conn.commit()
 

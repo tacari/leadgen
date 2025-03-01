@@ -68,7 +68,9 @@ def ensure_tables_exist():
                 id VARCHAR(255) PRIMARY KEY,
                 username VARCHAR(255) UNIQUE NOT NULL,
                 email VARCHAR(255) UNIQUE NOT NULL,
-                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                hubspot_api_key VARCHAR(255),
+                slack_webhook_url VARCHAR(255)
             );
         """)
 
@@ -235,7 +237,7 @@ def score_lead(lead_data):
                 score += 12
 
     # Check for intent signals in name or other fields
-    intent_keywords = ['looking for', 'need', 'want', 'searching', 'interested', 
+    intent_keywords = ['looking for', 'need', 'want', 'searching', 'interested',
                       'inquiry', 'request', 'seeking', 'explore', 'considering']
 
     # Check name for intent signals
@@ -805,11 +807,7 @@ def dashboard():
                 },
                 {
                     'name': "Test Lead 2",
-                    'email': 'lead2@example.com',
-                    'source': 'Google',
-                    'score': 92,
-                    'verified': True,
-                    'status': 'Contacted',
+                    ```python
                     'date_added': datetime.now().isoformat()
                 },
                 {
@@ -901,8 +899,8 @@ def dashboard():
                             logger.info(f"Found subscription in file (list) for user {user_id}: {subscription}")
                     else:
                         # Handle dict format
-                        matching_packages = [packages[pid] for pid in packages 
-                                           if packages[pid].get('user_id') == user_id 
+                        matching_packages = [packages[pid] for pid in packages
+                                           if packages[pid].get('user_id') == user_id
                                            and packages[pid].get('status') == 'active']
                         if matching_packages:
                             package_data = matching_packages[0]
@@ -988,7 +986,7 @@ def settings():
         }
 
         return render_template(
-            'settings.html', 
+            'settings.html',
             username=session.get('username', 'User'),
             user_data=user_data,
             api_key=api_key,
@@ -1007,24 +1005,24 @@ def update_crm_settings():
     if 'user_id' not in session:
         flash('You must be logged in to update settings', 'error')
         return redirect(url_for('login'))
-    
+
     try:
         # Get form data
         hubspot_api_key = request.form.get('hubspot_api_key', '')
         slack_webhook_url = request.form.get('slack_webhook_url', '')
-        
+
         # Update user settings in database
         conn = get_db_connection()
         cur = conn.cursor()
-        
+
         # Check if settings already exist for user
         cur.execute("SELECT id FROM user_settings WHERE user_id = %s", (session['user_id'],))
         settings_exist = cur.fetchone()
-        
+
         if settings_exist:
             # Update existing settings
             cur.execute("""
-                UPDATE user_settings 
+                UPDATE user_settings
                 SET hubspot_api_key = %s, slack_webhook_url = %s
                 WHERE user_id = %s
             """, (hubspot_api_key, slack_webhook_url, session['user_id']))
@@ -1034,38 +1032,38 @@ def update_crm_settings():
                 INSERT INTO user_settings (user_id, hubspot_api_key, slack_webhook_url)
                 VALUES (%s, %s, %s)
             """, (session['user_id'], hubspot_api_key, slack_webhook_url))
-        
+
         conn.commit()
         cur.close()
         conn.close()
-        
+
         flash('CRM settings updated successfully', 'success')
         return redirect(url_for('settings'))
     except Exception as e:
         logger.error(f"Error updating CRM settings: {str(e)}")
         flash(f'An error occurred: {str(e)}', 'error')
-        return redirect(url_for('settings'))])
+        return redirect(url_for('settings'))
 def update_crm_settings():
     try:
         if 'user_id' not in session:
             return redirect(url_for('login'))
-            
+
         user_id = session['user_id']
         hubspot_api_key = request.form.get('hubspot_api_key', '')
         slack_webhook_url = request.form.get('slack_webhook_url', '')
-        
+
         # Update user settings in Supabase
         try:
             supabase.table('users').update({
                 'hubspot_api_key': hubspot_api_key,
                 'slack_webhook_url': slack_webhook_url
             }).eq('id', user_id).execute()
-            
+
             flash('CRM settings updated successfully!', 'success')
         except Exception as e:
             logger.error(f"Error updating CRM settings in database: {str(e)}")
             flash('Error saving settings. Please try again.', 'error')
-            
+
         return redirect(url_for('settings'))
     except Exception as e:
         logger.error(f"Error in update_crm_settings: {str(e)}")
@@ -1620,7 +1618,7 @@ def handle_subscription_update(subscription):
                     p.update({
                         'stripe_subscription_id': subscription.id,
                         'status': 'active' if subscription.status == 'active' else 'inactive',
-                        'updated_at': datetime.now().isoformat()
+                        'next_delivery': datetime.now() + timedelta(days=7) # Example: Next delivery in 7 days
                     })
                     break
 
@@ -1660,6 +1658,42 @@ ensure_tables_exist()
 # Then add the scheduled job
 scheduler = APScheduler()
 scheduler.init_app(app)
+
+@app.route('/hubspot/webhook', methods=['POST'])
+def hubspot_webhook():
+    """Handle webhook notifications from HubSpot"""
+    try:
+        # Verify the request is from HubSpot (replace with actual verification logic)
+        hubspot_signature = request.headers.get('X-HubSpot-Signature')
+        if not hubspot_signature:
+            logger.warning("Received webhook request without HubSpot signature")
+            return jsonify({'status': 'error', 'message': 'Invalid request'}), 401
+
+        # Process the webhook payload
+        webhook_data = request.json
+
+        # Log the webhook event
+        logger.info(f"Received HubSpot webhook: {webhook_data.get('eventType', 'unknown event')}")
+
+        # Handle different types of notifications
+        event_type = webhook_data.get('eventType')
+        if event_type == 'contact.creation':
+            # Handle new contact creation
+            contact_data = webhook_data.get('data', {})
+            logger.info(f"New contact created in HubSpot: {contact_data}")
+            # Add logic to process the new contact data, such as adding it to your database
+        elif event_type == 'contact.propertyChange':
+            # Handle contact property changes
+            contact_data = webhook_data.get('data', {})
+            logger.info(f"Contact property changed in HubSpot: {contact_data}")
+            # Add logic to process contact property changes
+        # Add more event type handling as needed
+
+        return jsonify({'status': 'success'}), 200
+
+    except Exception as e:
+        logger.error(f"Error processing HubSpot webhook: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 if __name__ == '__main__':
     try:
