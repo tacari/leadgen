@@ -1868,18 +1868,24 @@ if __name__ == '__main__':
         scheduler.start()
 
         # Start the Flask server
-        # Check for available port
-        ports = [3000, 5000, 8080, 8000]
+        # Use a higher range of ports to avoid conflicts
+        ports = [8080, 8000, 5000, 3000]
         port_to_use = None
         
         for port in ports:
             try:
                 # Try to terminate any process on this port first
                 terminate_port_process(port)
+                # Test if port is available
+                import socket
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.bind(('0.0.0.0', port))
+                s.close()
                 port_to_use = port
                 break
             except Exception as port_e:
                 logger.error(f"Couldn't use port {port}: {str(port_e)}")
+                continue
         
         if not port_to_use:
             port_to_use = 8080  # Default fallback

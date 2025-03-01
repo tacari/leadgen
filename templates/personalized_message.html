@@ -1,4 +1,3 @@
-
 {% extends "dashboard_base.html" %}
 {% block title %}Personalized Outreach{% endblock %}
 {% block content %}
@@ -13,303 +12,53 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Lead Details -->
                 <div>
-                    <h2 class="text-2xl font-bold text-white mb-4">Lead Details</h2>
-                    <dl class="grid grid-cols-3 gap-4">
-                        <dt class="col-span-1 text-[#A1A9B8]">Name:</dt>
-                        <dd class="col-span-2 font-medium">{{ lead.name }}</dd>
-                        
-                        <dt class="col-span-1 text-[#A1A9B8]">Email:</dt>
-                        <dd class="col-span-2">{{ lead.email }}</dd>
-                        
-                        <dt class="col-span-1 text-[#A1A9B8]">Source:</dt>
-                        <dd class="col-span-2">
-                            <span class="px-2 py-1 rounded text-xs {% if lead.source == 'LinkedIn' %}bg-blue-900{% elif lead.source == 'Google Maps' %}bg-green-900{% elif lead.source == 'Yellow Pages' %}bg-yellow-900{% else %}bg-gray-900{% endif %}">
-                                {{ lead.source }}
-                            </span>
-                        </dd>
-                        
-                        <dt class="col-span-1 text-[#A1A9B8]">Score:</dt>
-                        <dd class="col-span-2">
-                            <div class="flex items-center">
-                                <div class="w-16 h-2 bg-gray-700 rounded-full mr-2">
-                                    <div class="h-2 bg-[#7B00FF] rounded-full" style="width: {{ lead.score }}%;"></div>
-                                </div>
-                                <span class="text-xs text-white">{{ lead.score }}</span>
-                            </div>
-                        </dd>
-                        
-                        <dt class="col-span-1 text-[#A1A9B8]">Date Added:</dt>
-                        <dd class="col-span-2">{{ lead.date_added }}</dd>
-                        
-                        <dt class="col-span-1 text-[#A1A9B8]">Status:</dt>
-                        <dd class="col-span-2">
-                            <span class="px-2 py-1 rounded-full text-xs
-                                {% if lead.status == 'Contacted' %}bg-blue-900 text-white
-                                {% elif lead.status == 'Replied' %}bg-green-900 text-white
-                                {% elif lead.status == 'Converted' %}bg-purple-900 text-white
-                                {% else %}bg-gray-700 text-white{% endif %}">
-                                {{ lead.status }}
-                            </span>
-                        </dd>
-                    </dl>
-                </div>
-                
-                <!-- Verification Status -->
-                <div>
-                    <h2 class="text-2xl font-bold text-white mb-4">Verification Status</h2>
-                    <div class="grid grid-cols-1 gap-3">
-                        <div class="flex items-center">
-                            <span class="w-3 h-3 mr-2 rounded-full {{ 'bg-green-500' if lead.verified else 'bg-gray-300' }}"></span>
-                            <span class="text-[#A1A9B8]">Email Verified:</span>
-                            <span class="ml-auto {{ 'text-green-500' if lead.verified else 'text-gray-400' }}">{{ "Yes" if lead.verified else "No" }}</span>
-                        </div>
-                        
-                        <div class="flex items-center">
-                            <span class="w-3 h-3 mr-2 rounded-full {{ 'bg-green-500' if lead.phone_verified else 'bg-gray-300' }}"></span>
-                            <span class="text-[#A1A9B8]">Phone Verified:</span>
-                            <span class="ml-auto {{ 'text-green-500' if lead.phone_verified else 'text-gray-400' }}">{{ "Yes" if lead.phone_verified else "No" }}</span>
-                        </div>
-                        
-                        <div class="flex items-center">
-                            <span class="w-3 h-3 mr-2 rounded-full {{ 'bg-green-500' if lead.linkedin_verified else 'bg-gray-300' }}"></span>
-                            <span class="text-[#A1A9B8]">LinkedIn Verified:</span>
-                            <span class="ml-auto {{ 'text-green-500' if lead.linkedin_verified else 'text-gray-400' }}">{{ "Yes" if lead.linkedin_verified else "No" }}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Generated Message -->
-    <div class="max-w-4xl mx-auto space-y-8">
-        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
-            <h2 class="text-2xl font-bold text-white mb-4">Personalized Message</h2>
-            <p class="text-[#A1A9B8] mb-6">Use this AI-generated message as a starting point for your outreach to this lead.</p>
-            
-            <div class="bg-[#0D1321] border border-[#7B00FF] p-4 rounded-lg">
-                <p class="text-white leading-relaxed">{{ message }}</p>
-            </div>
-            
-            <div class="mt-4 flex gap-4">
-                <button class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF]" onclick="copyToClipboard('message')">Copy Message</button>
-                <button class="border border-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#7B00FF]" onclick="regenerateMessage()">Regenerate</button>
-            </div>
-        </div>
-        
-        <!-- Email Template -->
-        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
-            <h2 class="text-2xl font-bold text-white mb-4">Email Template</h2>
-            <p class="text-[#A1A9B8] mb-6">Use this template for email outreach to this lead.</p>
-            
-            <div class="bg-[#0D1321] border border-[#7B00FF] p-4 rounded-lg">
-                <pre class="text-white whitespace-pre-wrap font-mono text-sm">{{ email_template }}</pre>
-            </div>
-            
-            <div class="mt-4 flex gap-4">
-                <button class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF]" onclick="copyToClipboard('email')">Copy Email</button>
-                <button class="border border-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#7B00FF]" onclick="regenerateEmail()">Regenerate</button>
-            </div>
-        </div>
-        
-        <!-- Action buttons -->
-        <div class="flex justify-center gap-4">
-            <a href="{{ url_for('dashboard') }}" class="bg-[#7B00FF] text-white px-6 py-3 rounded-lg hover:bg-[#8F00FF]">Back to Dashboard</a>
-            <button class="border border-[#7B00FF] text-white px-6 py-3 rounded-lg hover:bg-[#7B00FF]" onclick="markAsContacted()">Mark as Contacted</button>
-        </div>
-    </div>
-</div>
-
-<script>
-function copyToClipboard(type) {
-    const element = document.querySelector(type === 'message' ? '.bg-[#0D1321] p' : '.bg-[#0D1321] pre');
-    const text = element.innerText;
-    
-    navigator.clipboard.writeText(text).then(() => {
-        showToast('Copied to clipboard!');
-    }).catch(err => {
-        console.error('Failed to copy text: ', err);
-    });
-}
-
-function showToast(message) {
-    // Create toast element
-    const toast = document.createElement('div');
-    toast.className = 'fixed bottom-4 right-4 bg-[#7B00FF] text-white px-4 py-2 rounded-lg shadow-lg transition-opacity duration-300';
-    toast.innerText = message;
-    
-    // Add to document
-    document.body.appendChild(toast);
-    
-    // Remove after 3 seconds
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => {
-            document.body.removeChild(toast);
-        }, 300);
-    }, 3000);
-}
-
-function regenerateMessage() {
-    window.location.reload();
-}
-
-function regenerateEmail() {
-    window.location.reload();
-}
-
-function markAsContacted() {
-    const leadId = "{{ lead.id }}";
-    fetch(`/mark_lead_contacted/${leadId}`, {
-        method: 'POST'
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showToast('Lead marked as contacted!');
-            setTimeout(() => {
-                window.location.href = "{{ url_for('dashboard') }}";
-            }, 1500);
-        } else {
-            showToast('Error: ' + data.error);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('An error occurred');
-    });
-}
-</script>
-
-<style>
-@keyframes fade-in {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in {
-    animation: fade-in 0.5s ease-out;
-    animation-fill-mode: both;
-}
-</style>
-{% endblock %}
-{% extends "dashboard_base.html" %}
-{% block title %}Personalized Outreach{% endblock %}
-{% block content %}
-<div class="bg-[#0D1321] min-h-screen text-white p-8">
-    <!-- Header -->
-    <h1 class="text-4xl font-bold text-center mb-4 animate-fade-in">Personalized Outreach</h1>
-    <p class="text-lg text-[#A1A9B8] italic text-center mb-12">Craft unique messages that get responses</p>
-
-    <!-- Lead Info Card -->
-    <div class="max-w-4xl mx-auto mb-8">
-        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Lead Details -->
-                <div>
-                    <h2 class="text-2xl font-bold mb-4">Lead Information</h2>
+                    <h2 class="text-2xl font-bold mb-4">Lead Details</h2>
                     <div class="space-y-2">
                         <p><span class="text-[#A1A9B8]">Name:</span> {{ lead.name }}</p>
                         <p><span class="text-[#A1A9B8]">Email:</span> {{ lead.email }}</p>
                         <p><span class="text-[#A1A9B8]">Source:</span> {{ lead.source }}</p>
-                        <p><span class="text-[#A1A9B8]">Score:</span> 
-                            <span class="{% if lead.score > 75 %}text-[#00DB77]{% else %}text-white{% endif %}">
-                                {{ lead.score }}
-                            </span>
-                        </p>
-                        <p><span class="text-[#A1A9B8]">Verified:</span> 
-                            {% if lead.verified %}
-                            <span class="text-[#00DB77]">Yes</span>
-                            {% else %}
-                            <span class="text-[#FF4444]">No</span>
-                            {% endif %}
-                        </p>
+                        <p><span class="text-[#A1A9B8]">Score:</span> <span class="{{ 'text-[#7B00FF]' if lead.score > 75 }}">{{ lead.score }}</span></p>
+                        <p><span class="text-[#A1A9B8]">Niche:</span> {{ lead.niche }}</p>
+                        <p><span class="text-[#A1A9B8]">City:</span> {{ lead.city }}</p>
+                        <p><span class="text-[#A1A9B8]">Date Added:</span> {{ lead.date_added }}</p>
                     </div>
                 </div>
-                
-                <!-- AI Analysis -->
+
+                <!-- Verification Status -->
                 <div>
-                    <h2 class="text-2xl font-bold mb-4">AI Insights</h2>
-                    <div class="space-y-2">
-                        <div class="flex items-center mb-2">
-                            <span class="text-[#A1A9B8] mr-2">Quality Score:</span>
-                            <div class="w-full h-2 bg-[#0D1321] rounded-full mr-2">
-                                <div class="h-2 bg-[#7B00FF] rounded-full" style="width: {{ lead.score }}%;"></div>
-                            </div>
-                            <span class="text-xs text-white ml-1">{{ lead.score }}%</span>
+                    <h2 class="text-2xl font-bold mb-4">Verification Status</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <div class="flex items-center">
+                            <span class="w-3 h-3 mr-2 rounded-full {{ 'bg-green-500' if lead.verified else 'bg-gray-300' }}"></span>
+                            <span>Email: {{ "Verified" if lead.verified else "Unverified" }}</span>
                         </div>
-                        <p><span class="text-[#A1A9B8]">Engagement Potential:</span> 
-                            {% if lead.score > 80 %}Very High
-                            {% elif lead.score > 65 %}High
-                            {% elif lead.score > 50 %}Medium
-                            {% else %}Low
-                            {% endif %}
-                        </p>
-                        <p><span class="text-[#A1A9B8]">Recommended Channel:</span> 
-                            {% if lead.linkedin_verified %}LinkedIn
-                            {% elif lead.phone_verified %}Phone
-                            {% elif lead.verified %}Email
-                            {% else %}Email
-                            {% endif %}
-                        </p>
-                        <p><span class="text-[#A1A9B8]">Best Time to Contact:</span> 
-                            {% if lead.source == 'LinkedIn' %}Morning (9-11 AM)
-                            {% elif lead.source == 'Google Maps' %}Afternoon (1-3 PM)
-                            {% elif lead.source == 'Yellow Pages' %}Evening (4-6 PM)
-                            {% else %}Business Hours (10 AM-4 PM)
-                            {% endif %}
-                        </p>
+                        <div class="flex items-center">
+                            <span class="w-3 h-3 mr-2 rounded-full {{ 'bg-green-500' if lead.phone_verified else 'bg-gray-300' }}"></span>
+                            <span>Phone: {{ "Verified" if lead.phone_verified else "Unverified" }}</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="w-3 h-3 mr-2 rounded-full {{ 'bg-green-500' if lead.linkedin_verified else 'bg-gray-300' }}"></span>
+                            <span>LinkedIn: {{ "Verified" if lead.linkedin_verified else "Unverified" }}</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Message Templates -->
-    <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
-        <!-- Email Template -->
+    <!-- Personalized Message -->
+    <div class="max-w-4xl mx-auto mb-8">
         <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in" style="animation-delay: 0.2s;">
-            <h2 class="text-2xl font-bold mb-4">Email Template</h2>
-            <div class="bg-[#0D1321] p-4 rounded-lg mb-4">
-                <p class="font-semibold text-[#7B00FF]">Subject: {{ email_template.subject }}</p>
-                <div class="mt-2 text-[#A1A9B8]">
-                    {{ email_template.body|safe }}
-                </div>
-            </div>
-            <div class="flex gap-2 mt-4">
-                <button class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#9F5FFF] transition" onclick="copyToClipboard('email')">
-                    Copy
-                </button>
-                <button class="border border-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#7B00FF] transition">
-                    Send Now
-                </button>
-                <button class="border border-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#7B00FF] transition">
-                    Schedule
-                </button>
-            </div>
-        </div>
-        
-        <!-- LinkedIn Message -->
-        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in" style="animation-delay: 0.3s;">
-            <h2 class="text-2xl font-bold mb-4">LinkedIn Message</h2>
-            <div class="bg-[#0D1321] p-4 rounded-lg mb-4">
+            <h2 class="text-2xl font-bold mb-4">Personalized Message</h2>
+            <div class="bg-[#0D1321] p-4 rounded-lg">
                 <p class="text-[#A1A9B8]">{{ message }}</p>
             </div>
-            <div class="flex gap-2 mt-4">
-                <button class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#9F5FFF] transition" onclick="copyToClipboard('linkedin')">
-                    Copy
-                </button>
-                <button class="border border-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#7B00FF] transition">
-                    Open LinkedIn
-                </button>
+
+            <h3 class="text-xl font-bold mt-6 mb-3">Email Template</h3>
+            <div class="bg-[#0D1321] p-4 rounded-lg">
+                <p class="text-[#A1A9B8] whitespace-pre-line">{{ email_template }}</p>
             </div>
-        </div>
-    </div>
-    
-    <!-- Custom Message Editor -->
-    <div class="max-w-4xl mx-auto mt-8">
-        <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in" style="animation-delay: 0.4s;">
-            <h2 class="text-2xl font-bold mb-4">Customize Message</h2>
-            <textarea class="w-full h-40 bg-[#0D1321] text-white p-4 rounded-lg border border-[#7B00FF] focus:outline-none focus:border-[#9F5FFF]" placeholder="Edit the message to add your personal touch...">{{ message }}</textarea>
+
             <div class="flex gap-2 mt-4">
                 <button class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#9F5FFF] transition">
                     Save Template
@@ -323,7 +72,7 @@ function markAsContacted() {
             </div>
         </div>
     </div>
-    
+
     <!-- Action History -->
     <div class="max-w-4xl mx-auto mt-8 mb-12">
         <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in" style="animation-delay: 0.5s;">
@@ -332,51 +81,44 @@ function markAsContacted() {
             <div class="space-y-4">
                 <!-- Only show if there's a history -->
                 <div class="bg-[#0D1321] p-4 rounded-lg flex items-start">
-                    <div class="bg-[#7B00FF] text-white rounded-full w-8 h-8 flex items-center justify-center mr-3 flex-shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                            <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                    <div class="bg-[#7B00FF] text-white p-2 rounded-full mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
                     </div>
-                    <div class="flex-grow">
-                        <div class="flex justify-between">
-                            <p class="font-medium">Email Sent</p>
-                            <p class="text-[#A1A9B8] text-sm">{{ lead.date_added }}</p>
-                        </div>
-                        <p class="text-[#A1A9B8] text-sm mt-1">Subject: {{ email_template.subject }}</p>
+                    <div>
+                        <p class="text-sm text-[#A1A9B8]">{{ lead.date_added }}</p>
+                        <p class="font-bold">Email Sent</p>
+                        <p class="text-[#A1A9B8]">Initial outreach email sent to {{ lead.email }}</p>
                     </div>
                 </div>
-                
+
                 {% if lead.status == 'Replied' or lead.status == 'Converted' %}
                 <div class="bg-[#0D1321] p-4 rounded-lg flex items-start">
-                    <div class="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3 flex-shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" />
+                    <div class="bg-green-500 text-white p-2 rounded-full mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                         </svg>
                     </div>
-                    <div class="flex-grow">
-                        <div class="flex justify-between">
-                            <p class="font-medium">Lead Replied</p>
-                            <p class="text-[#A1A9B8] text-sm">{{ (lead.date_added|string)[:10] }}</p>
-                        </div>
-                        <p class="text-[#A1A9B8] text-sm mt-1">Interested in learning more about your services</p>
+                    <div>
+                        <p class="text-sm text-[#A1A9B8]">{{ lead.reply_date|default(lead.date_added) }}</p>
+                        <p class="font-bold">Lead Replied</p>
+                        <p class="text-[#A1A9B8]">{{ lead.name }} responded to your outreach</p>
                     </div>
                 </div>
                 {% endif %}
-                
+
                 {% if lead.status == 'Converted' %}
                 <div class="bg-[#0D1321] p-4 rounded-lg flex items-start">
-                    <div class="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3 flex-shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                    <div class="bg-purple-500 text-white p-2 rounded-full mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
-                    <div class="flex-grow">
-                        <div class="flex justify-between">
-                            <p class="font-medium">Lead Converted</p>
-                            <p class="text-[#A1A9B8] text-sm">{{ (lead.date_added|string)[:10] }}</p>
-                        </div>
-                        <p class="text-[#A1A9B8] text-sm mt-1">Scheduled demo call on {{ (lead.date_added|string)[:10] }}</p>
+                    <div>
+                        <p class="text-sm text-[#A1A9B8]">{{ lead.conversion_date|default(lead.date_added) }}</p>
+                        <p class="font-bold">Lead Converted!</p>
+                        <p class="text-[#A1A9B8]">{{ lead.name }} became a customer</p>
                     </div>
                 </div>
                 {% endif %}
@@ -389,61 +131,38 @@ function markAsContacted() {
 </div>
 
 <script>
-    function copyToClipboard(type) {
-        let text = '';
-        if (type === 'email') {
-            // Get the email content including subject
-            let subject = document.querySelector('.bg-[#0D1321] .font-semibold').textContent.replace('Subject: ', '');
-            let body = document.querySelector('.bg-[#0D1321] .mt-2').textContent;
-            text = 'Subject: ' + subject + '\n\n' + body;
-        } else if (type === 'linkedin') {
-            // Get the LinkedIn message
-            text = document.querySelector('.bg-[#0D1321] .text-[#A1A9B8]').textContent;
+document.getElementById('mark-contacted').addEventListener('click', function() {
+    const leadId = this.getAttribute('data-lead-id');
+
+    fetch(`/mark_lead_contacted/${leadId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
         }
-        
-        // Create a temporary input element
-        const input = document.createElement('textarea');
-        input.value = text;
-        document.body.appendChild(input);
-        input.select();
-        document.execCommand('copy');
-        document.body.removeChild(input);
-        
-        // Show a visual cue that copying was successful
-        alert('Copied to clipboard!');
-    }
-    
-    // Mark as contacted functionality
-    document.getElementById('mark-contacted').addEventListener('click', function() {
-        const leadId = this.getAttribute('data-lead-id');
-        fetch(`/mark_lead_contacted/${leadId}`, {
-            method: 'POST'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Lead marked as contacted!');
-                // You could refresh the page or update the UI here
-                location.reload();
-            } else {
-                alert('Error: ' + (data.error || 'Something went wrong'));
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error updating lead status');
-        });
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Lead marked as contacted!');
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        alert('Error: ' + error);
     });
+});
 </script>
 
 <style>
-    @keyframes fade-in {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .animate-fade-in {
-        animation: fade-in 0.5s ease-out forwards;
-        opacity: 0;
-    }
+@keyframes fade-in {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+    animation: fade-in 0.5s ease-out;
+    animation-fill-mode: both;
+}
 </style>
 {% endblock %}
