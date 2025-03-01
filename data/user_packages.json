@@ -3,10 +3,11 @@
     "user_id": "92f4bd4d-31aa-4019-b4f4-c6f80585c817",
     "package_name": "accelerator",
     "lead_volume": 300,
-    "stripe_subscription_id": "sub_1QxOLuGsSuGLiAUEPezPNNCH",
+    "stripe_subscription_id": "sub_1QxkQfGsSuGLiAUEj6K0kmNY",
     "status": "active",
-    "next_delivery": "2025-02-28T07:51:28.124259",
-    "updated_at": "2025-02-28T07:51:28.124269"
+    "next_delivery": "2025-03-01T07:25:52.951550",
+    "updated_at": "2025-03-01T07:25:52.951559",
+    "created_at": "2025-03-01T07:25:50.023651"
   },
   {
     "user_id": "local_20250227190133",
