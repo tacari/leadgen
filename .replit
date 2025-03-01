@@ -4,7 +4,7 @@ modules = ["python-3.11", "python3.11"]
 channel = "stable-24_05"
 
 [workflows]
-runButton = "Project"
+runButton = "Flask Server"
 
 [[workflows.workflow]]
 name = "Project"
@@ -27,7 +27,7 @@ task = "packager.installForAll"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "python web_app.py"
+args = "npx tailwindcss -i ./static/css/tailwind.css -o ./static/css/main.css && python web_app.py"
 waitForPort = 5000
 
 [deployment]
