@@ -803,7 +803,7 @@ def dashboard():
 
         # Fallback to sample data if no real leads
         if not real_leads:
-            real_leads = [```python
+            real_leads = [
                 {
                     'name': "Test Lead 1",
                     'email': 'lead1@example.com',
