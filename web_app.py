@@ -994,6 +994,34 @@ def settings():
         flash(f'An error occurred: {str(e)}', 'error')
         return redirect(url_for('dashboard'))
 
+@app.route('/update_crm_settings', methods=['POST'])
+def update_crm_settings():
+    try:
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
+            
+        user_id = session['user_id']
+        hubspot_api_key = request.form.get('hubspot_api_key', '')
+        slack_webhook_url = request.form.get('slack_webhook_url', '')
+        
+        # Update user settings in Supabase
+        try:
+            supabase.table('users').update({
+                'hubspot_api_key': hubspot_api_key,
+                'slack_webhook_url': slack_webhook_url
+            }).eq('id', user_id).execute()
+            
+            flash('CRM settings updated successfully!', 'success')
+        except Exception as e:
+            logger.error(f"Error updating CRM settings in database: {str(e)}")
+            flash('Error saving settings. Please try again.', 'error')
+            
+        return redirect(url_for('settings'))
+    except Exception as e:
+        logger.error(f"Error in update_crm_settings: {str(e)}")
+        flash(f'An error occurred: {str(e)}', 'error')
+        return redirect(url_for('settings'))
+
 @app.route('/support', methods=['GET', 'POST'])
 def support():
     try:

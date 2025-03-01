@@ -14,7 +14,7 @@
                     <input 
                         type="text" 
                         name="username" 
-                        value="{{ user.username }}"
+                        value="{{ username }}"
                         class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white"
                     >
                 </div>
@@ -23,7 +23,7 @@
                     <input 
                         type="email" 
                         name="email" 
-                        value="{{ user.email }}"
+                        value="{{ user_data.email if user_data else '' }}"
                         class="w-full bg-[#1A2236] border border-[#7B00FF] rounded-lg p-3 text-white"
                     >
                 </div>
@@ -70,11 +70,11 @@
             <div class="space-y-4">
                 <div>
                     <p class="text-[#A1A9B8] text-lg">Current Plan</p>
-                    <p class="text-white text-xl">{{ subscription.package_name }}, ${{ "{:,.0f}".format(subscription.price) }}/month</p>
+                    <p class="text-white text-xl">{{ package.package_name if package else 'No Active Plan' }}</p>
                 </div>
                 <div>
                     <p class="text-[#A1A9B8] text-lg">Next Billing Date</p>
-                    <p class="text-white text-xl">{{ subscription.next_billing }}</p>
+                    <p class="text-white text-xl">{{ package.next_delivery if package and package.next_delivery else 'N/A' }}</p>
                 </div>
                 <div class="flex gap-4">
                     <a href="{{ url_for('pricing') }}" class="bg-[#7B00FF] text-white px-5 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">
@@ -153,4 +153,13 @@
         animation-fill-mode: both;
     }
 </style>
+
+<script>
+    function copyApiKey() {
+        var apiKeyField = document.getElementById("apiKey");
+        apiKeyField.select();
+        document.execCommand("copy");
+        alert("API key copied to clipboard!");
+    }
+</script>
 {% endblock %}
