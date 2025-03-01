@@ -3,6 +3,58 @@
 {% block title %}Leadzap - AI-Powered Lead Generation{% endblock %}
 {% block content %}
 <div class="min-h-screen bg-[#0D1321]">
+    <!-- Navigation -->
+    <nav class="bg-[#0D1321] p-4 fixed w-full top-0 z-10 animate-fade-in">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <!-- Left: Logo -->
+            <div class="flex items-center">
+                <a href="{{ url_for('home') if 'user_id' not in session else url_for('dashboard') }}" class="text-2xl font-bold text-white hover:text-[#7B00FF] transition-colors duration-200">Leadzap</a>
+                <div class="w-5 h-5 bg-[#7B00FF] rounded-full ml-2 animate-pulse"></div>
+            </div>
+            <!-- Right: Desktop Links -->
+            <div class="hidden md:flex space-x-6 items-center">
+                <a href="{{ url_for('home') }}" class="text-white hover:text-[#7B00FF] transition-colors duration-200 {% if request.endpoint == 'home' %}border-b-2 border-[#7B00FF]{% endif %}">Home</a>
+                <a href="{{ url_for('pricing') }}" class="text-white hover:text-[#7B00FF] transition-colors duration-200 {% if request.endpoint == 'pricing' %}border-b-2 border-[#7B00FF]{% endif %}">Pricing</a>
+                {% if 'user_id' not in session %}
+                <a href="{{ url_for('login') }}" class="text-white hover:text-[#7B00FF] transition-colors duration-200 {% if request.endpoint == 'login' %}border-b-2 border-[#7B00FF]{% endif %}">Login</a>
+                <a href="{{ url_for('signup') }}" class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transition-transform duration-200 transform hover:scale-105">Sign Up</a>
+                {% else %}
+                <a href="{{ url_for('dashboard') }}" class="text-white hover:text-[#7B00FF] transition-colors duration-200 {% if request.endpoint == 'dashboard' %}border-b-2 border-[#7B00FF]{% endif %}">Dashboard</a>
+                <a href="{{ url_for('lead_history') }}" class="text-white hover:text-[#7B00FF] transition-colors duration-200 {% if request.endpoint == 'lead_history' %}border-b-2 border-[#7B00FF]{% endif %}">Lead History</a>
+                <a href="{{ url_for('analytics') }}" class="text-white hover:text-[#7B00FF] transition-colors duration-200 {% if request.endpoint == 'analytics' %}border-b-2 border-[#7B00FF]{% endif %}">Analytics</a>
+                <a href="{{ url_for('settings') }}" class="text-white hover:text-[#7B00FF] transition-colors duration-200 {% if request.endpoint == 'settings' %}border-b-2 border-[#7B00FF]{% endif %}">Settings</a>
+                <a href="{{ url_for('support') }}" class="text-white hover:text-[#7B00FF] transition-colors duration-200 {% if request.endpoint == 'support' %}border-b-2 border-[#7B00FF]{% endif %}">Support</a>
+                <a href="{{ url_for('logout') }}" class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transition-transform duration-200 transform hover:scale-105">Logout</a>
+                {% endif %}
+            </div>
+            <!-- Mobile Hamburger -->
+            <div class="md:hidden">
+                <button id="hamburger" class="focus:outline-none">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-[#1A2236] w-full absolute top-16 left-0 border-t border-[#7B00FF] shadow-lg">
+            <div class="flex flex-col items-center py-4 space-y-4">
+                <a href="{{ url_for('home') }}" class="text-white text-lg hover:text-[#7B00FF] hover:bg-[#2A2F42] w-full text-center py-2 transition-colors duration-200 {% if request.endpoint == 'home' %}text-[#7B00FF] font-bold{% endif %}">Home</a>
+                <a href="{{ url_for('pricing') }}" class="text-white text-lg hover:text-[#7B00FF] hover:bg-[#2A2F42] w-full text-center py-2 transition-colors duration-200 {% if request.endpoint == 'pricing' %}text-[#7B00FF] font-bold{% endif %}">Pricing</a>
+                {% if 'user_id' not in session %}
+                <a href="{{ url_for('login') }}" class="text-white text-lg hover:text-[#7B00FF] hover:bg-[#2A2F42] w-full text-center py-2 transition-colors duration-200 {% if request.endpoint == 'login' %}text-[#7B00FF] font-bold{% endif %}">Login</a>
+                <a href="{{ url_for('signup') }}" class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transition-transform duration-200 transform hover:scale-105">Sign Up</a>
+                {% else %}
+                <a href="{{ url_for('dashboard') }}" class="text-white text-lg hover:text-[#7B00FF] hover:bg-[#2A2F42] w-full text-center py-2 transition-colors duration-200 {% if request.endpoint == 'dashboard' %}text-[#7B00FF] font-bold{% endif %}">Dashboard</a>
+                <a href="{{ url_for('lead_history') }}" class="text-white text-lg hover:text-[#7B00FF] hover:bg-[#2A2F42] w-full text-center py-2 transition-colors duration-200 {% if request.endpoint == 'lead_history' %}text-[#7B00FF] font-bold{% endif %}">Lead History</a>
+                <a href="{{ url_for('analytics') }}" class="text-white text-lg hover:text-[#7B00FF] hover:bg-[#2A2F42] w-full text-center py-2 transition-colors duration-200 {% if request.endpoint == 'analytics' %}text-[#7B00FF] font-bold{% endif %}">Analytics</a>
+                <a href="{{ url_for('settings') }}" class="text-white text-lg hover:text-[#7B00FF] hover:bg-[#2A2F42] w-full text-center py-2 transition-colors duration-200 {% if request.endpoint == 'settings' %}text-[#7B00FF] font-bold{% endif %}">Settings</a>
+                <a href="{{ url_for('support') }}" class="text-white text-lg hover:text-[#7B00FF] hover:bg-[#2A2F42] w-full text-center py-2 transition-colors duration-200 {% if request.endpoint == 'support' %}text-[#7B00FF] font-bold{% endif %}">Support</a>
+                <a href="{{ url_for('logout') }}" class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transition-transform duration-200 transform hover:scale-105">Logout</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
     <!-- Hero Section -->
     <section class="relative h-[800px] flex items-center justify-center text-center bg-gradient-to-b from-[#0D1321] to-[#1E2A44]">
         <canvas id="waveCanvas" class="absolute inset-0 w-full h-full opacity-20"></canvas>
@@ -428,5 +480,18 @@
             observer.observe(el);
         });
     });
+    
+    // Mobile Menu Toggle
+    const hamburger = document.getElementById('hamburger');
+    const mobileMenu = document.getElementById('mobile-menu');
+    
+    if (hamburger && mobileMenu) {
+        hamburger.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+            hamburger.innerHTML = mobileMenu.classList.contains('hidden') ?
+                '<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>' :
+                '<svg class="w-6 h-6 text-[#7B00FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+        });
+    }
 </script>
 {% endblock %}
