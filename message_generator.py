@@ -4,96 +4,104 @@ import logging
 import openai
 from datetime import datetime
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
 class MessageGenerator:
+    """Generates personalized outreach messages for leads using GPT"""
+    
     def __init__(self):
-        self.api_key = os.environ.get('OPENAI_API_KEY')
-        if not self.api_key:
-            logger.warning("OpenAI API key not found. Personalized messaging will use fallback templates.")
-        else:
+        # Initialize with OpenAI API key from environment variable
+        self.api_key = os.environ.get('OPENAI_API_KEY', '')
+        if self.api_key:
             openai.api_key = self.api_key
-            logger.info("OpenAI API initialized for personalized messaging")
-            
+        else:
+            logger.warning("No OpenAI API key found. Message generation will use fallback templates.")
+    
     def generate_message(self, lead):
-        """Generate a personalized message for a lead using OpenAI"""
+        """Generate a personalized outreach message for a lead"""
         try:
             if not self.api_key:
-                return self._generate_template_message(lead)
+                return self._generate_fallback_message(lead)
                 
-            # Extract lead data
-            name = lead.get('name', 'there')
-            niche = lead.get('niche', lead.get('source', 'business'))
+            # Prepare lead data for prompt
+            lead_name = lead.get('name', 'the business')
+            niche = lead.get('niche', 'your industry')
             city = lead.get('city', 'your area')
             source = lead.get('source', 'online')
-            score = lead.get('score', 75)
             
-            # Create prompt
+            # Construct prompt for GPT
             prompt = f"""
-            Generate a personalized outreach message for a lead named {name}, who is a {niche} in {city} found on {source}.
-            The lead has a quality score of {score}/100.
-            The message should be friendly, concise (under 100 words), and encourage them to learn more about our lead generation services.
-            Write as if you're sending them an initial outreach message.
+            Create a short, friendly, and personalized outreach message for a potential client with the following information:
+            
+            Business Name: {lead_name}
+            Industry/Niche: {niche}
+            Location: {city}
+            Source: {source}
+            
+            The message should be concise (60-80 words), friendly but professional, and tailored to their specific business.
+            Focus on how we can help them grow their {niche} business in {city}. 
+            Don't use generic phrases like "I hope this email finds you well".
+            Don't use obvious templates or formal language. Make it conversational and genuine.
             """
             
             # Call OpenAI API
-            response = openai.Completion.create(
-                engine="text-davinci-003",
-                prompt=prompt,
+            response = openai.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are an expert at writing personalized business outreach messages that sound natural and get responses."},
+                    {"role": "user", "content": prompt}
+                ],
                 max_tokens=150,
-                temperature=0.7,
-                top_p=1.0,
-                frequency_penalty=0.0,
-                presence_penalty=0.0
+                temperature=0.7
             )
             
-            message = response.choices[0].text.strip()
-            logger.info(f"Generated personalized message for {name}")
+            # Extract and return the message
+            message = response.choices[0].message.content.strip()
+            logger.info(f"Generated personalized message for {lead_name}")
             return message
-        
+            
         except Exception as e:
-            logger.error(f"Error generating message with OpenAI: {str(e)}")
-            return self._generate_template_message(lead)
+            logger.error(f"Error generating message with GPT: {str(e)}")
+            return self._generate_fallback_message(lead)
     
-    def _generate_template_message(self, lead):
-        """Fallback to template-based message if API fails"""
-        name = lead.get('name', 'there')
-        niche = lead.get('niche', lead.get('source', 'business'))
+    def _generate_fallback_message(self, lead):
+        """Generate a fallback message if API is unavailable"""
+        lead_name = lead.get('name', 'the business')
+        niche = lead.get('niche', 'your industry')
         city = lead.get('city', 'your area')
         
         templates = [
-            f"Hi {name}, I noticed your {niche} business in {city} and wanted to reach out. Our lead generation service has helped similar businesses increase customer acquisition by 35%. Would you be open to a quick chat about how we could help you grow?",
+            f"Hi {lead_name}, I noticed your {niche} business in {city} and wanted to connect. We've helped similar businesses increase their leads by 30-50%. Would you be open to a quick chat about how we might be able to do the same for you?",
             
-            f"Hello {name}, I came across your {niche} services while researching businesses in {city}. We specialize in delivering qualified leads to businesses like yours. I'd love to share how we can help you reach more customers.",
+            f"Hey there {lead_name}! I work with {niche} businesses in {city} to generate more qualified leads. Our clients typically see a 40% increase in new business within 90 days. Are you currently looking to grow your customer base?",
             
-            f"Hi {name}, as a {niche} professional in {city}, you might be interested in our lead generation service that's delivering great results for others in your industry. Would you be available for a brief conversation about growing your client base?"
+            f"I came across {lead_name} while researching top {niche} providers in {city}. We specialize in connecting businesses like yours with customers actively looking for your services. Would you be interested in learning how we're helping similar businesses grow?"
         ]
         
-        # Choose template based on name length (predictable but seems random)
-        index = len(name) % len(templates)
-        return templates[index]
+        # Select template based on business name to ensure consistency
+        template_index = sum(ord(c) for c in lead_name) % len(templates)
+        return templates[template_index]
     
     def generate_email_template(self, lead):
-        """Generate a longer email template"""
+        """Generate an email template for the lead"""
         message = self.generate_message(lead)
-        name = lead.get('name', 'there').split()[0]  # Get first name
+        lead_name = lead.get('name', 'the business')
         
         email_template = f"""
-Subject: Helping Your Business Grow in {lead.get('city', 'Your Area')}
-
-Hi {name},
+Subject: Growing Your Business at {lead_name}
 
 {message}
 
-Our lead generation service has helped businesses like yours:
-• Increase qualified leads by 35%
-• Reduce customer acquisition costs
-• Grow revenue predictably
-
-When would be a good time for a quick 15-minute call this week?
-
-Best regards,
-The LeadZap Team
+Looking forward to connecting,
+[Your Name]
+Lead Generation Specialist
+Leadzap
+[Your Phone]
         """
         
         return email_template.strip()
