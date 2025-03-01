@@ -1148,6 +1148,73 @@ def update_crm_settings():
         flash(f'An error occurred: {str(e)}', 'error')
         return redirect(url_for('settings'))
 
+@app.route('/update_account_info', methods=['POST'])
+def update_account_info():
+    if 'user_id' not in session:
+        flash('Please log in to update your account information.')
+        return redirect(url_for('login'))
+
+    try:
+        user_id = session.get('user_id')
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip()
+
+        # Validate email format
+        if not '@' in email or not '.' in email:
+            flash('Invalid email format.')
+            return redirect(url_for('settings'))
+
+        # Update in Supabase
+        try:
+            supabase.table('users').update({
+                'name': name,
+                'email': email
+            }).eq('id', user_id).execute()
+
+            # Update session username if name was provided
+            if name:
+                session['username'] = name
+                session.modified = True
+
+            logger.info(f"Updated account info for user {user_id}: name={name}, email={email}")
+        except Exception as e:
+            logger.error(f"Error updating account info in Supabase: {str(e)}")
+            # Fallback to file storage
+            try:
+                with open('data/users.json', 'r') as f:
+                    users = json.load(f)
+
+                for user in users:
+                    if user.get('id') == user_id:
+                        user['name'] = name
+                        user['email'] = email
+                        # Update username in file if name was provided
+                        if name:
+                            user['username'] = name
+                        break
+
+                with open('data/users.json', 'w') as f:
+                    json.dump(users, f, indent=2)
+
+                # Update session username if name was provided
+                if name:
+                    session['username'] = name
+                    session.modified = True
+
+                logger.info(f"Updated account info in file for user {user_id}")
+            except Exception as file_e:
+                logger.error(f"Error updating account info in file: {str(file_e)}")
+                flash('Error updating account information. Please try again.')
+                return redirect(url_for('settings'))
+
+        flash('Account information updated successfully!')
+        return redirect(url_for('settings'))
+
+    except Exception as e:
+        logger.error(f"Error in update_account_info: {str(e)}")
+        flash(f'An error occurred: {str(e)}', 'error')
+        return redirect(url_for('settings'))
+
 @app.route('/update_competitor_settings', methods=['POST'])
 def update_competitor_settings():
     if 'user_id' not in session:

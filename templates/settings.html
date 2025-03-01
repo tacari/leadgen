@@ -57,6 +57,26 @@
             </div>
         </section>
 
+        <!-- Account Information Section -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold mb-8">Account Information</h2>
+            <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6">
+                <form action="{{ url_for('update_account_info') }}" method="post">
+                    <div class="mb-6">
+                        <label for="name" class="block text-white text-lg font-bold mb-2">Name</label>
+                        <input type="text" name="name" id="name" value="{{ user_data.get('name', '') }}" class="w-full bg-[#1E2A44] border border-[#7B00FF] rounded-lg p-3 text-white placeholder-[#A1A9B8]" placeholder="Enter your name">
+                    </div>
+
+                    <div class="mb-6">
+                        <label for="email" class="block text-white text-lg font-bold mb-2">Email</label>
+                        <input type="email" name="email" id="email" value="{{ user_data.get('email', '') }}" class="w-full bg-[#1E2A44] border border-[#7B00FF] rounded-lg p-3 text-white placeholder-[#A1A9B8]" placeholder="Enter your email">
+                    </div>
+
+                    <button type="submit" class="bg-[#7B00FF] text-white px-6 py-3 rounded-lg text-lg font-bold hover:bg-[#8F00FF] hover:shadow-lg">Update Account Info</button>
+                </form>
+            </div>
+        </section>
+
         <!-- Notification Settings Section -->
         <section class="mb-16">
             <h2 class="text-3xl font-bold mb-8">Notification Settings</h2>
