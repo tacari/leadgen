@@ -70,7 +70,8 @@ def ensure_tables_exist():
                 email VARCHAR(255) UNIQUE NOT NULL,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 hubspot_api_key VARCHAR(255),
-                slack_webhook_url VARCHAR(255)
+                slack_webhook_url VARCHAR(255),
+                competitor_urls TEXT[]
             );
         """)
 
@@ -100,7 +101,8 @@ def ensure_tables_exist():
                 score INTEGER DEFAULT 50,
                 verified BOOLEAN DEFAULT FALSE,
                 status VARCHAR(50) DEFAULT 'new',
-                date_added TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                date_added TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                competitor_source VARCHAR(255)
             );
         """)
 
@@ -296,7 +298,7 @@ def send_lead_email(user_id, package_name):
         # Create CSV in memory
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(['Name', 'Email', 'Phone', 'LinkedIn URL', 'Source', 'Score', 'Email Verified', 'Phone Verified', 'LinkedIn Verified', 'Status', 'Date Added'])
+        writer.writerow(['Name', 'Email', 'Phone', 'LinkedIn URL', 'Source', 'Competitor Source', 'Score', 'Email Verified', 'Phone Verified', 'LinkedIn Verified', 'Status', 'Date Added'])
 
         for lead in leads.data:
             writer.writerow([
@@ -305,6 +307,7 @@ def send_lead_email(user_id, package_name):
                 lead.get('phone', 'N/A'),
                 lead.get('linkedin_url', 'N/A'),
                 lead.get('source', 'N/A'),
+                lead.get('competitor_source', 'N/A'),
                 lead.get('score', 0),
                 lead.get('verified', False),
                 lead.get('phone_verified', False),
@@ -316,6 +319,9 @@ def send_lead_email(user_id, package_name):
         csv_content = output.getvalue()
         csv_base64 = base64.b64encode(csv_content.encode('utf-8')).decode('utf-8')
 
+        # Calculate competitor leads
+        competitor_leads_count = sum(1 for lead in leads.data if lead.get('competitor_source'))
+        
         # Create email with HTML template
         message = Mail(
             from_email='leads@leadzap.io',
@@ -334,6 +340,7 @@ def send_lead_email(user_id, package_name):
                             <li>Phone verified: {sum(1 for lead in leads.data if lead.get('phone_verified', False))}</li>
                             <li>LinkedIn verified: {sum(1 for lead in leads.data if lead.get('linkedin_verified', False))}</li>
                             <li>Fully verified leads: {sum(1 for lead in leads.data if lead.get('verified', False) and lead.get('phone_verified', False) and lead.get('linkedin_verified', False))}</li>
+                            {f'<li>Competitor insight leads: {competitor_leads_count}</li>' if competitor_leads_count > 0 and package_name.lower() != 'launch' else ''}
                         </ul>
                     </div>
 
@@ -342,6 +349,7 @@ def send_lead_email(user_id, package_name):
                     <div style="margin-top: 30px; padding: 20px; border-top: 1px solid #eee;">
                         <p style="color: #666; font-size: 12px;">
                             Your leads are attached in CSV format for easy import into your CRM.
+                            {f'<br><br><strong>Pro Tip:</strong> We\'ve included leads from your competitors\' websites to give you an edge!' if competitor_leads_count > 0 and package_name.lower() != 'launch' else ''}
                         </p>
                     </div>
                 </div>
@@ -1335,6 +1343,55 @@ def success():
         # Calculate lead volume based on package
         lead_volumes = {
             'launch': 50,
+
+
+@app.route('/update_competitor_settings', methods=['POST'])
+def update_competitor_settings():
+    if 'user_id' not in session:
+        flash('Please log in to update competitor settings.')
+        return redirect(url_for('login'))
+
+    try:
+        user_id = session.get('user_id')
+        competitor_urls = request.form.get('competitor_urls', '').splitlines()
+        competitor_urls = [url.strip() for url in competitor_urls if url.strip()]
+
+        # Update in Supabase
+        try:
+            supabase.table('users').update({
+                'competitor_urls': competitor_urls
+            }).eq('id', user_id).execute()
+            
+            logger.info(f"Updated competitor URLs for user {user_id}: {competitor_urls}")
+        except Exception as e:
+            logger.error(f"Error updating competitor URLs in Supabase: {str(e)}")
+            # Fallback to file storage
+            try:
+                with open('data/users.json', 'r') as f:
+                    users = json.load(f)
+                
+                for user in users:
+                    if user.get('id') == user_id:
+                        user['competitor_urls'] = competitor_urls
+                        break
+                
+                with open('data/users.json', 'w') as f:
+                    json.dump(users, f, indent=2)
+                    
+                logger.info(f"Updated competitor URLs in file for user {user_id}")
+            except Exception as file_e:
+                logger.error(f"Error updating competitor URLs in file: {str(file_e)}")
+                flash('Error updating competitor settings. Please try again.')
+                return redirect(url_for('settings'))
+
+        flash('Competitor settings updated successfully!')
+        return redirect(url_for('settings'))
+
+    except Exception as e:
+        logger.error(f"Error in update_competitor_settings: {str(e)}")
+        flash(f'An error occurred: {str(e)}', 'error')
+        return redirect(url_for('settings'))
+
             'engine': 150,
             'accelerator': 300,
             'empire': 600

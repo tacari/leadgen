@@ -446,8 +446,9 @@ class LeadScraper:
                     INSERT INTO leads (
                         user_id, name, email, source, score,
                         verified, status, date_added, website,
-                        phone, description, phone_verified, linkedin_verified
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        phone, description, phone_verified, linkedin_verified,
+                        competitor_source
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     RETURNING id
                 """, (
                     user_id,
@@ -462,7 +463,8 @@ class LeadScraper:
                     lead.get('phone'),
                     lead.get('description'),
                     lead.get('phone_verified', False),
-                    lead.get('linkedin_verified', False)
+                    lead.get('linkedin_verified', False),
+                    lead.get('competitor_source')
                 ))
                 
                 # Get the lead ID
@@ -491,35 +493,43 @@ class LeadScraper:
             'empire': 600
         }
         
-        # Get user niche preferences (defaults to plumbers if not set)
+        # Get user niche preferences and competitor URLs
         try:
-            # Try to get user's niche preference from database
-            self.cur.execute("SELECT niche, location FROM users WHERE id = %s", (user_id,))
+            # Try to get user's niche preference and competitor URLs from database
+            self.cur.execute("SELECT niche, location, competitor_urls FROM users WHERE id = %s", (user_id,))
             user_data = self.cur.fetchone()
             
             if user_data and user_data[0]:
                 niche = user_data[0]
                 location = user_data[1] if user_data[1] else "Austin, TX"
+                competitor_urls = user_data[2] if user_data[2] else []
             else:
                 # Default values
                 niche = "plumbers"
                 location = "Austin, TX"
+                competitor_urls = []
         except Exception as e:
             self.logger.error(f"Error fetching user niche preference: {str(e)}")
             niche = "plumbers"
             location = "Austin, TX"
+            competitor_urls = []
 
         volume = volumes.get(package_name.lower(), 50)
         self.logger.info(f"Generating {volume} leads for user {user_id} (Package: {package_name})")
         
         # Different sources based on package type
         if package_name.lower() == 'launch':
-            # Lead Launch ($499): Yellow Pages only
+            # Lead Launch ($499): Yellow Pages only, no competitor scraping
             all_leads = self.scrape_yellow_pages(niche=niche, location=location, limit=volume)
             self.logger.info(f"Scraped {len(all_leads)} leads from Yellow Pages for Launch package")
         else:
-            # All other packages: multi-source scraping
-            all_leads = self.multi_source_scrape(niche=niche, location=location, limit=volume)
+            # All other packages: multi-source scraping including competitors
+            all_leads = self.multi_source_scrape(
+                niche=niche, 
+                location=location, 
+                limit=volume,
+                competitor_urls=competitor_urls
+            )
             self.logger.info(f"Multi-source scraping complete: {len(all_leads)} leads for {package_name} package")
 
         if all_leads:
@@ -592,6 +602,130 @@ class LeadScraper:
 
         try:
             params = {
+
+
+def scrape_competitor_website(url):
+    """Scrape a competitor website for leads"""
+    self.logger.info(f"Starting competitor website scraping for {url}")
+    leads = []
+
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+        response = self.session.get(url, headers=headers, timeout=10)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Extract from testimonials
+        for testimonial in soup.select('.testimonial, .review, .quote, .customer, .client'):
+            try:
+                name_elem = testimonial.select_one('.name, .author, h3, h4, p strong, .customer-name, .client-name')
+                if name_elem and name_elem.text.strip():
+                    name = name_elem.text.strip()
+                    # Clean up the name - remove quotes and extra text
+                    name = re.sub(r'[""]', '', name)
+                    name = name.split('-')[0].strip() if '-' in name else name
+                    
+                    # Try to extract email if present
+                    email = None
+                    email_match = re.search(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', testimonial.text)
+                    if email_match:
+                        email = email_match.group(0)
+                    
+                    lead = {
+                        'name': name,
+                        'email': email,
+                        'source': 'Competitor',
+                        'competitor_source': url,
+                        'verified': False,
+                        'phone': None,
+                        'phone_verified': False,
+                        'linkedin_url': None,
+                        'linkedin_verified': False,
+                        'date_added': datetime.now().isoformat()
+                    }
+                    
+                    # Add score
+                    lead['score'] = self._calculate_lead_score(lead) + 15  # Bonus for competitor leads
+                    leads.append(lead)
+                    self.logger.info(f"Scraped competitor lead: {name} from testimonial")
+            except Exception as e:
+                self.logger.error(f"Error processing testimonial: {str(e)}")
+                continue
+        
+        # Extract from team pages
+        for team_member in soup.select('.team-member, .staff, .employee, .team, .about-us'):
+            try:
+                name_elem = team_member.select_one('.name, h3, h4, p strong, .employee-name')
+                if name_elem and name_elem.text.strip():
+                    name = name_elem.text.strip()
+                    
+                    # Try to find LinkedIn URL
+                    linkedin_url = None
+                    linkedin_elem = team_member.select_one('a[href*="linkedin.com"]')
+                    if linkedin_elem and linkedin_elem.has_attr('href'):
+                        linkedin_url = linkedin_elem['href']
+                    
+                    # Generate email based on name and domain
+                    email = None
+                    domain = urlparse(url).netloc
+                    if domain:
+                        first_name = name.split()[0].lower()
+                        email = f"{first_name}@{domain}"
+                    
+                    lead = {
+                        'name': name,
+                        'email': email,
+                        'source': 'Competitor',
+                        'competitor_source': url,
+                        'verified': False,
+                        'phone': None,
+                        'phone_verified': False,
+                        'linkedin_url': linkedin_url,
+                        'linkedin_verified': False if not linkedin_url else self.verify_linkedin(linkedin_url),
+                        'date_added': datetime.now().isoformat()
+                    }
+                    
+                    # Add score
+                    lead['score'] = self._calculate_lead_score(lead) + 15  # Bonus for competitor leads
+                    leads.append(lead)
+                    self.logger.info(f"Scraped competitor lead: {name} from team page")
+            except Exception as e:
+                self.logger.error(f"Error processing team member: {str(e)}")
+                continue
+        
+        # Extract from client lists
+        for client in soup.select('.client, .customer, .portfolio-item, .case-study'):
+            try:
+                name_elem = client.select_one('.name, h3, h4, p strong, .client-name')
+                if name_elem and name_elem.text.strip():
+                    name = name_elem.text.strip()
+                    
+                    lead = {
+                        'name': name,
+                        'email': None,
+                        'source': 'Competitor',
+                        'competitor_source': url,
+                        'verified': False,
+                        'phone': None,
+                        'phone_verified': False,
+                        'linkedin_url': None,
+                        'linkedin_verified': False,
+                        'date_added': datetime.now().isoformat()
+                    }
+                    
+                    # Add score
+                    lead['score'] = self._calculate_lead_score(lead) + 15  # Bonus for competitor leads
+                    leads.append(lead)
+                    self.logger.info(f"Scraped competitor lead: {name} from client list")
+            except Exception as e:
+                self.logger.error(f"Error processing client: {str(e)}")
+                continue
+
+        return leads[:50]  # Cap at 50 leads per competitor site
+        
+    except Exception as e:
+        self.logger.error(f"Competitor website scraping error: {str(e)}")
+        return []
+
                 "engine": "google",
                 "q": f"{niche} companies in {location} site:linkedin.com/company",
                 "api_key": self.serpapi_key,
@@ -734,32 +868,42 @@ class LeadScraper:
         
         return combined_leads
         
-    def multi_source_scrape(self, niche="plumbers", location="Austin, TX", limit=50):
-        """Scrape leads from multiple sources and combine them"""
+    def multi_source_scrape(self, niche="plumbers", location="Austin, TX", limit=50, competitor_urls=None):
+        """Scrape leads from multiple sources and combine them, including competitor websites"""
         self.logger.info(f"Starting multi-source scraping for {niche} in {location}")
         
         # Create threads for parallel scraping
         yp_leads = []
         gm_leads = []
         linkedin_leads = []
+        competitor_leads = []
         
         def scrape_yp():
             nonlocal yp_leads
-            yp_leads = self.scrape_yellow_pages(niche, location, limit)
+            yp_leads = self.scrape_yellow_pages(niche, location, limit//3)
             
         def scrape_gm():
             nonlocal gm_leads
-            gm_leads = self.scrape_google_maps(niche, location, limit)
+            gm_leads = self.scrape_google_maps(niche, location, limit//3)
             
         def scrape_linkedin():
             nonlocal linkedin_leads
-            linkedin_leads = self.scrape_linkedin(niche, location, limit)
+            linkedin_leads = self.scrape_linkedin(niche, location, limit//3)
+            
+        def scrape_competitors():
+            nonlocal competitor_leads
+            if competitor_urls:
+                for url in competitor_urls[:3]:  # Limit to 3 competitors
+                    if url and url.strip():
+                        comp_leads = self.scrape_competitor_website(url.strip())
+                        competitor_leads.extend(comp_leads)
         
         # Create and start threads
         threads = [
             threading.Thread(target=scrape_yp),
             threading.Thread(target=scrape_gm),
-            threading.Thread(target=scrape_linkedin)
+            threading.Thread(target=scrape_linkedin),
+            threading.Thread(target=scrape_competitors)
         ]
         
         for thread in threads:
@@ -770,13 +914,14 @@ class LeadScraper:
             thread.join()
             
         # Combine and deduplicate leads
-        all_leads = self.combine_and_deduplicate_leads([yp_leads, gm_leads, linkedin_leads])
+        all_leads = self.combine_and_deduplicate_leads([yp_leads, gm_leads, linkedin_leads, competitor_leads])
         
-        # Trim to the requested limit
-        if len(all_leads) > limit:
+        # Triple the limit if we have competitor leads
+        if competitor_leads and len(all_leads) > limit:
             # Sort by score before trimming
             all_leads.sort(key=lambda x: x.get('score', 0), reverse=True)
-            all_leads = all_leads[:limit]
+            # Keep at most 3 times the original limit
+            all_leads = all_leads[:min(limit*3, len(all_leads))]
             
         self.logger.info(f"Multi-source scraping complete. Generated {len(all_leads)} unique leads.")
         return all_leads

@@ -74,6 +74,9 @@
                                 <span class="px-2 py-1 rounded {% if lead.source == 'LinkedIn' %}bg-blue-900{% elif lead.source == 'Google Maps' %}bg-green-900{% elif lead.source == 'Yellow Pages' %}bg-yellow-900{% else %}bg-gray-900{% endif %}">
                                     {{ lead.source }}
                                 </span>
+                                {% if lead.competitor_source %}
+                                <span class="ml-1 text-xs bg-[#7B00FF] text-white px-2 py-1 rounded-full" title="{{ lead.competitor_source }}">Competitor</span>
+                                {% endif %}
                             </td>
                             <td class="p-3">{{ lead.phone if lead.phone else 'N/A' }}</td>
                             <td class="p-3">
@@ -144,6 +147,9 @@
                         <span class="px-2 py-1 rounded text-xs {% if lead.source == 'LinkedIn' %}bg-blue-900{% elif lead.source == 'Google Maps' %}bg-green-900{% elif lead.source == 'Yellow Pages' %}bg-yellow-900{% else %}bg-gray-900{% endif %}">
                             {{ lead.source }}
                         </span>
+                         {% if lead.competitor_source %}
+                                <span class="ml-1 text-xs bg-[#7B00FF] text-white px-2 py-1 rounded-full" title="{{ lead.competitor_source }}">Competitor</span>
+                                {% endif %}
                     </p>
                     {% if lead.phone %}
                     <p class="text-[#A1A9B8] text-sm mb-1">Phone: {{ lead.phone }}</p>
