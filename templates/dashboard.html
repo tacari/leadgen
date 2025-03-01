@@ -39,7 +39,12 @@
                 <a href="{{ url_for('dashboard') }}?filter=phone_verified" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if request.args.get('filter') == 'phone_verified' }}">Phone Verified</a>
                 <a href="{{ url_for('dashboard') }}?filter=linkedin_verified" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if request.args.get('filter') == 'linkedin_verified' }}">LinkedIn Verified</a>
                 <a href="{{ url_for('dashboard') }}?filter=fully_verified" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if request.args.get('filter') == 'fully_verified' }}">Fully Verified</a>
-                <a href="{{ url_for('dashboard') }}?filter=high_score" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if request.args.get('filter') == 'high_score' }}">High Score (>75)</a>
+                <button class="p-2 rounded bg-[#1A2236] border border-[#7B00FF] text-[#A1A9B8] text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if request.args.get('filter') == 'high_score' }}" onclick="window.location.href='{{ url_for('dashboard', filter='high_score') }}'">
+                    High Score
+                </button>
+                <button class="p-2 rounded bg-[#1A2236] border border-[#7B00FF] text-[#A1A9B8] text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if request.args.get('filter') == 'high_conversion' }}" onclick="window.location.href='{{ url_for('dashboard', filter='high_conversion') }}'">
+                    High Conversion
+                </button>
                 <a href="{{ url_for('dashboard') }}?filter=last_week" class="filter-btn bg-[#0D1321] border border-[#7B00FF] px-4 py-2 rounded-lg text-sm hover:bg-[#7B00FF] hover:text-white {{ 'bg-[#7B00FF] text-white' if request.args.get('filter') == 'last_week' }}">Last 7 Days</a>
             </div>
             <!-- Source-based filters -->
@@ -142,6 +147,20 @@
                         <span class="{% if lead.score > 75 %}text-[#9F5FFF] font-medium{% else %}text-[#A1A9B8]{% endif %}" title="AI-powered lead score">Score: {{ lead.score }}</span>
                     </div>
                     <p class="text-[#A1A9B8] text-sm mb-1">{{ lead.email }}</p>
+                    <h5 class="text-xs text-[#A1A9B8] mb-1">{{ lead.source }}</h5>
+                        <div class="flex items-center">
+                            <div class="w-16 h-2 bg-gray-700 rounded-full mr-2">
+                                <div class="h-2 bg-[#7B00FF] rounded-full" style="width: {{ lead.score }}%;"></div>
+                            </div>
+                            <span class="text-xs text-white">{{ lead.score }}</span>
+                        </div>
+                        <div class="flex items-center mt-1">
+                            <span class="text-xs mr-2">Conversion:</span>
+                            <div class="w-16 h-2 bg-gray-700 rounded-full mr-2">
+                                <div class="h-2 bg-green-500 rounded-full" style="width: {{ lead.conversion_probability or 0 }}%;"></div>
+                            </div>
+                            <span class="text-xs text-white">{{ lead.conversion_probability|round(1) if lead.conversion_probability else 'N/A' }}%</span>
+                        </div>
                     <p class="text-[#A1A9B8] text-sm mb-1">
                         Source: 
                         <span class="px-2 py-1 rounded text-xs {% if lead.source == 'LinkedIn' %}bg-blue-900{% elif lead.source == 'Google Maps' %}bg-green-900{% elif lead.source == 'Yellow Pages' %}bg-yellow-900{% else %}bg-gray-900{% endif %}">

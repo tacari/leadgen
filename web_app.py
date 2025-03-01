@@ -118,7 +118,8 @@ def ensure_tables_exist():
                 verified BOOLEAN DEFAULT FALSE,
                 status VARCHAR(50) DEFAULT 'new',
                 date_added TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                competitor_source VARCHAR(255)
+                competitor_source VARCHAR(255),
+                conversion_probability REAL
             );
         """)
 
@@ -902,6 +903,8 @@ def dashboard():
                 elif filter_type == 'fully_verified' and not (lead.get('verified', False) and lead.get('phone_verified', False) and lead.get('linkedin_verified', False)):
                     continue
                 elif filter_type == 'high_score' and lead.get('score', 0) <= 75:
+                    continue
+                elif filter_type == 'high_conversion' and lead.get('conversion_probability', 0) <= 50:
                     continue
                 elif filter_type == 'last_week' and (datetime.now() - lead_date).days > 7:
                     continue
@@ -1831,6 +1834,15 @@ if __name__ == '__main__':
             days=7,  # Run weekly
             next_run_time=datetime.now() + timedelta(minutes=5)  # Start after 5 minutes
         )
+        
+        # Schedule lead prediction updates
+        scheduler.add_job(
+            id='lead_prediction_update',
+            func=lambda: lead_model.update_lead_predictions(psycopg2.connect(os.environ['DATABASE_URL'])),
+            trigger='interval',
+            hours=12,  # Run twice daily
+            next_run_time=datetime.now() + timedelta(minutes=10)  # Start after 10 minutes
+        )
 
         # Initial population of lead pool (in background thread to not block startup)
         threading.Thread(target=lead_scheduler.populate_initial_pool).start()
@@ -1847,7 +1859,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
 
-@app.route('/train_ml_model', methods=['POST'])
+@app.route('/train_ml_model', methods=['GET', 'POST'])
 def train_ml_model():
     """Train the ML model with available lead data"""
     if 'user_id' not in session:
@@ -1858,10 +1870,13 @@ def train_ml_model():
         from ml_engine import lead_model
         
         # Train the model with database connection
-        success = lead_model.train_from_database(psycopg2.connect(os.environ['DATABASE_URL']))
+        conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        success = lead_model.train_from_database(conn)
         
         if success:
-            flash('Machine learning model trained successfully!', 'success')
+            # Update lead predictions with new model
+            updated_count = lead_model.update_lead_predictions(conn)
+            flash(f'Machine learning models trained successfully! Updated {updated_count} lead predictions.', 'success')
         else:
             flash('Not enough data to train the model yet. Keep adding leads with status updates.', 'warning')
             
