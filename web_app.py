@@ -1902,3 +1902,81 @@ def train_ml_model():
         logger.error(f"Error training ML model: {str(e)}")
         flash(f'Error training model: {str(e)}', 'error')
         return redirect(url_for('analytics'))
+
+@app.route('/generate_message/<int:lead_id>', methods=['GET'])
+def generate_message(lead_id):
+    """Generate a personalized message for a specific lead"""
+    if 'user_id' not in session:
+        flash('Please log in to access this feature.')
+        return redirect(url_for('login'))
+    
+    try:
+        user_id = session.get('user_id')
+        
+        # Get lead data from database
+        try:
+            lead_data = supabase.table('leads').select('*').eq('id', lead_id).eq('user_id', user_id).execute()
+            if not lead_data.data:
+                flash('Lead not found or you do not have permission to access it.')
+                return redirect(url_for('dashboard'))
+            
+            lead = lead_data.data[0]
+        except Exception as db_e:
+            logger.error(f"Database error in generate_message: {str(db_e)}")
+            # Fallback to sample data for testing
+            lead = {
+                'id': lead_id,
+                'name': 'Sample Lead',
+                'email': 'sample@example.com',
+                'source': 'LinkedIn',
+                'niche': 'Plumbing',
+                'city': 'Austin',
+                'score': 85
+            }
+        
+        # Generate personalized message
+        from message_generator import MessageGenerator
+        message_gen = MessageGenerator()
+        message = message_gen.generate_message(lead)
+        email_template = message_gen.generate_email_template(lead)
+        
+        return render_template('personalized_message.html', 
+                             lead=lead, 
+                             message=message,
+                             email_template=email_template)
+        
+    except Exception as e:
+        logger.error(f"Error generating personalized message: {str(e)}")
+        flash(f'Error generating message: {str(e)}', 'error')
+        return redirect(url_for('dashboard'))
+
+@app.route('/message_api/<int:lead_id>', methods=['GET'])
+def message_api(lead_id):
+    """API endpoint to get a personalized message for a lead"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    try:
+        user_id = session.get('user_id')
+        
+        # Get lead data
+        try:
+            lead_data = supabase.table('leads').select('*').eq('id', lead_id).eq('user_id', user_id).execute()
+            if not lead_data.data:
+                return jsonify({'error': 'Lead not found'}), 404
+            
+            lead = lead_data.data[0]
+        except Exception as db_e:
+            logger.error(f"Database error in message_api: {str(db_e)}")
+            return jsonify({'error': 'Database error'}), 500
+        
+        # Generate message
+        from message_generator import MessageGenerator
+        message_gen = MessageGenerator()
+        message = message_gen.generate_message(lead)
+        
+        return jsonify({'message': message, 'lead': lead})
+        
+    except Exception as e:
+        logger.error(f"API error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
