@@ -742,7 +742,6 @@ def scrape_competitor_website(self, url):
                 "api_key": self.serpapi_key,
                 "num": limit
             }
-            }
 
             response = requests.get("https://serpapi.com/search", params=params)
             data = response.json()
