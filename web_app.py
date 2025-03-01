@@ -1868,8 +1868,8 @@ if __name__ == '__main__':
         scheduler.start()
 
         # Start the Flask server
-        logger.info("Starting Flask server on port 5000")
-        app.run(host='0.0.0.0', port=5000, debug=True)
+        logger.info("Starting Flask server on port 8080")
+        app.run(host='0.0.0.0', port=8080, debug=True)
     except Exception as e:
         logger.error(f"Failed to start server: {str(e)}")
         sys.exit(1)
