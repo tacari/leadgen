@@ -602,9 +602,49 @@ class LeadScraper:
 
         try:
             params = {
+                "engine": "google",
+                "q": f"{niche} companies in {location} site:linkedin.com/company",
+                "api_key": self.serpapi_key,
+                "num": limit
+            }
+            
+            response = requests.get("https://serpapi.com/search", params=params)
+            data = response.json()
+            
+            if "error" in data:
+                self.logger.error(f"SerpAPI error: {data['error']}")
+                return []
+                
+            organic_results = data.get('organic_results', [])[:limit]
+            
+            for result in organic_results:
+                try:
+                    # Extract company information
+                    name = result.get('title', '').split('|')[0].strip()
+                    link = result.get('link', '')
+                    description = result.get('snippet', '')
+                    
+                    # Create lead
+                    lead = {
+                        'name': name,
+                        'email': f"contact@{name.lower().replace(' ', '')}.com",
+                        'source': 'LinkedIn',
+                        'verified': False,
+                        'date_added': datetime.now().isoformat()
+                    }
+                    
+                    leads.append(lead)
+                    
+                except Exception as e:
+                    self.logger.error(f"Error processing LinkedIn result: {str(e)}")
+            
+            return leads
+            
+        except Exception as e:
+            self.logger.error(f"LinkedIn scraping error: {str(e)}")
+            return []
 
-
-def scrape_competitor_website(self, url):
+    def scrape_competitor_website(self, url):
         """Scrape a competitor website for leads"""
         self.logger.info(f"Starting competitor website scraping for {url}")
         leads = []
