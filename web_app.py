@@ -321,7 +321,7 @@ def send_lead_email(user_id, package_name):
 
         # Calculate competitor leads
         competitor_leads_count = sum(1 for lead in leads.data if lead.get('competitor_source'))
-        
+
         # Create email with HTML template
         message = Mail(
             from_email='leads@leadzap.io',
@@ -803,7 +803,7 @@ def dashboard():
 
         # Fallback to sample data if no real leads
         if not real_leads:
-            real_leads = [
+            real_leads = [```python
                 {
                     'name': "Test Lead 1",
                     'email': 'lead1@example.com',
@@ -1361,7 +1361,7 @@ def update_competitor_settings():
             supabase.table('users').update({
                 'competitor_urls': competitor_urls
             }).eq('id', user_id).execute()
-            
+
             logger.info(f"Updated competitor URLs for user {user_id}: {competitor_urls}")
         except Exception as e:
             logger.error(f"Error updating competitor URLs in Supabase: {str(e)}")
@@ -1369,15 +1369,15 @@ def update_competitor_settings():
             try:
                 with open('data/users.json', 'r') as f:
                     users = json.load(f)
-                
+
                 for user in users:
                     if user.get('id') == user_id:
                         user['competitor_urls'] = competitor_urls
                         break
-                
+
                 with open('data/users.json', 'w') as f:
                     json.dump(users, f, indent=2)
-                    
+
                 logger.info(f"Updated competitor URLs in file for user {user_id}")
             except Exception as file_e:
                 logger.error(f"Error updating competitor URLs in file: {str(file_e)}")
@@ -1604,7 +1604,7 @@ def handle_successful_payment(session):
 
         except Exception as db_e:
             logger.error(f"Database error in webhook: {str(db_e)}")
-            # Fallback to file-based storage
+            # Fallback to filebased storage
             user_packages_file = 'data/user_packages.json'
 
             with open(user_packages_file, 'r') as f:
