@@ -2,7 +2,7 @@
 {% extends "base.html" %}
 {% block title %}Leadzap - AI-Powered Lead Generation{% endblock %}
 {% block content %}
-<div class="min-h-screen bg-[#0D1321]">
+<div class="min-h-screen bg-[#0D1321] pt-20">
     <!-- Navigation -->
     <nav class="bg-[#0D1321] p-4 fixed w-full top-0 z-10 animate-fade-in">
         <div class="max-w-6xl mx-auto flex justify-between items-center">
@@ -396,102 +396,127 @@
 <script>
     // Canvas wave animation
     document.addEventListener('DOMContentLoaded', function() {
-        const canvas = document.getElementById('waveCanvas');
-        if (canvas) {
-            const ctx = canvas.getContext('2d');
-            
-            // Set canvas size to match parent
-            function resizeCanvas() {
-                canvas.width = canvas.parentElement.offsetWidth;
-                canvas.height = canvas.parentElement.offsetHeight;
-            }
-            
-            resizeCanvas();
-            window.addEventListener('resize', resizeCanvas);
-            
-            // Wave properties
-            const waves = {
-                y: canvas.height / 2,
-                length: 0.01,
-                amplitude: 50,
-                frequency: 0.01
-            };
-            
-            // Line properties
-            const lines = [];
-            const lineCount = 3;
-            
-            for (let i = 0; i < lineCount; i++) {
-                lines.push({
-                    points: [],
-                    width: 2 + (i * 0.5),
-                    speed: 0.04 - (i * 0.01),
-                    offset: Math.random() * 1000,
-                    color: `rgba(123, 0, 255, ${0.2 + (i * 0.1)})`
-                });
-            }
-            
-            // Animation loop
-            function animate() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+        try {
+            const canvas = document.getElementById('waveCanvas');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
                 
-                lines.forEach((line, index) => {
-                    line.offset += line.speed;
-                    line.points = [];
-                    
-                    // Create sine wave points
-                    for (let i = 0; i <= canvas.width; i += 5) {
-                        const x = i;
-                        const y = canvas.height / 2 + Math.sin(i * waves.length + line.offset) * waves.amplitude;
-                        line.points.push({x, y});
-                    }
-                    
-                    // Draw the line
-                    ctx.beginPath();
-                    ctx.moveTo(line.points[0].x, line.points[0].y);
-                    
-                    for (let i = 1; i < line.points.length; i++) {
-                        ctx.lineTo(line.points[i].x, line.points[i].y);
-                    }
-                    
-                    ctx.strokeStyle = line.color;
-                    ctx.lineWidth = line.width;
-                    ctx.stroke();
-                });
+                // Set canvas size to match parent
+                function resizeCanvas() {
+                    canvas.width = canvas.parentElement.offsetWidth;
+                    canvas.height = canvas.parentElement.offsetHeight;
+                }
                 
-                requestAnimationFrame(animate);
+                resizeCanvas();
+                window.addEventListener('resize', resizeCanvas);
+                
+                // Wave properties
+                const waves = {
+                    y: canvas.height / 2,
+                    length: 0.01,
+                    amplitude: 50,
+                    frequency: 0.01
+                };
+                
+                // Line properties
+                const lines = [];
+                const lineCount = 3;
+                
+                for (let i = 0; i < lineCount; i++) {
+                    lines.push({
+                        points: [],
+                        width: 2 + (i * 0.5),
+                        speed: 0.04 - (i * 0.01),
+                        offset: Math.random() * 1000,
+                        color: `rgba(123, 0, 255, ${0.2 + (i * 0.1)})`
+                    });
+                }
+                
+                // Animation loop
+                function animate() {
+                    try {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        
+                        lines.forEach((line, index) => {
+                            line.offset += line.speed;
+                            line.points = [];
+                            
+                            // Create sine wave points
+                            for (let i = 0; i <= canvas.width; i += 5) {
+                                const x = i;
+                                const y = canvas.height / 2 + Math.sin(i * waves.length + line.offset) * waves.amplitude;
+                                line.points.push({x, y});
+                            }
+                            
+                            // Draw the line
+                            ctx.beginPath();
+                            ctx.moveTo(line.points[0].x, line.points[0].y);
+                            
+                            for (let i = 1; i < line.points.length; i++) {
+                                ctx.lineTo(line.points[i].x, line.points[i].y);
+                            }
+                            
+                            ctx.strokeStyle = line.color;
+                            ctx.lineWidth = line.width;
+                            ctx.stroke();
+                        });
+                        
+                        requestAnimationFrame(animate);
+                    } catch (e) {
+                        console.log('Animation error:', e);
+                    }
+                }
+                
+                animate();
             }
-            
-            animate();
+        } catch (e) {
+            console.log('Canvas setup error:', e);
         }
         
         // Intersection Observer for fade-in animations
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.style.animationPlayState = 'running';
-                    observer.unobserve(entry.target);
-                }
+        try {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.animationPlayState = 'running';
+                        observer.unobserve(entry.target);
+                    }
+                });
             });
-        });
-        
-        document.querySelectorAll('.animate-fade-in').forEach(el => {
-            el.style.animationPlayState = 'paused';
-            observer.observe(el);
-        });
+            
+            document.querySelectorAll('.animate-fade-in').forEach(el => {
+                el.style.animationPlayState = 'paused';
+                observer.observe(el);
+            });
+        } catch (e) {
+            console.log('Observer error:', e);
+            // Fallback to make elements visible if observer fails
+            document.querySelectorAll('.animate-fade-in').forEach(el => {
+                el.style.opacity = '1';
+                el.style.transform = 'translateY(0)';
+            });
+        }
     });
     
     // Mobile Menu Toggle
-    const hamburger = document.getElementById('hamburger');
-    const mobileMenu = document.getElementById('mobile-menu');
-    
-    if (hamburger && mobileMenu) {
-        hamburger.addEventListener('click', () => {
-            mobileMenu.classList.toggle('hidden');
-            hamburger.innerHTML = mobileMenu.classList.contains('hidden') ?
-                '<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>' :
-                '<svg class="w-6 h-6 text-[#7B00FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
-        });
-    }
+    document.addEventListener('DOMContentLoaded', function() {
+        try {
+            const hamburger = document.getElementById('hamburger');
+            const mobileMenu = document.getElementById('mobile-menu');
+            
+            if (hamburger && mobileMenu) {
+                hamburger.addEventListener('click', function() {
+                    mobileMenu.classList.toggle('hidden');
+                    if (mobileMenu.classList.contains('hidden')) {
+                        hamburger.innerHTML = '<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>';
+                    } else {
+                        hamburger.innerHTML = '<svg class="w-6 h-6 text-[#7B00FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+                    }
+                });
+            }
+        } catch (e) {
+            console.log('Mobile menu error:', e);
+        }
+    });
 </script>
 {% endblock %}
