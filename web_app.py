@@ -807,7 +807,11 @@ def dashboard():
                 },
                 {
                     'name': "Test Lead 2",
-                    ```python
+                    'email': 'lead2@example.com',
+                    'source': 'Google Maps',
+                    'score': 70,
+                    'verified': True,
+                    'status': 'New',
                     'date_added': datetime.now().isoformat()
                 },
                 {
