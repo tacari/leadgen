@@ -1868,8 +1868,24 @@ if __name__ == '__main__':
         scheduler.start()
 
         # Start the Flask server
-        logger.info("Starting Flask server on port 3000")
-        app.run(host='0.0.0.0', port=3000, debug=True)
+        # Check for available port
+        ports = [3000, 5000, 8080, 8000]
+        port_to_use = None
+        
+        for port in ports:
+            try:
+                # Try to terminate any process on this port first
+                terminate_port_process(port)
+                port_to_use = port
+                break
+            except Exception as port_e:
+                logger.error(f"Couldn't use port {port}: {str(port_e)}")
+        
+        if not port_to_use:
+            port_to_use = 8080  # Default fallback
+            
+        logger.info(f"Starting Flask server on port {port_to_use}")
+        app.run(host='0.0.0.0', port=port_to_use, debug=True)
     except Exception as e:
         logger.error(f"Failed to start server: {str(e)}")
         sys.exit(1)
