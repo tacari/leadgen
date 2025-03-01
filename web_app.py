@@ -1926,12 +1926,17 @@ def generate_message(lead_id):
             # Fallback to sample data for testing
             lead = {
                 'id': lead_id,
-                'name': 'Sample Lead',
-                'email': 'sample@example.com',
+                'name': 'Sample Business',
+                'email': 'contact@samplebusiness.com',
                 'source': 'LinkedIn',
                 'niche': 'Plumbing',
                 'city': 'Austin',
-                'score': 85
+                'score': 85,
+                'verified': True,
+                'phone_verified': False,
+                'linkedin_verified': True,
+                'status': 'New',
+                'date_added': datetime.now().strftime('%Y-%m-%d')
             }
         
         # Generate personalized message
@@ -1949,6 +1954,30 @@ def generate_message(lead_id):
         logger.error(f"Error generating personalized message: {str(e)}")
         flash(f'Error generating message: {str(e)}', 'error')
         return redirect(url_for('dashboard'))
+
+@app.route('/mark_lead_contacted/<int:lead_id>', methods=['POST'])
+def mark_lead_contacted(lead_id):
+    """Mark a lead as contacted"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Not authenticated'})
+    
+    try:
+        user_id = session.get('user_id')
+        
+        # Update lead status in database
+        try:
+            supabase.table('leads').update({
+                'status': 'Contacted'
+            }).eq('id', lead_id).eq('user_id', user_id).execute()
+            
+            return jsonify({'success': True})
+        except Exception as db_e:
+            logger.error(f"Database error marking lead as contacted: {str(db_e)}")
+            return jsonify({'success': False, 'error': str(db_e)})
+        
+    except Exception as e:
+        logger.error(f"Error marking lead as contacted: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/message_api/<int:lead_id>', methods=['GET'])
 def message_api(lead_id):

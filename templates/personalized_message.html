@@ -1,3 +1,4 @@
+
 {% extends "dashboard_base.html" %}
 {% block title %}Personalized Outreach{% endblock %}
 {% block content %}
@@ -13,109 +14,181 @@
                 <!-- Lead Details -->
                 <div>
                     <h2 class="text-2xl font-bold text-white mb-4">Lead Details</h2>
-                    <div class="space-y-2 text-[#A1A9B8]">
-                        <p><span class="font-bold">Name:</span> {{ lead.name }}</p>
-                        <p><span class="font-bold">Email:</span> {{ lead.email }}</p>
-                        {% if lead.phone %}
-                        <p><span class="font-bold">Phone:</span> {{ lead.phone }}</p>
-                        {% endif %}
-                        <p><span class="font-bold">Source:</span> {{ lead.source }}</p>
-                        {% if lead.niche %}
-                        <p><span class="font-bold">Niche:</span> {{ lead.niche }}</p>
-                        {% endif %}
-                        {% if lead.city %}
-                        <p><span class="font-bold">City:</span> {{ lead.city }}</p>
-                        {% endif %}
-                        <p><span class="font-bold">Lead Score:</span> 
-                            <span class="{% if lead.score > 75 %}text-[#9F5FFF] font-medium{% else %}text-[#A1A9B8]{% endif %}">
-                                {{ lead.score }}
+                    <dl class="grid grid-cols-3 gap-4">
+                        <dt class="col-span-1 text-[#A1A9B8]">Name:</dt>
+                        <dd class="col-span-2 font-medium">{{ lead.name }}</dd>
+                        
+                        <dt class="col-span-1 text-[#A1A9B8]">Email:</dt>
+                        <dd class="col-span-2">{{ lead.email }}</dd>
+                        
+                        <dt class="col-span-1 text-[#A1A9B8]">Source:</dt>
+                        <dd class="col-span-2">
+                            <span class="px-2 py-1 rounded text-xs {% if lead.source == 'LinkedIn' %}bg-blue-900{% elif lead.source == 'Google Maps' %}bg-green-900{% elif lead.source == 'Yellow Pages' %}bg-yellow-900{% else %}bg-gray-900{% endif %}">
+                                {{ lead.source }}
                             </span>
-                        </p>
-                    </div>
+                        </dd>
+                        
+                        <dt class="col-span-1 text-[#A1A9B8]">Score:</dt>
+                        <dd class="col-span-2">
+                            <div class="flex items-center">
+                                <div class="w-16 h-2 bg-gray-700 rounded-full mr-2">
+                                    <div class="h-2 bg-[#7B00FF] rounded-full" style="width: {{ lead.score }}%;"></div>
+                                </div>
+                                <span class="text-xs text-white">{{ lead.score }}</span>
+                            </div>
+                        </dd>
+                        
+                        <dt class="col-span-1 text-[#A1A9B8]">Date Added:</dt>
+                        <dd class="col-span-2">{{ lead.date_added }}</dd>
+                        
+                        <dt class="col-span-1 text-[#A1A9B8]">Status:</dt>
+                        <dd class="col-span-2">
+                            <span class="px-2 py-1 rounded-full text-xs
+                                {% if lead.status == 'Contacted' %}bg-blue-900 text-white
+                                {% elif lead.status == 'Replied' %}bg-green-900 text-white
+                                {% elif lead.status == 'Converted' %}bg-purple-900 text-white
+                                {% else %}bg-gray-700 text-white{% endif %}">
+                                {{ lead.status }}
+                            </span>
+                        </dd>
+                    </dl>
                 </div>
-
+                
                 <!-- Verification Status -->
                 <div>
-                    <h2 class="text-xl font-bold text-white mb-4">Verification Status</h2>
-                    <div class="space-y-2">
+                    <h2 class="text-2xl font-bold text-white mb-4">Verification Status</h2>
+                    <div class="grid grid-cols-1 gap-3">
                         <div class="flex items-center">
-                            <span class="w-3 h-3 mr-2 rounded-full {{ 'bg-green-500' if lead.verified else 'bg-red-500' }}"></span>
-                            <span class="text-[#A1A9B8]">Email: {{ "Verified" if lead.verified else "Not Verified" }}</span>
+                            <span class="w-3 h-3 mr-2 rounded-full {{ 'bg-green-500' if lead.verified else 'bg-gray-300' }}"></span>
+                            <span class="text-[#A1A9B8]">Email Verified:</span>
+                            <span class="ml-auto {{ 'text-green-500' if lead.verified else 'text-gray-400' }}">{{ "Yes" if lead.verified else "No" }}</span>
                         </div>
+                        
                         <div class="flex items-center">
-                            <span class="w-3 h-3 mr-2 rounded-full {{ 'bg-green-500' if lead.phone_verified else 'bg-red-500' }}"></span>
-                            <span class="text-[#A1A9B8]">Phone: {{ "Verified" if lead.phone_verified else "Not Verified" }}</span>
+                            <span class="w-3 h-3 mr-2 rounded-full {{ 'bg-green-500' if lead.phone_verified else 'bg-gray-300' }}"></span>
+                            <span class="text-[#A1A9B8]">Phone Verified:</span>
+                            <span class="ml-auto {{ 'text-green-500' if lead.phone_verified else 'text-gray-400' }}">{{ "Yes" if lead.phone_verified else "No" }}</span>
                         </div>
+                        
                         <div class="flex items-center">
-                            <span class="w-3 h-3 mr-2 rounded-full {{ 'bg-green-500' if lead.linkedin_verified else 'bg-red-500' }}"></span>
-                            <span class="text-[#A1A9B8]">LinkedIn: {{ "Verified" if lead.linkedin_verified else "Not Verified" }}</span>
+                            <span class="w-3 h-3 mr-2 rounded-full {{ 'bg-green-500' if lead.linkedin_verified else 'bg-gray-300' }}"></span>
+                            <span class="text-[#A1A9B8]">LinkedIn Verified:</span>
+                            <span class="ml-auto {{ 'text-green-500' if lead.linkedin_verified else 'text-gray-400' }}">{{ "Yes" if lead.linkedin_verified else "No" }}</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Message Section -->
-    <div class="max-w-4xl mx-auto mb-8">
+    
+    <!-- Generated Message -->
+    <div class="max-w-4xl mx-auto space-y-8">
         <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
             <h2 class="text-2xl font-bold text-white mb-4">Personalized Message</h2>
-            <div class="bg-[#0D1321] border border-[#7B00FF] rounded-lg p-4 mb-4">
-                <p class="text-[#A1A9B8] whitespace-pre-line">{{ message }}</p>
+            <p class="text-[#A1A9B8] mb-6">Use this AI-generated message as a starting point for your outreach to this lead.</p>
+            
+            <div class="bg-[#0D1321] border border-[#7B00FF] p-4 rounded-lg">
+                <p class="text-white leading-relaxed">{{ message }}</p>
             </div>
-            <div class="flex space-x-4">
-                <button id="copyBtn" class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF]">Copy to Clipboard</button>
-                <a href="mailto:{{ lead.email }}" class="bg-transparent border border-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#7B00FF]">
-                    Send Email
-                </a>
+            
+            <div class="mt-4 flex gap-4">
+                <button class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF]" onclick="copyToClipboard('message')">Copy Message</button>
+                <button class="border border-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#7B00FF]" onclick="regenerateMessage()">Regenerate</button>
             </div>
         </div>
-    </div>
-
-    <!-- Email Template -->
-    <div class="max-w-4xl mx-auto">
+        
+        <!-- Email Template -->
         <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
             <h2 class="text-2xl font-bold text-white mb-4">Email Template</h2>
-            <div class="bg-[#0D1321] border border-[#7B00FF] rounded-lg p-4 mb-4">
-                <pre class="text-[#A1A9B8] whitespace-pre-line overflow-x-auto">{{ email_template }}</pre>
+            <p class="text-[#A1A9B8] mb-6">Use this template for email outreach to this lead.</p>
+            
+            <div class="bg-[#0D1321] border border-[#7B00FF] p-4 rounded-lg">
+                <pre class="text-white whitespace-pre-wrap font-mono text-sm">{{ email_template }}</pre>
             </div>
-            <div class="flex space-x-4">
-                <button id="copyEmailBtn" class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF]">Copy Email</button>
+            
+            <div class="mt-4 flex gap-4">
+                <button class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF]" onclick="copyToClipboard('email')">Copy Email</button>
+                <button class="border border-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#7B00FF]" onclick="regenerateEmail()">Regenerate</button>
             </div>
+        </div>
+        
+        <!-- Action buttons -->
+        <div class="flex justify-center gap-4">
+            <a href="{{ url_for('dashboard') }}" class="bg-[#7B00FF] text-white px-6 py-3 rounded-lg hover:bg-[#8F00FF]">Back to Dashboard</a>
+            <button class="border border-[#7B00FF] text-white px-6 py-3 rounded-lg hover:bg-[#7B00FF]" onclick="markAsContacted()">Mark as Contacted</button>
         </div>
     </div>
 </div>
 
 <script>
-    document.getElementById('copyBtn').addEventListener('click', function() {
-        const text = document.querySelector('.bg-[#0D1321] p').innerText;
-        navigator.clipboard.writeText(text).then(() => {
-            this.innerText = 'Copied!';
-            setTimeout(() => {
-                this.innerText = 'Copy to Clipboard';
-            }, 2000);
-        });
+function copyToClipboard(type) {
+    const element = document.querySelector(type === 'message' ? '.bg-[#0D1321] p' : '.bg-[#0D1321] pre');
+    const text = element.innerText;
+    
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('Copied to clipboard!');
+    }).catch(err => {
+        console.error('Failed to copy text: ', err);
     });
+}
 
-    document.getElementById('copyEmailBtn').addEventListener('click', function() {
-        const text = document.querySelector('.bg-[#0D1321] pre').innerText;
-        navigator.clipboard.writeText(text).then(() => {
-            this.innerText = 'Copied!';
+function showToast(message) {
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = 'fixed bottom-4 right-4 bg-[#7B00FF] text-white px-4 py-2 rounded-lg shadow-lg transition-opacity duration-300';
+    toast.innerText = message;
+    
+    // Add to document
+    document.body.appendChild(toast);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 300);
+    }, 3000);
+}
+
+function regenerateMessage() {
+    window.location.reload();
+}
+
+function regenerateEmail() {
+    window.location.reload();
+}
+
+function markAsContacted() {
+    const leadId = "{{ lead.id }}";
+    fetch(`/mark_lead_contacted/${leadId}`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Lead marked as contacted!');
             setTimeout(() => {
-                this.innerText = 'Copy Email';
-            }, 2000);
-        });
+                window.location.href = "{{ url_for('dashboard') }}";
+            }, 1500);
+        } else {
+            showToast('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('An error occurred');
     });
+}
 </script>
 
 <style>
-    @keyframes fade-in {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .animate-fade-in {
-        animation: fade-in 0.5s ease-out;
-        animation-fill-mode: both;
-    }
+@keyframes fade-in {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+    animation: fade-in 0.5s ease-out;
+    animation-fill-mode: both;
+}
 </style>
 {% endblock %}
