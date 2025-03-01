@@ -1,3 +1,4 @@
+
 {% extends "base.html" %}
 {% block title %}Leadzap - AI-Powered Lead Generation{% endblock %}
 {% block content %}
@@ -5,8 +6,8 @@
     <!-- Hero Section -->
     <section class="bg-gradient-to-b from-[#0D1321] to-[#1E2A44] h-[800px] flex items-center justify-center text-center animate-fade-in">
         <div class="max-w-4xl mx-auto px-4">
-            <h1 class="text-6xl font-bold text-white mb-6">Leadzap: AI-Powered Leads for Anyone</h1>
-            <p class="text-2xl text-[#A1A9B8] italic mb-8">50–600 Leads Delivered Fast, Starting at $499</p>
+            <h1 class="text-6xl font-bold text-white mb-6">Leadzap: AI-Powered Lead Generation That Converts</h1>
+            <p class="text-2xl text-[#A1A9B8] italic mb-8">Precision-targeted leads delivered to your inbox, starting at $499</p>
             <a href="{{ url_for('pricing') }}" class="bg-[#7B00FF] text-white px-10 py-4 rounded-lg text-xl font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">
                 Launch Your Leads
             </a>
@@ -24,102 +25,139 @@
                 <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
                     <div class="flex justify-center mb-4">
                         <svg class="w-12 h-12 text-[#7B00FF] animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <circle cx="12" cy="12" r="10"/>
-                            <circle cx="12" cy="12" r="6"/>
-                            <circle cx="12" cy="12" r="2"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                         </svg>
                     </div>
-                    <h3 class="text-xl font-bold text-center text-white mb-4">Precision Targeting</h3>
-                    <p class="text-[#A1A9B8] text-center">AI finds leads that fit your exact niche—no more guesswork.</p>
+                    <h3 class="text-xl font-bold text-center text-white mb-4">AI-Powered Precision</h3>
+                    <p class="text-[#A1A9B8] text-center">Our AI finds leads that match your exact target audience—no more wasted outreach.</p>
                 </div>
                 <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
                     <div class="flex justify-center mb-4">
                         <svg class="w-12 h-12 text-[#7B00FF] animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M3 8l9-6 9 6v8l-9 6-9-6V8z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
                     </div>
-                    <h3 class="text-xl font-bold text-center text-white mb-4">Automated Outreach</h3>
-                    <p class="text-[#A1A9B8] text-center">Emails, LinkedIn, SMS—AI handles it all, so you don't have to.</p>
+                    <h3 class="text-xl font-bold text-center text-white mb-4">Verified Contacts</h3>
+                    <p class="text-[#A1A9B8] text-center">Every lead is verified with working contact information so you only reach real prospects.</p>
                 </div>
                 <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
                     <div class="flex justify-center mb-4">
                         <svg class="w-12 h-12 text-[#7B00FF] animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 20V10M18 20V4M6 20v-4"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                         </svg>
                     </div>
-                    <h3 class="text-xl font-bold text-center text-white mb-4">Smart Scoring</h3>
-                    <p class="text-[#A1A9B8] text-center">AI ranks your leads—focus on the best, close faster.</p>
+                    <h3 class="text-xl font-bold text-center text-white mb-4">Multi-Channel Outreach</h3>
+                    <p class="text-[#A1A9B8] text-center">Automated email, LinkedIn, and SMS outreach with personalized messaging that converts.</p>
                 </div>
             </div>
         </div>
     </section>
 
+    <!-- How It Works -->
     <section class="py-16 bg-gradient-to-b from-[#0D1321] to-[#1E2A44]">
         <div class="max-w-6xl mx-auto px-4">
-            <h2 class="text-3xl font-bold text-center text-white mb-12">How We Zap Your Leads</h2>
+            <h2 class="text-3xl font-bold text-center text-white mb-12">How Leadzap Works</h2>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
                     <div class="flex justify-center mb-4">
                         <svg class="w-14 h-14 text-[#7B00FF] animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                         </svg>
                     </div>
-                    <p class="text-[#A1A9B8] text-center">1. Define Your Niche: Tell us your target—plumbers, SaaS execs, anyone.</p>
+                    <p class="text-[#A1A9B8] text-center">1. Define Your Ideal Customer—tell us exactly who you want to target</p>
                 </div>
                 <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
                     <div class="flex justify-center mb-4">
                         <svg class="w-14 h-14 text-[#7B00FF] animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
                         </svg>
                     </div>
-                    <p class="text-[#A1A9B8] text-center">2. AI Scrapes Leads: Our AI hunts across the web—Yellow Pages, LinkedIn, more.</p>
+                    <p class="text-[#A1A9B8] text-center">2. Our AI Finds Matches—searching multiple data sources across the web</p>
                 </div>
                 <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
                     <div class="flex justify-center mb-4">
                         <svg class="w-14 h-14 text-[#7B00FF] animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M3 8l9-6 9 6v8l-9 6-9-6V8z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
                     </div>
-                    <p class="text-[#A1A9B8] text-center">3. Automated Outreach: Personalized emails, LinkedIn DMs—sent for you.</p>
+                    <p class="text-[#A1A9B8] text-center">3. We Verify Every Lead—ensuring accurate contact information</p>
                 </div>
                 <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
                     <div class="flex justify-center mb-4">
                         <svg class="w-14 h-14 text-[#7B00FF] animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76"/>
                         </svg>
                     </div>
-                    <p class="text-[#A1A9B8] text-center">4. Leads Delivered: CSV, email, dashboard—daily or weekly, your call.</p>
+                    <p class="text-[#A1A9B8] text-center">4. Leads Delivered To You—via dashboard, email, or CSV export</p>
                 </div>
             </div>
         </div>
     </section>
 
+    <!-- Testimonials -->
     <section class="py-16 bg-[#0D1321]">
         <div class="max-w-6xl mx-auto px-4">
             <h2 class="text-3xl font-bold text-center text-white mb-12">What Our Clients Say</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
-                    <p class="text-[#A1A9B8] text-base italic mb-4">"Leadzap doubled my pipeline in 30 days—game-changer for my SaaS."</p>
-                    <p class="text-white text-sm font-bold">—Jane, SaaS Founder</p>
+                    <p class="text-[#A1A9B8] text-base italic mb-4">"Leadzap doubled my pipeline in 30 days—it's been a complete game-changer for my SaaS business."</p>
+                    <p class="text-white text-sm font-bold">—Jane Smith, SaaS Founder</p>
                 </div>
                 <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
-                    <p class="text-[#A1A9B8] text-base italic mb-4">"50 leads in a week—closed 5 deals already. Worth every penny."</p>
-                    <p class="text-white text-sm font-bold">—Mike, Plumber</p>
+                    <p class="text-[#A1A9B8] text-base italic mb-4">"50 high-quality leads in a week—I've already closed 5 deals. Worth every penny."</p>
+                    <p class="text-white text-sm font-bold">—Mike Johnson, Plumber</p>
                 </div>
                 <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
-                    <p class="text-[#A1A9B8] text-base italic mb-4">"AI scoring is legit—focused on the best leads, saved hours."</p>
-                    <p class="text-white text-sm font-bold">—Alex, Gym Owner</p>
+                    <p class="text-[#A1A9B8] text-base italic mb-4">"The AI scoring is legit—I focus only on the best leads and have saved countless hours."</p>
+                    <p class="text-white text-sm font-bold">—Alex Chen, Gym Owner</p>
                 </div>
             </div>
         </div>
     </section>
 
+    <!-- Tech Stack -->
+    <section class="py-16 bg-gradient-to-b from-[#0D1321] to-[#1E2A44]">
+        <div class="max-w-6xl mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center text-white mb-12">Powered By Advanced Technology</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+                    <div class="flex justify-center mb-4">
+                        <svg class="w-12 h-12 text-[#7B00FF] animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-center text-white mb-4">Machine Learning</h3>
+                    <p class="text-[#A1A9B8] text-center">Our lead scoring algorithms predict which prospects are most likely to convert.</p>
+                </div>
+                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+                    <div class="flex justify-center mb-4">
+                        <svg class="w-12 h-12 text-[#7B00FF] animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-center text-white mb-4">Multi-Source Data</h3>
+                    <p class="text-[#A1A9B8] text-center">We integrate with multiple platforms to find the perfect leads for your business.</p>
+                </div>
+                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+                    <div class="flex justify-center mb-4">
+                        <svg class="w-12 h-12 text-[#7B00FF] animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-center text-white mb-4">Enterprise Security</h3>
+                    <p class="text-[#A1A9B8] text-center">All your lead data is protected with bank-level encryption and security.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
     <section class="py-16 text-center bg-[#0D1321]">
         <div class="max-w-4xl mx-auto px-4">
-            <h2 class="text-3xl font-bold text-white">Ready to Zap Your Leads?</h2>
-            <p class="text-lg text-[#A1A9B8] mb-8">Start with a $499 pilot or scale to $5,999 domination—grow your business today.</p>
+            <h2 class="text-3xl font-bold text-white mb-4">Ready to Transform Your Lead Generation?</h2>
+            <p class="text-lg text-[#A1A9B8] mb-8">Start with a $499 pilot or scale to $5,999 for enterprise-level lead generation.</p>
             <a href="{{ url_for('pricing') }}" class="bg-[#7B00FF] text-white px-10 py-4 rounded-lg text-xl font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">
-                Get Started
+                Get Started Today
             </a>
         </div>
     </section>
