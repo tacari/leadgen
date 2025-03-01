@@ -1160,23 +1160,31 @@ def update_account_info():
         email = request.form.get('email', '').strip()
 
         # Validate email format
-        if not '@' in email or not '.' in email:
+        if email and (not '@' in email or not '.' in email):
             flash('Invalid email format.')
+            return redirect(url_for('settings'))
+
+        # Create update data - only include fields that have values
+        update_data = {}
+        if name:
+            update_data['name'] = name
+        if email:
+            update_data['email'] = email
+            
+        if not update_data:
+            flash('No changes were made.')
             return redirect(url_for('settings'))
 
         # Update in Supabase
         try:
-            supabase.table('users').update({
-                'name': name,
-                'email': email
-            }).eq('id', user_id).execute()
+            supabase.table('users').update(update_data).eq('id', user_id).execute()
 
             # Update session username if name was provided
             if name:
                 session['username'] = name
                 session.modified = True
 
-            logger.info(f"Updated account info for user {user_id}: name={name}, email={email}")
+            logger.info(f"Updated account info for user {user_id}: {update_data}")
         except Exception as e:
             logger.error(f"Error updating account info in Supabase: {str(e)}")
             # Fallback to file storage
@@ -1186,11 +1194,12 @@ def update_account_info():
 
                 for user in users:
                     if user.get('id') == user_id:
-                        user['name'] = name
-                        user['email'] = email
-                        # Update username in file if name was provided
                         if name:
+                            user['name'] = name
+                            # Update username in file if name was provided
                             user['username'] = name
+                        if email:
+                            user['email'] = email
                         break
 
                 with open('data/users.json', 'w') as f:
