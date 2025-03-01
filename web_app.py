@@ -545,78 +545,94 @@ def download_leads():
 
 @app.route('/analytics')
 def analytics():
-    # Sample analytics data for development
-    leads = [
-        {
-            'date_added': '2025-02-25',
-            'leads_added': 10,
-            'emailed': 8,
-            'replies': 2,
-            'conversions': 1,
-            'avg_score': 82,
-            'source': 'LinkedIn'
-        },
-        {
-            'date_added': '2025-02-24',
-            'leads_added': 15,
-            'emailed': 12,
-            'replies': 3,
-            'conversions': 1,
-            'avg_score': 78,
-            'source': 'Yellow Pages'
-        }
-    ]
+    if 'user_id' not in session:
+        flash('Please log in to view analytics.')
+        return redirect(url_for('login'))
+        
+    try:
+        # Sample analytics data for development
+        leads = [
+            {
+                'date_added': '2025-02-25',
+                'leads_added': 10,
+                'emailed': 8,
+                'replies': 2,
+                'conversions': 1,
+                'avg_score': 82,
+                'source': 'LinkedIn'
+            },
+            {
+                'date_added': '2025-02-24',
+                'leads_added': 15,
+                'emailed': 12,
+                'replies': 3,
+                'conversions': 1,
+                'avg_score': 78,
+                'source': 'Yellow Pages'
+            }
+        ]
 
-    analytics = {
-        'total_leads': 25,
-        'emailed': 20,
-        'replies': 5,
-        'conversions': 2,
-        'charts': {
-            'daily': [10, 15],
-            'dates': ['Feb 24', 'Feb 25'],
-            'status': {
-                'labels': ['Pending', 'Emailed', 'Replied', 'Converted'],
-                'data': [5, 15, 3, 2]
+        analytics = {
+            'total_leads': 25,
+            'emailed': 20,
+            'replies': 5,
+            'conversions': 2,
+            'charts': {
+                'daily': [10, 15],
+                'dates': ['Feb 24', 'Feb 25'],
+                'status': {
+                    'labels': ['Pending', 'Emailed', 'Replied', 'Converted'],
+                    'data': [5, 15, 3, 2]
+                }
             }
         }
-    }
 
-    # Calculate source insights
-    sources = {}
-    for lead in leads:
-        source = lead['source']
-        if source not in sources:
-            sources[source] = {'count': 0, 'high_score_leads': 0, 'total_score': 0}
-        sources[source]['count'] += lead['leads_added']
-        sources[source]['high_score_leads'] += lead['leads_added'] if lead['avg_score'] > 75 else 0
-        sources[source]['total_score'] += lead['avg_score'] * lead['leads_added']
+        # Calculate source insights
+        sources = {}
+        for lead in leads:
+            source = lead['source']
+            if source not in sources:
+                sources[source] = {'count': 0, 'high_score_leads': 0, 'total_score': 0}
+            sources[source]['count'] += lead['leads_added']
+            sources[source]['high_score_leads'] += lead['leads_added'] if lead['avg_score'] > 75 else 0
+            sources[source]['total_score'] += lead['avg_score'] * lead['leads_added']
 
-    source_insights = {}
-    for source, data in sources.items():
-        avg_score = data['total_score'] / data['count'] if data['count'] > 0 else 0
-        high_score_percent = (data['high_score_leads'] / data['count'] * 100) if data['count'] > 0 else 0
-        source_insights[source] = {
-            'count': data['count'],
-            'avg_score': round(avg_score, 1),
-            'high_score_percent': round(high_score_percent, 1)
+        source_insights = {}
+        for source, data in sources.items():
+            avg_score = data['total_score'] / data['count'] if data['count'] > 0 else 0
+            high_score_percent = (data['high_score_leads'] / data['count'] * 100) if data['count'] > 0 else 0
+            source_insights[source] = {
+                'count': data['count'],
+                'avg_score': round(avg_score, 1),
+                'high_score_percent': round(high_score_percent, 1)
+            }
+
+        # Top source is the one with highest high_score_percent
+        top_source = max(source_insights.items(), key=lambda x: x[1]['high_score_percent']) if source_insights else ('None', {'high_score_percent': 0})
+        best_day_lead = max(leads, key=lambda x: x['leads_added']) if leads else {'date_added': 'No data', 'leads_added': 0, 'avg_score': 0}
+
+        insights = {
+            'top_source': f"{top_source[0]} ({top_source[1]['high_score_percent']}% high-score)",
+            'best_day': f"{best_day_lead['date_added']} ({best_day_lead['leads_added']} leads, {best_day_lead['avg_score']} avg score)",
+            'conversion_rate': round((analytics['conversions'] / analytics['total_leads']) * 100, 1) if analytics['total_leads'] > 0 else 0
         }
 
-    # Top source is the one with highest high_score_percent
-    top_source = max(source_insights.items(), key=lambda x: x[1]['high_score_percent'])
-    best_day_lead = max(leads, key=lambda x: x['leads_added'])
+        # Add ML stats
+        stats = {
+            'total': analytics['total_leads'],
+            'high_score': sum(1 for lead in leads if lead.get('avg_score', 0) > 75) if leads else 0
+        }
 
-    insights = {
-        'top_source': f"{top_source[0]} ({top_source[1]['high_score_percent']}% high-score)",
-        'best_day': f"{best_day_lead['date_added']} ({best_day_lead['leads_added']} leads, {best_day_lead['avg_score']} avg score)",
-        'conversion_rate': round((analytics['conversions'] / analytics['total_leads']) * 100, 1)
-    }
-
-    return render_template('analytics.html',
-                         analytics=analytics,
-                         leads=leads,
-                         insights=insights,
-                         source_insights=source_insights)
+        return render_template('analytics.html',
+                            analytics=analytics,
+                            leads=leads,
+                            insights=insights,
+                            source_insights=source_insights,
+                            stats=stats)
+    except Exception as e:
+        logger.error(f"Error rendering analytics page: {str(e)}")
+        flash(f"Error loading analytics. Please try again.")
+        return redirect(url_for('dashboard'))
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
