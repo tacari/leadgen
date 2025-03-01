@@ -980,6 +980,13 @@ def settings():
         hubspot_api_key = user_data.get('hubspot_api_key', '')
         slack_webhook_url = user_data.get('slack_webhook_url', '')
 
+        # Create user notifications dummy data for template
+        user_notifications = {
+            'new_leads': True,
+            'weekly_summary': True,
+            'support_updates': False
+        }
+
         return render_template(
             'settings.html', 
             username=session.get('username', 'User'),
@@ -987,10 +994,11 @@ def settings():
             api_key=api_key,
             package=package,
             hubspot_api_key=hubspot_api_key,
-            slack_webhook_url=slack_webhook_url
+            slack_webhook_url=slack_webhook_url,
+            user={'notifications': user_notifications}
         )
     except Exception as e:
-        logging.error(f"Error loading settings: {str(e)}")
+        logger.error(f"Error loading settings: {str(e)}")
         flash(f'An error occurred: {str(e)}', 'error')
         return redirect(url_for('dashboard'))
 

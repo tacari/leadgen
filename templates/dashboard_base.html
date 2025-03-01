@@ -59,7 +59,53 @@
     </div>
 
     <!-- Content -->
-    <div class="mt-20">
+    <div class="fixed top-0 left-0 right-0 z-50 bg-[#0D1321] border-b border-[#7B00FF]">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <span class="text-[#7B00FF] text-xl font-bold">LeadZap</span>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="{{ url_for('dashboard') }}" class="text-white hover:text-[#7B00FF] px-3 py-2 text-sm font-medium">Dashboard</a>
+                        <a href="{{ url_for('lead_history') }}" class="text-white hover:text-[#7B00FF] px-3 py-2 text-sm font-medium">Lead History</a>
+                        <a href="{{ url_for('analytics') }}" class="text-white hover:text-[#7B00FF] px-3 py-2 text-sm font-medium">Analytics</a>
+                        <a href="{{ url_for('settings') }}" class="text-white hover:text-[#7B00FF] px-3 py-2 text-sm font-medium">Settings</a>
+                        <a href="{{ url_for('generate_custom_leads') }}" class="text-white hover:text-[#7B00FF] px-3 py-2 text-sm font-medium">Generate Leads</a>
+                        <a href="{{ url_for('support') }}" class="text-white hover:text-[#7B00FF] px-3 py-2 text-sm font-medium">Support</a>
+                    </div>
+                </div>
+                <div class="hidden sm:ml-6 sm:flex sm:items-center">
+                    <div class="ml-3 relative">
+                        <div class="flex items-center">
+                            <span class="text-white mr-2">{{ username }}</span>
+                            <a href="{{ url_for('logout') }}" class="text-white hover:text-[#7B00FF] px-3 py-2 text-sm font-medium">Logout</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center sm:hidden">
+                    <button id="hamburger" class="inline-flex items-center justify-center p-2 rounded-md text-white hover:text-[#7B00FF] focus:outline-none">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="mobile-menu" class="sm:hidden hidden">
+            <div class="pt-2 pb-3 space-y-1">
+                <a href="{{ url_for('dashboard') }}" class="text-white hover:text-[#7B00FF] block px-3 py-2 text-base font-medium">Dashboard</a>
+                <a href="{{ url_for('lead_history') }}" class="text-white hover:text-[#7B00FF] block px-3 py-2 text-base font-medium">Lead History</a>
+                <a href="{{ url_for('analytics') }}" class="text-white hover:text-[#7B00FF] block px-3 py-2 text-base font-medium">Analytics</a>
+                <a href="{{ url_for('settings') }}" class="text-white hover:text-[#7B00FF] block px-3 py-2 text-base font-medium">Settings</a>
+                <a href="{{ url_for('generate_custom_leads') }}" class="text-white hover:text-[#7B00FF] block px-3 py-2 text-base font-medium">Generate Leads</a>
+                <a href="{{ url_for('support') }}" class="text-white hover:text-[#7B00FF] block px-3 py-2 text-base font-medium">Support</a>
+                <a href="{{ url_for('logout') }}" class="text-white hover:text-[#7B00FF] block px-3 py-2 text-base font-medium">Logout</a>
+            </div>
+        </div>
+    </div>
+
+<div class="mt-20">
         {% block content %}{% endblock %}
     </div>
 
