@@ -46,6 +46,18 @@ def terminate_port_process(port):
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key')
 
+# Add current_user to all template contexts
+@app.context_processor
+def inject_user():
+    class User:
+        is_authenticated = False
+        
+    current_user = User()
+    if 'user_id' in session:
+        current_user.is_authenticated = True
+        
+    return {'current_user': current_user, 'user': session.get('username')}
+
 # Initialize Supabase client
 supabase_url = os.environ.get('SUPABASE_URL')
 supabase_key = os.environ.get('SUPABASE_KEY')
@@ -390,7 +402,15 @@ def about():
 
 @app.route('/contact')
 def contact():
-    return render_template('contact.html')
+    # Create a mock current_user object for templates
+    class User:
+        is_authenticated = False
+        
+    current_user = User()
+    if 'user_id' in session:
+        current_user.is_authenticated = True
+        
+    return render_template('contact.html', current_user=current_user)
 
 @app.route('/pricing')
 def pricing():

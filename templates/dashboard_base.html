@@ -7,6 +7,34 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
+<body>
+    <div class="min-h-screen bg-[#0D1321] text-white">
+        <!-- Navigation -->
+        <nav class="bg-[#1A2236] border-b border-[#7B00FF] px-6 py-4">
+            <div class="container mx-auto flex justify-between items-center">
+                <a href="{{ url_for('dashboard') }}" class="text-2xl font-bold flex items-center">
+                    <span class="w-8 h-8 rounded-full bg-[#7B00FF] flex items-center justify-center mr-2">LZ</span>
+                    Leadzap
+                </a>
+                <div class="flex items-center space-x-6">
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('dashboard') }}" class="hover:text-[#7B00FF]">Dashboard</a>
+                        <a href="{{ url_for('lead_history') }}" class="hover:text-[#7B00FF]">Lead History</a>
+                        <a href="{{ url_for('analytics') }}" class="hover:text-[#7B00FF]">Analytics</a>
+                        <a href="{{ url_for('settings') }}" class="hover:text-[#7B00FF]">Settings</a>
+                        <a href="{{ url_for('support') }}" class="hover:text-[#7B00FF]">Support</a>
+                        <a href="{{ url_for('logout') }}" class="hover:text-[#7B00FF]">Logout</a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="hover:text-[#7B00FF]">Login</a>
+                        <a href="{{ url_for('signup') }}" class="hover:text-[#7B00FF]">Sign Up</a>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+        
+        {% block content %}{% endblock %}
+    </div>
+</body>
 <body class="bg-[#0D1321] text-white">
     <!-- Dashboard Navbar -->
     <nav class="fixed top-0 w-full bg-[#0D1321] bg-opacity-95 border-b border-[#7B00FF] h-20 flex items-center justify-between px-6 z-10">
