@@ -4,7 +4,7 @@ modules = ["python-3.11", "python3.11"]
 channel = "stable-24_05"
 
 [workflows]
-runButton = "Flask Server"
+runButton = "Run"
 
 [[workflows.workflow]]
 name = "Project"
@@ -29,6 +29,14 @@ task = "packager.installForAll"
 task = "shell.exec"
 args = "python web_app.py"
 waitForPort = 5000
+
+[[workflows.workflow]]
+name = "Run"
+author = 39914629
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python web_app.py"
 
 [deployment]
 run = ["sh", "-c", "python web_app.py"]
