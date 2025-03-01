@@ -1082,6 +1082,53 @@ def update_crm_settings():
         flash(f'An error occurred: {str(e)}', 'error')
         return redirect(url_for('settings'))
 
+@app.route('/update_competitor_settings', methods=['POST'])
+def update_competitor_settings():
+    if 'user_id' not in session:
+        flash('Please log in to update competitor settings.')
+        return redirect(url_for('login'))
+
+    try:
+        user_id = session.get('user_id')
+        competitor_urls = request.form.get('competitor_urls', '').splitlines()
+        competitor_urls = [url.strip() for url in competitor_urls if url.strip()]
+
+        # Update in Supabase
+        try:
+            supabase.table('users').update({
+                'competitor_urls': competitor_urls
+            }).eq('id', user_id).execute()
+
+            logger.info(f"Updated competitor URLs for user {user_id}: {competitor_urls}")
+        except Exception as e:
+            logger.error(f"Error updating competitor URLs in Supabase: {str(e)}")
+            # Fallback to file storage
+            try:
+                with open('data/users.json', 'r') as f:
+                    users = json.load(f)
+
+                for user in users:
+                    if user.get('id') == user_id:
+                        user['competitor_urls'] = competitor_urls
+                        break
+
+                with open('data/users.json', 'w') as f:
+                    json.dump(users, f, indent=2)
+
+                logger.info(f"Updated competitor URLs in file for user {user_id}")
+            except Exception as file_e:
+                logger.error(f"Error updating competitor URLs in file: {str(file_e)}")
+                flash('Error updating competitor settings. Please try again.')
+                return redirect(url_for('settings'))
+
+        flash('Competitor settings updated successfully!')
+        return redirect(url_for('settings'))
+
+    except Exception as e:
+        logger.error(f"Error in update_competitor_settings: {str(e)}")
+        flash(f'An error occurred: {str(e)}', 'error')
+        return redirect(url_for('settings'))
+
 @app.route('/support', methods=['GET', 'POST'])
 def support():
     try:
@@ -1343,55 +1390,6 @@ def success():
         # Calculate lead volume based on package
         lead_volumes = {
             'launch': 50,
-
-
-@app.route('/update_competitor_settings', methods=['POST'])
-def update_competitor_settings():
-    if 'user_id' not in session:
-        flash('Please log in to update competitor settings.')
-        return redirect(url_for('login'))
-
-    try:
-        user_id = session.get('user_id')
-        competitor_urls = request.form.get('competitor_urls', '').splitlines()
-        competitor_urls = [url.strip() for url in competitor_urls if url.strip()]
-
-        # Update in Supabase
-        try:
-            supabase.table('users').update({
-                'competitor_urls': competitor_urls
-            }).eq('id', user_id).execute()
-
-            logger.info(f"Updated competitor URLs for user {user_id}: {competitor_urls}")
-        except Exception as e:
-            logger.error(f"Error updating competitor URLs in Supabase: {str(e)}")
-            # Fallback to file storage
-            try:
-                with open('data/users.json', 'r') as f:
-                    users = json.load(f)
-
-                for user in users:
-                    if user.get('id') == user_id:
-                        user['competitor_urls'] = competitor_urls
-                        break
-
-                with open('data/users.json', 'w') as f:
-                    json.dump(users, f, indent=2)
-
-                logger.info(f"Updated competitor URLs in file for user {user_id}")
-            except Exception as file_e:
-                logger.error(f"Error updating competitor URLs in file: {str(file_e)}")
-                flash('Error updating competitor settings. Please try again.')
-                return redirect(url_for('settings'))
-
-        flash('Competitor settings updated successfully!')
-        return redirect(url_for('settings'))
-
-    except Exception as e:
-        logger.error(f"Error in update_competitor_settings: {str(e)}")
-        flash(f'An error occurred: {str(e)}', 'error')
-        return redirect(url_for('settings'))
-
             'engine': 150,
             'accelerator': 300,
             'empire': 600
