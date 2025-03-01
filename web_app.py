@@ -1004,6 +1004,48 @@ def settings():
 
 @app.route('/update_crm_settings', methods=['POST'])
 def update_crm_settings():
+    if 'user_id' not in session:
+        flash('You must be logged in to update settings', 'error')
+        return redirect(url_for('login'))
+    
+    try:
+        # Get form data
+        hubspot_api_key = request.form.get('hubspot_api_key', '')
+        slack_webhook_url = request.form.get('slack_webhook_url', '')
+        
+        # Update user settings in database
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Check if settings already exist for user
+        cur.execute("SELECT id FROM user_settings WHERE user_id = %s", (session['user_id'],))
+        settings_exist = cur.fetchone()
+        
+        if settings_exist:
+            # Update existing settings
+            cur.execute("""
+                UPDATE user_settings 
+                SET hubspot_api_key = %s, slack_webhook_url = %s
+                WHERE user_id = %s
+            """, (hubspot_api_key, slack_webhook_url, session['user_id']))
+        else:
+            # Insert new settings
+            cur.execute("""
+                INSERT INTO user_settings (user_id, hubspot_api_key, slack_webhook_url)
+                VALUES (%s, %s, %s)
+            """, (session['user_id'], hubspot_api_key, slack_webhook_url))
+        
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        flash('CRM settings updated successfully', 'success')
+        return redirect(url_for('settings'))
+    except Exception as e:
+        logger.error(f"Error updating CRM settings: {str(e)}")
+        flash(f'An error occurred: {str(e)}', 'error')
+        return redirect(url_for('settings'))])
+def update_crm_settings():
     try:
         if 'user_id' not in session:
             return redirect(url_for('login'))
