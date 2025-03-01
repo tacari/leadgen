@@ -56,7 +56,11 @@ def inject_user():
     if 'user_id' in session:
         current_user.is_authenticated = True
         
-    return {'current_user': current_user, 'user': session.get('username')}
+    return {
+        'current_user': current_user, 
+        'user': session.get('username'),
+        'username': session.get('username')
+    }
 
 # Initialize Supabase client
 supabase_url = os.environ.get('SUPABASE_URL')

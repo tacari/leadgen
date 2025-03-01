@@ -71,7 +71,7 @@
                             <td class="p-3">{{ lead.name }}</td>
                             <td class="p-3">{{ lead.email }}</td>
                             <td class="p-3">
-                                <span class="px-2 py-1 rounded {% if lead.source == 'LinkedIn' %}bg-blue-900{% elif lead.source == 'Google Maps' %}bg-green-900{% elif lead.source == 'Yellow Pages' %}bg-yellow-900{% else %}bg-gray-900{% endif %}">
+                                <span class="px-2 py-1 rounded {% if lead.source == 'LinkedIn' %}bg-blue-900{% elif lead.source == 'Google Maps' %}bg-green-900{% elif lead.source == 'Yellow Pages' %}bg-yellow-900{% elif lead.source == 'Competitor' %}bg-purple-900{% else %}bg-gray-900{% endif %}">
                                     {{ lead.source }}
                                 </span>
                                 {% if lead.competitor_source %}
