@@ -349,7 +349,7 @@ def send_lead_email(user_id, package_name):
                     <div style="margin-top: 30px; padding: 20px; border-top: 1px solid #eee;">
                         <p style="color: #666; font-size: 12px;">
                             Your leads are attached in CSV format for easy import into your CRM.
-                            {f'<br><br><strong>Pro Tip:</strong> We\'ve included leads from your competitors\' websites to give you an edge!' if competitor_leads_count > 0 and package_name.lower() != 'launch' else ''}
+                            {f'<br><br><strong>Pro Tip:</strong> We have included leads from your competitors websites to give you an edge!' if competitor_leads_count > 0 and package_name.lower() != 'launch' else ''}
                         </p>
                     </div>
                 </div>
