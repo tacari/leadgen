@@ -51,11 +51,11 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key')
 def inject_user():
     class User:
         is_authenticated = False
-        
+
     current_user = User()
     if 'user_id' in session:
         current_user.is_authenticated = True
-        
+
     return {
         'current_user': current_user, 
         'user': session.get('username'),
@@ -219,7 +219,7 @@ def score_lead(lead_data):
     try:
         # Try using ML model for scoring
         from ml_engine import lead_model
-        
+
         # Use ML model if it's ready (singleton)
         if lead_model.pipeline is not None:
             # Get ML prediction for this lead
@@ -228,9 +228,9 @@ def score_lead(lead_data):
                 return ml_scores[0]
     except Exception as e:
         logger.error(f"ML scoring error: {str(e)}. Falling back to rule-based scoring.")
-    
+
     # Fallback to rule-based scoring if ML fails
-    
+
     # Start with a baseline score
     score = 50
 
@@ -430,11 +430,11 @@ def contact():
     # Create a mock current_user object for templates
     class User:
         is_authenticated = False
-        
+
     current_user = User()
     if 'user_id' in session:
         current_user.is_authenticated = True
-        
+
     return render_template('contact.html', current_user=current_user)
 
 @app.route('/pricing')
@@ -454,7 +454,8 @@ def lead_history():
             'status': 'Emailed',
             'date_added': '2025-02-25',
             'notes': 'Called 2/26',
-            'outcome': 'Meeting scheduled'
+            'outcome': 'Meeting scheduled',
+            'conversion_probability': 65.5
         },
         {
             'name': "Sarah's Dental",
@@ -464,7 +465,8 @@ def lead_history():
             'status': 'Pending',
             'date_added': '2025-02-24',
             'notes': 'High priority lead',
-            'outcome': 'Pending contact'
+            'outcome': 'Pending contact',
+            'conversion_probability': 78.2
         },
         {
             'name': "Tech Solutions Inc",
@@ -474,7 +476,8 @@ def lead_history():
             'status': 'Replied',
             'date_added': '2025-02-23',
             'notes': 'Interested in Enterprise plan',
-            'outcome': 'In negotiations'
+            'outcome': 'In negotiations',
+            'conversion_probability': 45.8
         }
     ]
 
@@ -548,7 +551,7 @@ def analytics():
     if 'user_id' not in session:
         flash('Please log in to view analytics.')
         return redirect(url_for('login'))
-        
+
     try:
         # Sample analytics data for development
         leads = [
@@ -807,6 +810,7 @@ def login():
                         session['user_id'] = user.get('id', f"local_{datetime.now().strftime('%Y%m%d%H%M%S')}")
                         session['username'] = user.get('username', email.split('@')[0])
                         session.modified = True
+True
                         flash('Successfully logged in!')
                         logger.info(f"File-based login successful for {email}")
                         return redirect(url_for('dashboard'))
@@ -1850,7 +1854,7 @@ if __name__ == '__main__':
             days=7,  # Run weekly
             next_run_time=datetime.now() + timedelta(minutes=5)  # Start after 5 minutes
         )
-        
+
         # Schedule lead prediction updates
         scheduler.add_job(
             id='lead_prediction_update',
@@ -1871,7 +1875,7 @@ if __name__ == '__main__':
         # Use a higher range of ports to avoid conflicts
         ports = [8080, 8000, 5000, 3000]
         port_to_use = None
-        
+
         for port in ports:
             try:
                 # Try to terminate any process on this port first
@@ -1886,10 +1890,10 @@ if __name__ == '__main__':
             except Exception as port_e:
                 logger.error(f"Couldn't use port {port}: {str(port_e)}")
                 continue
-        
+
         if not port_to_use:
             port_to_use = 8080  # Default fallback
-            
+
         logger.info(f"Starting Flask server on port {port_to_use}")
         app.run(host='0.0.0.0', port=port_to_use, debug=True)
     except Exception as e:
@@ -1903,23 +1907,23 @@ def train_ml_model():
     if 'user_id' not in session:
         flash('Please log in to access this feature.')
         return redirect(url_for('login'))
-        
+
     try:
         from ml_engine import lead_model
-        
+
         # Train the model with database connection
         conn = psycopg2.connect(os.environ['DATABASE_URL'])
         success = lead_model.train_from_database(conn)
-        
+
         if success:
             # Update lead predictions with new model
             updated_count = lead_model.update_lead_predictions(conn)
             flash(f'Machine learning models trained successfully! Updated {updated_count} lead predictions.', 'success')
         else:
             flash('Not enough data to train the model yet. Keep adding leads with status updates.', 'warning')
-            
+
         return redirect(url_for('analytics'))
-        
+
     except Exception as e:
         logger.error(f"Error training ML model: {str(e)}")
         flash(f'Error training model: {str(e)}', 'error')
@@ -1931,17 +1935,17 @@ def generate_message(lead_id):
     if 'user_id' not in session:
         flash('Please log in to access this feature.')
         return redirect(url_for('login'))
-    
+
     try:
         user_id = session.get('user_id')
-        
+
         # Get lead data from database
         try:
             lead_data = supabase.table('leads').select('*').eq('id', lead_id).eq('user_id', user_id).execute()
             if not lead_data.data:
                 flash('Lead not found or you do not have permission to access it.')
                 return redirect(url_for('dashboard'))
-            
+
             lead = lead_data.data[0]
         except Exception as db_e:
             logger.error(f"Database error in generate_message: {str(db_e)}")
@@ -1960,18 +1964,18 @@ def generate_message(lead_id):
                 'status': 'New',
                 'date_added': datetime.now().strftime('%Y-%m-%d')
             }
-        
+
         # Generate personalized message
         from message_generator import MessageGenerator
         message_gen = MessageGenerator()
         message = message_gen.generate_message(lead)
         email_template = message_gen.generate_email_template(lead)
-        
+
         return render_template('personalized_message.html', 
                              lead=lead, 
                              message=message,
                              email_template=email_template)
-        
+
     except Exception as e:
         logger.error(f"Error generating personalized message: {str(e)}")
         flash(f'Error generating message: {str(e)}', 'error')
@@ -1982,21 +1986,21 @@ def mark_lead_contacted(lead_id):
     """Mark a lead as contacted"""
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Not authenticated'})
-    
+
     try:
         user_id = session.get('user_id')
-        
+
         # Update lead status in database
         try:
             supabase.table('leads').update({
                 'status': 'Contacted'
             }).eq('id', lead_id).eq('user_id', user_id).execute()
-            
+
             return jsonify({'success': True})
         except Exception as db_e:
             logger.error(f"Database error marking lead as contacted: {str(db_e)}")
             return jsonify({'success': False, 'error': str(db_e)})
-        
+
     except Exception as e:
         logger.error(f"Error marking lead as contacted: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
@@ -2006,28 +2010,28 @@ def message_api(lead_id):
     """API endpoint to get a personalized message for a lead"""
     if 'user_id' not in session:
         return jsonify({'error': 'Authentication required'}), 401
-    
+
     try:
         user_id = session.get('user_id')
-        
+
         # Get lead data
         try:
             lead_data = supabase.table('leads').select('*').eq('id', lead_id).eq('user_id', user_id).execute()
             if not lead_data.data:
                 return jsonify({'error': 'Lead not found'}), 404
-            
+
             lead = lead_data.data[0]
         except Exception as db_e:
             logger.error(f"Database error in message_api: {str(db_e)}")
             return jsonify({'error': 'Database error'}), 500
-        
+
         # Generate message
         from message_generator import MessageGenerator
         message_gen = MessageGenerator()
         message = message_gen.generate_message(lead)
-        
+
         return jsonify({'message': message, 'lead': lead})
-        
+
     except Exception as e:
         logger.error(f"API error: {str(e)}")
         return jsonify({'error': str(e)}), 500
@@ -2038,17 +2042,17 @@ def generate_message(lead_id):
     if 'user_id' not in session:
         flash('Please log in to access this feature.')
         return redirect(url_for('login'))
-    
+
     try:
         user_id = session.get('user_id')
-        
+
         # Get lead data from database
         try:
             lead_data = supabase.table('leads').select('*').eq('id', lead_id).eq('user_id', user_id).execute()
             if not lead_data.data:
                 flash('Lead not found or you do not have permission to access it.')
                 return redirect(url_for('dashboard'))
-            
+
             lead = lead_data.data[0]
         except Exception as db_e:
             logger.error(f"Database error in generate_message: {str(db_e)}")
@@ -2065,18 +2069,18 @@ def generate_message(lead_id):
                 'phone_verified': False,
                 'linkedin_verified': True
             }
-        
+
         # Generate personalized message
         from message_generator import MessageGenerator
         message_gen = MessageGenerator()
         message = message_gen.generate_message(lead)
         email_template = message_gen.generate_email_template(lead)
-        
+
         return render_template('personalized_message.html', 
                              lead=lead, 
                              message=message,
                              email_template=email_template)
-        
+
     except Exception as e:
         logger.error(f"Error generating personalized message: {str(e)}")
         flash(f'Error generating message: {str(e)}', 'error')

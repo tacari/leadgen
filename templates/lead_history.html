@@ -85,7 +85,7 @@
                             <td class="p-3"><a href="mailto:{{ lead.email }}" class="email hover:text-[#7B00FF]">{{ lead.email }}</a></td>
                             <td class="p-3"><span class="source">{{ lead.source }}</span></td>
                             <td class="p-3 {{ 'text-[#7B00FF]' if lead.score > 75 }}">{{ lead.score }}</td>
-                            <td class="p-3 {{ 'text-green-500' if lead.conversion_probability > 50 }}">{{ lead.conversion_probability|round(1) if lead.conversion_probability else 'N/A' }}%</td>
+                            <td class="p-3 {{ 'text-green-500' if lead.get('conversion_probability', 0) > 50 }}">{{ lead.get('conversion_probability', 0)|round(1) if lead.get('conversion_probability') else 'N/A' }}%</td>
                             <td class="p-3">{{ lead.status }}</td>
                             <td class="p-3">{{ lead.date_added }}</td>
                             <td class="p-3">{{ lead.notes }}</td>
