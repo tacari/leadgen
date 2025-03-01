@@ -1,115 +1,54 @@
-
 {% extends "base.html" %}
 {% block title %}Leadzap - AI-Powered Lead Generation{% endblock %}
 {% block content %}
-<div class="min-h-screen bg-[#0D1321] pt-20">
-    <!-- Navigation -->
-    <nav class="bg-[#0D1321] p-4 fixed w-full top-0 z-10 animate-fade-in">
-        <div class="max-w-6xl mx-auto flex justify-between items-center">
-            <!-- Left: Logo -->
-            <div class="flex items-center">
-                <a href="{{ url_for('home') if 'user_id' not in session else url_for('dashboard') }}" class="text-2xl font-bold text-white hover:text-[#7B00FF] transition-colors duration-200">Leadzap</a>
-                <div class="w-5 h-5 bg-[#7B00FF] rounded-full ml-2 animate-pulse"></div>
-            </div>
-            <!-- Right: Desktop Links -->
-            <div class="hidden md:flex space-x-6 items-center">
-                <a href="{{ url_for('home') }}" class="text-white hover:text-[#7B00FF] transition-colors duration-200 {% if request.endpoint == 'home' %}border-b-2 border-[#7B00FF]{% endif %}">Home</a>
-                <a href="{{ url_for('pricing') }}" class="text-white hover:text-[#7B00FF] transition-colors duration-200 {% if request.endpoint == 'pricing' %}border-b-2 border-[#7B00FF]{% endif %}">Pricing</a>
-                {% if 'user_id' not in session %}
-                <a href="{{ url_for('login') }}" class="text-white hover:text-[#7B00FF] transition-colors duration-200 {% if request.endpoint == 'login' %}border-b-2 border-[#7B00FF]{% endif %}">Login</a>
-                <a href="{{ url_for('signup') }}" class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transition-transform duration-200 transform hover:scale-105">Sign Up</a>
-                {% else %}
-                <a href="{{ url_for('dashboard') }}" class="text-white hover:text-[#7B00FF] transition-colors duration-200 {% if request.endpoint == 'dashboard' %}border-b-2 border-[#7B00FF]{% endif %}">Dashboard</a>
-                <a href="{{ url_for('lead_history') }}" class="text-white hover:text-[#7B00FF] transition-colors duration-200 {% if request.endpoint == 'lead_history' %}border-b-2 border-[#7B00FF]{% endif %}">Lead History</a>
-                <a href="{{ url_for('analytics') }}" class="text-white hover:text-[#7B00FF] transition-colors duration-200 {% if request.endpoint == 'analytics' %}border-b-2 border-[#7B00FF]{% endif %}">Analytics</a>
-                <a href="{{ url_for('settings') }}" class="text-white hover:text-[#7B00FF] transition-colors duration-200 {% if request.endpoint == 'settings' %}border-b-2 border-[#7B00FF]{% endif %}">Settings</a>
-                <a href="{{ url_for('support') }}" class="text-white hover:text-[#7B00FF] transition-colors duration-200 {% if request.endpoint == 'support' %}border-b-2 border-[#7B00FF]{% endif %}">Support</a>
-                <a href="{{ url_for('logout') }}" class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transition-transform duration-200 transform hover:scale-105">Logout</a>
-                {% endif %}
-            </div>
-            <!-- Mobile Hamburger -->
-            <div class="md:hidden">
-                <button id="hamburger" class="focus:outline-none">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                    </svg>
-                </button>
-            </div>
-        </div>
-        <!-- Mobile Menu -->
-        <div id="mobile-menu" class="hidden md:hidden bg-[#1A2236] w-full absolute top-16 left-0 border-t border-[#7B00FF] shadow-lg">
-            <div class="flex flex-col items-center py-4 space-y-4">
-                <a href="{{ url_for('home') }}" class="text-white text-lg hover:text-[#7B00FF] hover:bg-[#2A2F42] w-full text-center py-2 transition-colors duration-200 {% if request.endpoint == 'home' %}text-[#7B00FF] font-bold{% endif %}">Home</a>
-                <a href="{{ url_for('pricing') }}" class="text-white text-lg hover:text-[#7B00FF] hover:bg-[#2A2F42] w-full text-center py-2 transition-colors duration-200 {% if request.endpoint == 'pricing' %}text-[#7B00FF] font-bold{% endif %}">Pricing</a>
-                {% if 'user_id' not in session %}
-                <a href="{{ url_for('login') }}" class="text-white text-lg hover:text-[#7B00FF] hover:bg-[#2A2F42] w-full text-center py-2 transition-colors duration-200 {% if request.endpoint == 'login' %}text-[#7B00FF] font-bold{% endif %}">Login</a>
-                <a href="{{ url_for('signup') }}" class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transition-transform duration-200 transform hover:scale-105">Sign Up</a>
-                {% else %}
-                <a href="{{ url_for('dashboard') }}" class="text-white text-lg hover:text-[#7B00FF] hover:bg-[#2A2F42] w-full text-center py-2 transition-colors duration-200 {% if request.endpoint == 'dashboard' %}text-[#7B00FF] font-bold{% endif %}">Dashboard</a>
-                <a href="{{ url_for('lead_history') }}" class="text-white text-lg hover:text-[#7B00FF] hover:bg-[#2A2F42] w-full text-center py-2 transition-colors duration-200 {% if request.endpoint == 'lead_history' %}text-[#7B00FF] font-bold{% endif %}">Lead History</a>
-                <a href="{{ url_for('analytics') }}" class="text-white text-lg hover:text-[#7B00FF] hover:bg-[#2A2F42] w-full text-center py-2 transition-colors duration-200 {% if request.endpoint == 'analytics' %}text-[#7B00FF] font-bold{% endif %}">Analytics</a>
-                <a href="{{ url_for('settings') }}" class="text-white text-lg hover:text-[#7B00FF] hover:bg-[#2A2F42] w-full text-center py-2 transition-colors duration-200 {% if request.endpoint == 'settings' %}text-[#7B00FF] font-bold{% endif %}">Settings</a>
-                <a href="{{ url_for('support') }}" class="text-white text-lg hover:text-[#7B00FF] hover:bg-[#2A2F42] w-full text-center py-2 transition-colors duration-200 {% if request.endpoint == 'support' %}text-[#7B00FF] font-bold{% endif %}">Support</a>
-                <a href="{{ url_for('logout') }}" class="bg-[#7B00FF] text-white px-4 py-2 rounded-lg hover:bg-[#8F00FF] hover:shadow-lg transition-transform duration-200 transform hover:scale-105">Logout</a>
-                {% endif %}
-            </div>
-        </div>
-    </nav>
+<div class="min-h-screen bg-[#0D1321]">
     <!-- Hero Section -->
-    <section class="relative h-[800px] flex items-center justify-center text-center bg-gradient-to-b from-[#0D1321] to-[#1E2A44]">
-        <canvas id="waveCanvas" class="absolute inset-0 w-full h-full opacity-20"></canvas>
-        <div class="relative z-10 max-w-4xl mx-auto px-4">
-            <h1 class="text-6xl font-bold text-white mb-6 animate-slide-up">AI-Powered Lead Generation that Delivers</h1>
-            <p class="text-2xl text-[#A1A9B8] italic mb-8 animate-slide-up" style="animation-delay: 0.2s;">From lead generation to closed deals, our AI handles it all.</p>
-            <a href="{{ url_for('pricing') }}" class="bg-[#7B00FF] text-white px-10 py-4 rounded-lg text-xl font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200 animate-slide-up" style="animation-delay: 0.4s;">
-                Explore Plans
+    <section class="bg-gradient-to-b from-[#0D1321] to-[#1E2A44] h-[800px] flex items-center justify-center text-center animate-fade-in">
+        <div class="max-w-4xl mx-auto px-4">
+            <h1 class="text-6xl font-bold text-white mb-6">Leadzap: AI-Powered Leads for Anyone</h1>
+            <p class="text-2xl text-[#A1A9B8] italic mb-8">50–600 Leads Delivered Fast, Starting at $499</p>
+            <a href="{{ url_for('pricing') }}" class="bg-[#7B00FF] text-white px-10 py-4 rounded-lg text-xl font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">
+                Launch Your Leads
             </a>
-            <div class="mt-10 animate-slide-up" style="animation-delay: 0.6s;">
+            <div class="mt-10">
                 <div class="w-24 h-24 bg-[#7B00FF] rounded-full mx-auto animate-pulse"></div>
             </div>
         </div>
     </section>
 
-    <!-- Features Section -->
+    <!-- Why Leadzap? -->
     <section class="py-16 bg-[#0D1321]">
         <div class="max-w-6xl mx-auto px-4">
             <h2 class="text-3xl font-bold text-center text-white mb-12">Why Choose Leadzap?</h2>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
                     <div class="flex justify-center mb-4">
                         <svg class="w-12 h-12 text-[#7B00FF] animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="12" r="6"/>
+                            <circle cx="12" cy="12" r="2"/>
                         </svg>
                     </div>
                     <h3 class="text-xl font-bold text-center text-white mb-4">Precision Targeting</h3>
-                    <p class="text-[#A1A9B8] text-center">Our AI finds leads that perfectly match your ideal customer profile—no more wasted time.</p>
+                    <p class="text-[#A1A9B8] text-center">AI finds leads that fit your exact niche—no more guesswork.</p>
                 </div>
-                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in" style="animation-delay: 0.2s;">
+                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
                     <div class="flex justify-center mb-4">
                         <svg class="w-12 h-12 text-[#7B00FF] animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M3 8l9-6 9 6v8l-9 6-9-6V8z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                            <path d="M3 8l9-6 9 6v8l-9 6-9-6V8z"/>
                         </svg>
                     </div>
                     <h3 class="text-xl font-bold text-center text-white mb-4">Automated Outreach</h3>
-                    <p class="text-[#A1A9B8] text-center">Personalized emails, LinkedIn messages, SMS—AI handles all channels simultaneously.</p>
+                    <p class="text-[#A1A9B8] text-center">Emails, LinkedIn, SMS—AI handles it all, so you don't have to.</p>
                 </div>
-                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in" style="animation-delay: 0.4s;">
+                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
                     <div class="flex justify-center mb-4">
                         <svg class="w-12 h-12 text-[#7B00FF] animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                            <path d="M12 20V10M18 20V4M6 20v-4"/>
                         </svg>
                     </div>
                     <h3 class="text-xl font-bold text-center text-white mb-4">Smart Scoring</h3>
-                    <p class="text-[#A1A9B8] text-center">AI ranks your leads by quality and intent—focus only on the most promising opportunities.</p>
-                </div>
-                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in" style="animation-delay: 0.6s;">
-                    <div class="flex justify-center mb-4">
-                        <svg class="w-12 h-12 text-[#7B00FF] animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-center text-white mb-4">Multi-Channel Verification</h3>
-                    <p class="text-[#A1A9B8] text-center">Every lead is verified across email, phone, and LinkedIn to ensure maximum deliverability.</p>
+                    <p class="text-[#A1A9B8] text-center">AI ranks your leads—focus on the best, close faster.</p>
                 </div>
             </div>
         </div>
@@ -120,48 +59,36 @@
             <h2 class="text-3xl font-bold text-center text-white mb-12">How We Zap Your Leads</h2>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
-                    <div class="relative">
-                        <div class="absolute -top-4 -left-4 w-10 h-10 bg-[#7B00FF] rounded-full flex items-center justify-center text-2xl font-bold">1</div>
-                    </div>
-                    <div class="flex justify-center mb-4 mt-2">
+                    <div class="flex justify-center mb-4">
                         <svg class="w-14 h-14 text-[#7B00FF] animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                         </svg>
                     </div>
-                    <p class="text-[#A1A9B8] text-center">Define Your Ideal Customer—Tell us exactly who you want to reach.</p>
+                    <p class="text-[#A1A9B8] text-center">1. Define Your Niche: Tell us your target—plumbers, SaaS execs, anyone.</p>
                 </div>
-                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in" style="animation-delay: 0.2s;">
-                    <div class="relative">
-                        <div class="absolute -top-4 -left-4 w-10 h-10 bg-[#7B00FF] rounded-full flex items-center justify-center text-2xl font-bold">2</div>
-                    </div>
-                    <div class="flex justify-center mb-4 mt-2">
+                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+                    <div class="flex justify-center mb-4">
                         <svg class="w-14 h-14 text-[#7B00FF] animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                            <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
                         </svg>
                     </div>
-                    <p class="text-[#A1A9B8] text-center">Our AI Scrapes Multiple Sources—Yellow Pages, LinkedIn, Google Maps, and more.</p>
+                    <p class="text-[#A1A9B8] text-center">2. AI Scrapes Leads: Our AI hunts across the web—Yellow Pages, LinkedIn, more.</p>
                 </div>
-                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in" style="animation-delay: 0.4s;">
-                    <div class="relative">
-                        <div class="absolute -top-4 -left-4 w-10 h-10 bg-[#7B00FF] rounded-full flex items-center justify-center text-2xl font-bold">3</div>
-                    </div>
-                    <div class="flex justify-center mb-4 mt-2">
+                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+                    <div class="flex justify-center mb-4">
                         <svg class="w-14 h-14 text-[#7B00FF] animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M3 8l9-6 9 6v8l-9 6-9-6V8z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                            <path d="M3 8l9-6 9 6v8l-9 6-9-6V8z"/>
                         </svg>
                     </div>
-                    <p class="text-[#A1A9B8] text-center">Automated Multi-Channel Outreach—Emails, LinkedIn messages, SMS, all personalized.</p>
+                    <p class="text-[#A1A9B8] text-center">3. Automated Outreach: Personalized emails, LinkedIn DMs—sent for you.</p>
                 </div>
-                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in" style="animation-delay: 0.6s;">
-                    <div class="relative">
-                        <div class="absolute -top-4 -left-4 w-10 h-10 bg-[#7B00FF] rounded-full flex items-center justify-center text-2xl font-bold">4</div>
-                    </div>
-                    <div class="flex justify-center mb-4 mt-2">
+                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+                    <div class="flex justify-center mb-4">
                         <svg class="w-14 h-14 text-[#7B00FF] animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                            <path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
                     </div>
-                    <p class="text-[#A1A9B8] text-center">You Get Results—Verified leads delivered to your dashboard with detailed analytics.</p>
+                    <p class="text-[#A1A9B8] text-center">4. Leads Delivered: CSV, email, dashboard—daily or weekly, your call.</p>
                 </div>
             </div>
         </div>
@@ -172,154 +99,16 @@
             <h2 class="text-3xl font-bold text-center text-white mb-12">What Our Clients Say</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
-                    <p class="text-[#A1A9B8] text-base italic mb-4">"Leadzap doubled our pipeline in 30 days—game-changer for my SaaS business. We're closing deals 3x faster now."</p>
-                    <p class="text-white text-sm font-bold">—Jane Robbins, SaaS Founder</p>
+                    <p class="text-[#A1A9B8] text-base italic mb-4">"Leadzap doubled my pipeline in 30 days—game-changer for my SaaS."</p>
+                    <p class="text-white text-sm font-bold">—Jane, SaaS Founder</p>
                 </div>
-                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in" style="animation-delay: 0.2s;">
-                    <p class="text-[#A1A9B8] text-base italic mb-4">"50 verified leads in my first week—closed 5 deals worth $30K. The ROI is insane. Best marketing investment I've made."</p>
-                    <p class="text-white text-sm font-bold">—Mike Chen, Agency Owner</p>
+                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+                    <p class="text-[#A1A9B8] text-base italic mb-4">"50 leads in a week—closed 5 deals already. Worth every penny."</p>
+                    <p class="text-white text-sm font-bold">—Mike, Plumber</p>
                 </div>
-                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in" style="animation-delay: 0.4s;">
-                    <p class="text-[#A1A9B8] text-base italic mb-4">"Their AI scoring is legitimate—I only focus on high-quality leads now. Saved me 20 hours a week of prospecting time."</p>
-                    <p class="text-white text-sm font-bold">—Alex Mercer, Marketing Director</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="py-16 bg-[#1A2236]">
-        <div class="max-w-6xl mx-auto px-4">
-            <h2 class="text-3xl font-bold text-center text-white mb-12">Lead Packages for Every Business</h2>
-            <div class="overflow-x-auto">
-                <table class="w-full text-white border-collapse">
-                    <thead>
-                        <tr>
-                            <th class="border-b border-[#7B00FF] p-4 text-left">Features</th>
-                            <th class="border-b border-[#7B00FF] p-4 text-center">
-                                <span class="block text-xl font-bold">Lead Starter</span>
-                                <span class="block text-2xl text-[#7B00FF] font-bold">$499</span>
-                                <span class="block text-sm text-[#A1A9B8]">One-time</span>
-                            </th>
-                            <th class="border-b border-[#7B00FF] p-4 text-center">
-                                <span class="block text-xl font-bold">Lead Growth</span>
-                                <span class="block text-2xl text-[#7B00FF] font-bold">$2,999</span>
-                                <span class="block text-sm text-[#A1A9B8]">/month</span>
-                            </th>
-                            <th class="border-b border-[#7B00FF] p-4 text-center">
-                                <span class="block text-xl font-bold">Lead Pro</span>
-                                <span class="block text-2xl text-[#7B00FF] font-bold">$9,999</span>
-                                <span class="block text-sm text-[#A1A9B8]">/month</span>
-                            </th>
-                            <th class="border-b border-[#7B00FF] p-4 text-center">
-                                <span class="block text-xl font-bold">Lead Enterprise</span>
-                                <span class="block text-2xl text-[#7B00FF] font-bold">$24,999</span>
-                                <span class="block text-sm text-[#A1A9B8]">/month</span>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody class="text-[#A1A9B8]">
-                        <tr class="hover:bg-[#242D42] transition-colors duration-150">
-                            <td class="border-b border-[#7B00FF] p-4">Leads per Month</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">50 (one-time)</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">200</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">500</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">1,000</td>
-                        </tr>
-                        <tr class="hover:bg-[#242D42] transition-colors duration-150">
-                            <td class="border-b border-[#7B00FF] p-4">Lead Scoring</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">Basic</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">Full</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">Advanced</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">Premium</td>
-                        </tr>
-                        <tr class="hover:bg-[#242D42] transition-colors duration-150">
-                            <td class="border-b border-[#7B00FF] p-4">Multi-Source Scraping</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">Yellow Pages</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">YP + Google</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">All Sources</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">All + Competitor</td>
-                        </tr>
-                        <tr class="hover:bg-[#242D42] transition-colors duration-150">
-                            <td class="border-b border-[#7B00FF] p-4">Email Verification</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">Basic</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">Complete</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">Complete</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">Complete</td>
-                        </tr>
-                        <tr class="hover:bg-[#242D42] transition-colors duration-150">
-                            <td class="border-b border-[#7B00FF] p-4">Phone Verification</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">—</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">✓</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">✓</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">✓</td>
-                        </tr>
-                        <tr class="hover:bg-[#242D42] transition-colors duration-150">
-                            <td class="border-b border-[#7B00FF] p-4">Automated Outreach</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">—</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">Email Only</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">Email + LinkedIn</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">All Channels</td>
-                        </tr>
-                        <tr class="hover:bg-[#242D42] transition-colors duration-150">
-                            <td class="border-b border-[#7B00FF] p-4">CRM Integration</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">—</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">—</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">✓</td>
-                            <td class="border-b border-[#7B00FF] p-4 text-center">✓</td>
-                        </tr>
-                        <tr>
-                            <td class="p-4"></td>
-                            <td class="p-4 text-center">
-                                <a href="{{ url_for('pricing') }}" class="inline-block bg-[#7B00FF] text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">
-                                    Get Started
-                                </a>
-                            </td>
-                            <td class="p-4 text-center">
-                                <a href="{{ url_for('pricing') }}" class="inline-block bg-[#7B00FF] text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">
-                                    Sign Up
-                                </a>
-                            </td>
-                            <td class="p-4 text-center">
-                                <a href="{{ url_for('pricing') }}" class="inline-block bg-[#7B00FF] text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">
-                                    Sign Up
-                                </a>
-                            </td>
-                            <td class="p-4 text-center">
-                                <a href="{{ url_for('contact') }}" class="inline-block bg-transparent border border-[#7B00FF] text-[#7B00FF] px-4 py-2 rounded-lg text-sm font-bold hover:bg-[#7B00FF] hover:text-white hover:shadow-lg transform hover:scale-105 transition-all duration-200">
-                                    Contact Us
-                                </a>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </section>
-
-    <section class="py-16 bg-gradient-to-b from-[#0D1321] to-[#1E2A44]">
-        <div class="max-w-4xl mx-auto px-4">
-            <h2 class="text-3xl font-bold text-center text-white mb-4">About Leadzap</h2>
-            <p class="text-[#A1A9B8] text-center mb-8">
-                Leadzap is a next-generation lead generation platform founded by AI and sales automation experts. Our team combines expertise in machine learning, data science, and sales to deliver the most effective lead generation solution for modern businesses.
-            </p>
-            <div class="flex flex-wrap justify-center gap-8 mb-8">
-                <div class="flex items-center">
-                    <svg class="w-8 h-8 text-[#7B00FF] mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
-                    </svg>
-                    <span class="text-white">500+ Active Clients</span>
-                </div>
-                <div class="flex items-center">
-                    <svg class="w-8 h-8 text-[#7B00FF] mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
-                    </svg>
-                    <span class="text-white">1M+ Leads Generated</span>
-                </div>
-                <div class="flex items-center">
-                    <svg class="w-8 h-8 text-[#7B00FF] mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
-                    </svg>
-                    <span class="text-white">$250M+ Client Revenue</span>
+                <div class="bg-[#1A2236] border border-[#7B00FF] rounded-lg p-6 animate-fade-in">
+                    <p class="text-[#A1A9B8] text-base italic mb-4">"AI scoring is legit—focused on the best leads, saved hours."</p>
+                    <p class="text-white text-sm font-bold">—Alex, Gym Owner</p>
                 </div>
             </div>
         </div>
@@ -327,22 +116,17 @@
 
     <section class="py-16 text-center bg-[#0D1321]">
         <div class="max-w-4xl mx-auto px-4">
-            <h2 class="text-3xl font-bold text-white mb-4">Ready to Zap Your Leads?</h2>
-            <p class="text-lg text-[#A1A9B8] mb-8">Start with a $499 pilot or scale up to dominate your market. Your next big client is just one click away.</p>
-            <div class="flex flex-wrap justify-center gap-4">
-                <a href="{{ url_for('pricing') }}" class="bg-[#7B00FF] text-white px-8 py-4 rounded-lg text-xl font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">
-                    Get Started
-                </a>
-                <a href="{{ url_for('contact') }}" class="bg-transparent border border-[#7B00FF] text-[#7B00FF] px-8 py-4 rounded-lg text-xl font-bold hover:bg-[#7B00FF] hover:text-white hover:shadow-lg transform hover:scale-105 transition-all duration-200">
-                    Schedule Demo
-                </a>
-            </div>
+            <h2 class="text-3xl font-bold text-white">Ready to Zap Your Leads?</h2>
+            <p class="text-lg text-[#A1A9B8] mb-8">Start with a $499 pilot or scale to $5,999 domination—grow your business today.</p>
+            <a href="{{ url_for('pricing') }}" class="bg-[#7B00FF] text-white px-10 py-4 rounded-lg text-xl font-bold hover:bg-[#8F00FF] hover:shadow-lg transform hover:scale-105 transition-transform duration-200">
+                Get Started
+            </a>
         </div>
     </section>
 
     <footer class="py-8 text-center bg-[#0D1321]">
         <div class="max-w-6xl mx-auto px-4">
-            <p class="text-[#A1A9B8] text-sm">© 2025 Leadzap • All Rights Reserved • leads@leadzap.io</p>
+            <p class="text-[#A1A9B8] text-sm">© 2025 Leadzap • leads@leadzap.io</p>
             <div class="mt-2 flex justify-center gap-4">
                 <a href="#" class="text-[#7B00FF] hover:text-[#8F00FF] transition-colors duration-200">
                     <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -365,8 +149,7 @@
         to { opacity: 1; transform: translateY(0); }
     }
     .animate-fade-in {
-        animation: fade-in 0.5s ease-out forwards;
-        opacity: 0;
+        animation: fade-in 0.5s ease-out;
     }
     @keyframes pulse {
         0% { transform: scale(1); }
@@ -376,147 +159,5 @@
     .animate-pulse {
         animation: pulse 2s infinite;
     }
-    @keyframes slide-up {
-        from { opacity: 0; transform: translateY(30px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .animate-slide-up {
-        animation: slide-up 0.6s ease-out forwards;
-        opacity: 0;
-    }
-    @keyframes spin-slow {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
-    .animate-spin-slow {
-        animation: spin-slow 8s linear infinite;
-    }
 </style>
-
-<script>
-    // Canvas wave animation
-    document.addEventListener('DOMContentLoaded', function() {
-        try {
-            const canvas = document.getElementById('waveCanvas');
-            if (canvas) {
-                const ctx = canvas.getContext('2d');
-                
-                // Set canvas size to match parent
-                function resizeCanvas() {
-                    canvas.width = canvas.parentElement.offsetWidth;
-                    canvas.height = canvas.parentElement.offsetHeight;
-                }
-                
-                resizeCanvas();
-                window.addEventListener('resize', resizeCanvas);
-                
-                // Wave properties
-                const waves = {
-                    y: canvas.height / 2,
-                    length: 0.01,
-                    amplitude: 50,
-                    frequency: 0.01
-                };
-                
-                // Line properties
-                const lines = [];
-                const lineCount = 3;
-                
-                for (let i = 0; i < lineCount; i++) {
-                    lines.push({
-                        points: [],
-                        width: 2 + (i * 0.5),
-                        speed: 0.04 - (i * 0.01),
-                        offset: Math.random() * 1000,
-                        color: `rgba(123, 0, 255, ${0.2 + (i * 0.1)})`
-                    });
-                }
-                
-                // Animation loop
-                function animate() {
-                    try {
-                        ctx.clearRect(0, 0, canvas.width, canvas.height);
-                        
-                        lines.forEach((line, index) => {
-                            line.offset += line.speed;
-                            line.points = [];
-                            
-                            // Create sine wave points
-                            for (let i = 0; i <= canvas.width; i += 5) {
-                                const x = i;
-                                const y = canvas.height / 2 + Math.sin(i * waves.length + line.offset) * waves.amplitude;
-                                line.points.push({x, y});
-                            }
-                            
-                            // Draw the line
-                            ctx.beginPath();
-                            ctx.moveTo(line.points[0].x, line.points[0].y);
-                            
-                            for (let i = 1; i < line.points.length; i++) {
-                                ctx.lineTo(line.points[i].x, line.points[i].y);
-                            }
-                            
-                            ctx.strokeStyle = line.color;
-                            ctx.lineWidth = line.width;
-                            ctx.stroke();
-                        });
-                        
-                        requestAnimationFrame(animate);
-                    } catch (e) {
-                        console.log('Animation error:', e);
-                    }
-                }
-                
-                animate();
-            }
-        } catch (e) {
-            console.log('Canvas setup error:', e);
-        }
-        
-        // Intersection Observer for fade-in animations
-        try {
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.style.animationPlayState = 'running';
-                        observer.unobserve(entry.target);
-                    }
-                });
-            });
-            
-            document.querySelectorAll('.animate-fade-in').forEach(el => {
-                el.style.animationPlayState = 'paused';
-                observer.observe(el);
-            });
-        } catch (e) {
-            console.log('Observer error:', e);
-            // Fallback to make elements visible if observer fails
-            document.querySelectorAll('.animate-fade-in').forEach(el => {
-                el.style.opacity = '1';
-                el.style.transform = 'translateY(0)';
-            });
-        }
-    });
-    
-    // Mobile Menu Toggle
-    document.addEventListener('DOMContentLoaded', function() {
-        try {
-            const hamburger = document.getElementById('hamburger');
-            const mobileMenu = document.getElementById('mobile-menu');
-            
-            if (hamburger && mobileMenu) {
-                hamburger.addEventListener('click', function() {
-                    mobileMenu.classList.toggle('hidden');
-                    if (mobileMenu.classList.contains('hidden')) {
-                        hamburger.innerHTML = '<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>';
-                    } else {
-                        hamburger.innerHTML = '<svg class="w-6 h-6 text-[#7B00FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
-                    }
-                });
-            }
-        } catch (e) {
-            console.log('Mobile menu error:', e);
-        }
-    });
-</script>
 {% endblock %}
